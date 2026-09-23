@@ -46,7 +46,7 @@
       "sku": "8993175531702",
       "cost": 500,
       "price": 500,
-      "stock": 20,
+      "stock": 19,
       "category": "Makanan",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790161533005-kojx.jpg"
     },
@@ -56,7 +56,7 @@
       "sku": "8992775312452",
       "cost": 500,
       "price": 500,
-      "stock": 20,
+      "stock": 18,
       "category": "Makanan",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790161572114-1c5z.jpg"
     },
@@ -66,7 +66,7 @@
       "sku": "2256",
       "cost": 2000,
       "price": 2500,
-      "stock": 20,
+      "stock": 17,
       "category": "Makanan",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790165416458.jpg"
     },
@@ -76,12 +76,57 @@
       "sku": "8993111212504",
       "cost": 2000,
       "price": 2500,
-      "stock": 20,
+      "stock": 18,
       "category": "Bumbu Dapur",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790166588941-le9f.jpg"
     }
   ],
   "transactions": [
+    {
+      "id": "TRX-MUE426SL",
+      "at": 1790168427237,
+      "items": [
+        {
+          "productId": "p-1790166588941-le9f",
+          "name": "Garam",
+          "price": 2500,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790166588941-le9f.jpg",
+          "qty": 2,
+          "sku": "8993111212504"
+        },
+        {
+          "productId": "p-1790165418736-89lr",
+          "name": "Telur Ayam Negeri",
+          "price": 2500,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790165416458.jpg",
+          "qty": 3,
+          "sku": "2256"
+        },
+        {
+          "productId": "p-1790161572114-1c5z",
+          "name": "Gery Salut",
+          "price": 500,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790161572114-1c5z.jpg",
+          "qty": 2,
+          "sku": "8992775312452"
+        },
+        {
+          "productId": "p-1790161533005-kojx",
+          "name": "Siip",
+          "price": 500,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790161533005-kojx.jpg",
+          "qty": 1,
+          "sku": "8993175531702"
+        }
+      ],
+      "subtotal": 14000,
+      "discount": 0,
+      "total": 14000,
+      "paid": 20000,
+      "change": 6000,
+      "method": "Cash",
+      "itemCount": 8
+    },
     {
       "id": "TRX-MUE41C0H",
       "at": 1790168387345,
