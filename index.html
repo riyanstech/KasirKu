@@ -25,6 +25,79 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+<style>
+/* ============================================================
+   FORCE FIX — Foto produk TIDAK terpotong + Scan button selalu tampil
+   Inline style = bypass cache SW
+   ============================================================ */
+
+/* 1. KOTAK FOTO: flex center, background putih */
+.pt-img, .pa-img, .ci-img {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+}
+.dark .pt-img, .dark .pa-img, .dark .ci-img {
+  background: #1e293b !important;
+}
+
+/* 2. GAMBAR: contain = UTUH, tidak dipotong */
+.pt-img img, .pa-img img, .ci-img img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 5px !important;
+  background: transparent !important;
+}
+
+/* 3. FOTO PRODUK: rasio lebih tinggi biar produk lega */
+.pt-img {
+  aspect-ratio: 4 / 5 !important;
+}
+
+/* 4. TOMBOL SCAN: PAKSA selalu tampil di samping search */
+.pos-toolbar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+}
+.pos-toolbar .search-box {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+.pos-toolbar button,
+.pos-toolbar .btn {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+}
+.pos-toolbar .btn-primary {
+  padding: 10px 14px !important;
+  min-height: 46px !important;
+}
+
+/* 5. HP: layout header rapi */
+@media (max-width: 640px) {
+  .hdr-inner { padding: 0 10px !important; gap: 8px !important; height: 58px !important; }
+  .nav-tab span { display: none !important; }
+  .nav-tab { padding: 8px 10px !important; min-width: 40px !important; justify-content: center !important; }
+  .user-badge span { display: none !important; }
+  .app-main { padding: 14px 12px 40px !important; }
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 9px !important;
+  }
+  .pt-img { aspect-ratio: 4 / 5 !important; padding: 4px !important; }
+  .pt-img img { padding: 4px !important; }
+  .pt-name { font-size: .78rem !important; }
+  .pt-price { font-size: .88rem !important; }
+}
+</style>
 </head>
 <body>
     <div id="app">
