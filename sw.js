@@ -1,13 +1,9 @@
 /* ==========================================
-   KasirKu — Service Worker v3
-   Network-First untuk HTML/JS/CSS
-   Cache-First untuk CDN & gambar
+   KasirKu — Service Worker
+   Auto-update + Offline support
    ========================================== */
-const CACHE_VERSION = 'kasirku-v3';
-const STATIC_CACHE = CACHE_VERSION + '-static';
-const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
-
-const STATIC_ASSETS = [
+const CACHE_VERSION = 'kasirku-' + Date.now(); // ← otomatis berubah tiap deploy
+const ASSETS = [
   './',
   './index.html',
   './assets/css/style.css',
@@ -18,81 +14,66 @@ const STATIC_ASSETS = [
   './assets/js/app.js',
 ];
 
-self.addEventListener('install', function (event) {
+/* Install — cache semua file */
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then(function (cache) {
-      return cache.addAll(STATIC_ASSETS).catch(function (err) {
-        console.warn('[SW] cache addAll', err);
+    caches.open(CACHE_VERSION).then(cache => {
+      return cache.addAll(ASSETS).catch(err => {
+        console.warn('[SW] Cache partial failed', err);
       });
     })
   );
+  // Langsung aktif (tidak tunggu user close tab)
   self.skipWaiting();
 });
 
-self.addEventListener('activate', function (event) {
+/* Activate — hapus cache versi lama */
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(function (keys) {
+    caches.keys().then(keys => {
       return Promise.all(
         keys
-          .filter(function (k) { return k.indexOf(CACHE_VERSION) !== 0; })
-          .map(function (k) { return caches.delete(k); })
+          .filter(key => key !== CACHE_VERSION && key.startsWith('kasirku-'))
+          .map(key => caches.delete(key))
       );
     })
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', function (event) {
+/* Fetch — Network First, Cache Fallback */
+self.addEventListener('fetch', (event) => {
   const req = event.request;
+
+  // Skip request non-GET atau ke API eksternal
   if (req.method !== 'GET') return;
-
   const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
 
-  // GitHub API — selalu fresh
-  if (url.hostname === 'api.github.com') return;
-
-  // Cache-first untuk CDN & gambar
-  const isCDN =
-    url.hostname.indexOf('unpkg.com') !== -1 ||
-    url.hostname.indexOf('fonts.googleapis.com') !== -1 ||
-    url.hostname.indexOf('fonts.gstatic.com') !== -1 ||
-    url.hostname.indexOf('raw.githubusercontent.com') !== -1;
-
-  if (isCDN) {
-    event.respondWith(
-      caches.open(RUNTIME_CACHE).then(function (cache) {
-        return cache.match(req).then(function (cached) {
+  event.respondWith(
+    fetch(req)
+      .then(res => {
+        // Update cache dengan response terbaru
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_VERSION).then(cache => cache.put(req, clone)).catch(() => {});
+        }
+        return res;
+      })
+      .catch(() => {
+        // Kalau offline → pakai cache
+        return caches.match(req).then(cached => {
           if (cached) return cached;
-          return fetch(req).then(function (res) {
-            if (res && res.status === 200) cache.put(req, res.clone());
-            return res;
-          });
+          // Kalau tidak ada cache, return index.html (SPA fallback)
+          return caches.match('./index.html');
         });
       })
-    );
-    return;
-  }
-
-  // Network-first untuk file lokal
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      fetch(req)
-        .then(function (res) {
-          if (res && res.status === 200) {
-            const clone = res.clone();
-            caches.open(STATIC_CACHE).then(function (c) { c.put(req, clone); }).catch(function () {});
-          }
-          return res;
-        })
-        .catch(function () {
-          return caches.match(req).then(function (cached) {
-            return cached || caches.match('./index.html');
-          });
-        })
-    );
-  }
+  );
 });
 
-self.addEventListener('message', function (event) {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+/* Message handler — untuk force update */
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
