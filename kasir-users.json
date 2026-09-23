@@ -1,0 +1,11 @@
+{
+  "users": [
+    {
+      "username": "waroeng",
+      "salt": "e7dc2d40c0015db852c24e168e33ec67",
+      "passwordHash": "57b63b684aef6d94ce8e6149fe84309be0ccda28d652bb2586bbe72aef75cd4c",
+      "role": "admin",
+      "createdAt": 1790140685529
+    }
+  ]
+}
