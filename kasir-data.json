@@ -39,6 +39,16 @@
       "stock": 6,
       "category": "Perlengkapan Bayi",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790142588802.jpg"
+    },
+    {
+      "id": "p-1790161533005-kojx",
+      "name": "Siip",
+      "sku": "8993175531702",
+      "cost": 500,
+      "price": 500,
+      "stock": 20,
+      "category": "Makanan",
+      "image": ""
     }
   ],
   "transactions": [
@@ -85,6 +95,6 @@
     "storeAddress": "Kp. Darmaga, RT 03/RW01, Kec. Bojongpicung, Kab. Cianjur",
     "storePhone": "085888082252",
     "receiptFooter": "Terima kasih, datang lagi!",
-    "theme": "light"
+    "theme": "dark"
   }
 }
