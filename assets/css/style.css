@@ -462,7 +462,6 @@ img { max-width: 100%; display: block; }
   overflow: hidden;
   position: relative;
 }
-.pt-img img { width: 100%; height: 100%; object-fit: cover; }
 .pt-img svg { width: 40px; height: 40px; color: var(--text-3); opacity: .6; }
 .pt-name {
   font-size: .82rem;
@@ -578,7 +577,6 @@ img { max-width: 100%; display: block; }
   flex-shrink: 0;
   overflow: hidden;
 }
-.ci-img img { width: 100%; height: 100%; object-fit: cover; }
 .ci-img svg { width: 20px; height: 20px; color: var(--text-3); }
 .ci-body { flex: 1; min-width: 0; }
 .ci-name {
@@ -728,7 +726,6 @@ img { max-width: 100%; display: block; }
   flex-shrink: 0;
   overflow: hidden;
 }
-.pa-img img { width: 100%; height: 100%; object-fit: cover; }
 .pa-img svg { width: 28px; height: 28px; color: var(--text-3); opacity: .6; }
 .pa-body { flex: 1; min-width: 0; }
 .pa-name {
@@ -2280,6 +2277,54 @@ img { max-width: 100%; height: auto; }
     max-width: 100%;
   }
   .r-store-name { font-size: 15px; }
+}
+
+/* ============================================================
+   FIX FOTO PRODUK — JANGAN TERPOTONG (v3 FINAL)
+   ============================================================ */
+
+/* Kotak gambar: tetap persegi biar grid rapi */
+.pt-img,
+.pa-img,
+.ci-img {
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.dark .pt-img,
+.dark .pa-img,
+.dark .ci-img { background: var(--bg-subtle); }
+
+/* Gambar: TAMPILKAN UTUH — tidak di-crop */
+.pt-img img,
+.pa-img img,
+.ci-img img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;     /* ← KUNCI: full image */
+  object-position: center !important;
+  padding: 6px !important;
+  background: transparent !important;
+}
+.ci-img img { padding: 3px !important; }
+
+/* Mobile: kotak foto sedikit lebih tinggi biar produk kelihatan besar */
+@media (max-width: 640px) {
+  .pt-img {
+    aspect-ratio: 4 / 5 !important;   /* ← naik dari 1:1 → 4:5 */
+    padding: 4px;
+  }
+  .pt-img img { padding: 4px !important; }
+}
+
+@media (max-width: 400px) {
+  .pt-img {
+    aspect-ratio: 4 / 5 !important;
+    padding: 3px;
+  }
 }
 
 /* ==================== END OF FILE ==================== */
