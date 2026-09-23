@@ -11,16 +11,6 @@
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137343525-ixmz.jpg"
     },
     {
-      "id": "p-1790137628461-n71i",
-      "name": "Indocafe",
-      "sku": "9311931024036",
-      "cost": 1700,
-      "price": 2000,
-      "stock": 19,
-      "category": "Kopi",
-      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137628461-n71i.jpg"
-    },
-    {
       "id": "p-1790165418736-89lr",
       "name": "Telur Ayam Negeri",
       "sku": "2256",
