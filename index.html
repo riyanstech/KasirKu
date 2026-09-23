@@ -29,8 +29,7 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- ✅ HAPUS Tailwind CDN — tidak dipakai (semua custom CSS) -->
-    <!-- ✅ Pin versi + defer agar tidak blocking -->
+    <!-- ✅ Pin versi + defer (tidak blocking render) -->
     <script defer src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
     <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -260,6 +259,11 @@
                             </button>
                             <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">
                                 <i data-lucide="upload"></i> Import JSON
+                            </button>
+                        </div>
+                        <div class="btn-row" style="margin-top:8px">
+                            <button class="btn btn-warning" onclick="migrateBase64Photos()">
+                                <i data-lucide="image-up"></i> Migrasi Foto ke GitHub
                             </button>
                         </div>
                         <input type="file" id="import-file" accept=".json" class="hidden">
@@ -629,7 +633,7 @@
 
     <div id="toasts"></div>
 
-    <!-- ✅ Load scripts dengan defer, TANPA cache-bust timestamp -->
+    <!-- ✅ Load scripts dengan defer -->
     <script defer src="assets/js/core.js"></script>
     <script defer src="assets/js/auth.js"></script>
     <script defer src="assets/js/vision.js"></script>
@@ -637,7 +641,7 @@
     <script defer src="assets/js/app.js"></script>
 
     <script>
-    // ✅ Service Worker — auto-update stabil
+    // ✅ Service Worker — auto-update
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then((reg) => {
