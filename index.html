@@ -2,23 +2,51 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#10b981">
     <meta name="color-scheme" content="light dark">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>KasirKu — Point of Sale</title>
 
-    <!-- ✅ Pre-hydrate tema SEBELUM render (anti flash putih→gelap) -->
     <script>
       (function(){
         try {
           var s = JSON.parse(localStorage.getItem('kasir:settings')||'{}');
-          var theme = s.theme;
-          if (!theme) {
-            theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          }
+          var theme = s.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
           if (theme === 'dark') document.documentElement.classList.add('dark');
         } catch(e){}
       })();
+    </script>
+
+    <script>
+      document.addEventListener('gesturestart', e => e.preventDefault());
+      document.addEventListener('gesturechange', e => e.preventDefault());
+      document.addEventListener('gestureend', e => e.preventDefault());
+
+      let _lastTouchEnd = 0;
+      document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - _lastTouchEnd <= 350) {
+          const t = e.target;
+          if (t.tagName !== 'INPUT' && t.tagName !== 'TEXTAREA' && t.tagName !== 'SELECT') {
+            e.preventDefault();
+          }
+        }
+        _lastTouchEnd = now;
+      }, { passive: false });
+
+      document.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) e.preventDefault();
+      }, { passive: false });
+
+      document.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
     </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,7 +57,6 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- ✅ Pin versi + defer (tidak blocking render) -->
     <script defer src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
     <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -41,9 +68,9 @@
             <div class="hdr-inner">
                 <div class="hdr-logo">
                     <div class="logo-box"><i data-lucide="shopping-cart"></i></div>
-                    <div>
+                    <div class="logo-text">
                         <h1 class="logo-title">KasirKu</h1>
-                        <p class="logo-sub">POINT OF SALE</p>
+                        <p class="logo-sub">POS</p>
                     </div>
                 </div>
 
@@ -58,7 +85,7 @@
                         <i data-lucide="receipt-text"></i><span>Transaksi</span>
                     </button>
                     <button class="nav-tab" data-tab="pengaturan" onclick="showTab('pengaturan', this)">
-                        <i data-lucide="settings"></i><span>Pengaturan</span>
+                        <i data-lucide="settings"></i><span>Atur</span>
                     </button>
                 </nav>
 
@@ -82,10 +109,11 @@
                         <div class="pos-toolbar">
                             <div class="search-box">
                                 <i data-lucide="search"></i>
-                                <input type="text" id="pos-search" placeholder="Cari produk atau scan barcode..." autocomplete="off">
+                                <input type="text" id="pos-search" placeholder="Cari produk..." autocomplete="off">
                             </div>
-                            <button class="btn btn-primary" onclick="openScanner()">
-                                <i data-lucide="scan-line"></i> Scan
+                            <button class="btn-scan-icon" onclick="openScanner()" aria-label="Scan Barcode">
+                                <i data-lucide="scan-line"></i>
+                                <span>Scan</span>
                             </button>
                         </div>
                         <div id="pos-category-filter" class="cat-chips"></div>
@@ -633,7 +661,6 @@
 
     <div id="toasts"></div>
 
-    <!-- ✅ Load scripts dengan defer -->
     <script defer src="assets/js/core.js"></script>
     <script defer src="assets/js/auth.js"></script>
     <script defer src="assets/js/vision.js"></script>
@@ -641,7 +668,6 @@
     <script defer src="assets/js/app.js"></script>
 
     <script>
-    // ✅ Service Worker — auto-update
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then((reg) => {
