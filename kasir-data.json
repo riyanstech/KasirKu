@@ -26,7 +26,7 @@
       "sku": "8993988052647",
       "cost": 4000,
       "price": 5000,
-      "stock": 20,
+      "stock": 19,
       "category": "Alat Sekolah",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137729845-sdft.jpg"
     },
@@ -86,7 +86,7 @@
       "sku": "8999999706081",
       "cost": 4500,
       "price": 5000,
-      "stock": 20,
+      "stock": 19,
       "category": "Pasta Gigi",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180689567.jpg"
     },
@@ -96,12 +96,49 @@
       "sku": "8998866608312",
       "cost": 3000,
       "price": 3500,
-      "stock": 20,
+      "stock": 19,
       "category": "Sabun",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180758903.jpg"
     }
   ],
   "transactions": [
+    {
+      "id": "TRX-MUEBV9W5",
+      "at": 1790181541589,
+      "items": [
+        {
+          "productId": "p-1790180763260-cl8z",
+          "name": "Sabun",
+          "price": 3500,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180758903.jpg",
+          "qty": 1,
+          "sku": "8998866608312"
+        },
+        {
+          "productId": "p-1790180692198-zs6v",
+          "name": "Pepsodent",
+          "price": 5000,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180689567.jpg",
+          "qty": 1,
+          "sku": "8999999706081"
+        },
+        {
+          "productId": "p-1790137729845-sdft",
+          "name": "Joyko Correction Fluid JK-101A",
+          "price": 5000,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137729845-sdft.jpg",
+          "qty": 1,
+          "sku": "8993988052647"
+        }
+      ],
+      "subtotal": 13500,
+      "discount": 0,
+      "total": 13500,
+      "paid": 15000,
+      "change": 1500,
+      "method": "Cash",
+      "itemCount": 3
+    },
     {
       "id": "TRX-MUE426SL",
       "at": 1790168427237,
