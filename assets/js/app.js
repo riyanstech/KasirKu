@@ -315,33 +315,27 @@ async function saveProduct() {
   const stock = Number(stockEl?.value) || 0;
   const category = (catEl?.value || '').trim();
 
-  if (!name) {
-    KR.toast.error('Nama produk wajib diisi');
-    return;
-  }
-  if (!sku) {
-    KR.toast.error('SKU wajib diisi');
-    return;
-  }
-  if (price <= 0) {
-    KR.toast.error('Harga jual harus lebih dari 0');
-    return;
-  }
+  if (!name) { KR.toast.error('Nama produk wajib diisi'); return; }
+  if (!sku) { KR.toast.error('SKU wajib diisi'); return; }
+  if (price <= 0) { KR.toast.error('Harga jual harus lebih dari 0'); return; }
 
   const dup = KR.store.findProductBySku(sku);
-  if (dup && dup.id !== id) {
-    KR.toast.error('SKU sudah dipakai produk lain');
-    return;
-  }
+  if (dup && dup.id !== id) { KR.toast.error('SKU sudah dipakai produk lain'); return; }
 
-  // Upload foto ke GitHub kalau ada foto baru (base64) & login GitHub
+  // Catat foto lama (untuk dihapus kalau diganti)
+  const oldProduct = id ? KR.store.findProductById(id) : null;
+  const oldPhotoFilename = oldProduct ? extractPhotoFilename(oldProduct.image) : null;
+
   let imageUrl = pfImageData || '';
+  let newPhotoFilename = null;
+
+  // Upload foto baru ke GitHub
   if (imageUrl && imageUrl.startsWith('data:') && KR.auth && KR.auth.isGitHubUser()) {
     showLoading('Mengunggah foto...');
     try {
       const prodId = id || ('p-' + Date.now());
-      const filename = prodId + '.jpg';
-      const url = await uploadPhotoToGithub(imageUrl, filename);
+      newPhotoFilename = prodId + '.jpg';
+      const url = await uploadPhotoToGithub(imageUrl, newPhotoFilename);
       imageUrl = url;
       KR.toast.success('Foto tersimpan di GitHub');
     } catch (e) {
@@ -352,14 +346,14 @@ async function saveProduct() {
     }
   }
 
+  // Hapus foto lama kalau diganti dengan yang baru
+  if (oldPhotoFilename && newPhotoFilename && oldPhotoFilename !== newPhotoFilename) {
+    try { await deletePhotoFromGithub(oldPhotoFilename); } catch (e) { console.warn(e); }
+  }
+
   const data = {
-    name: name,
-    sku: sku,
-    cost: cost,
-    price: price,
-    stock: stock,
-    category: category,
-    image: imageUrl,
+    name: name, sku: sku, cost: cost, price: price,
+    stock: stock, category: category, image: imageUrl,
   };
 
   if (id) {
@@ -381,7 +375,12 @@ window.saveProduct = saveProduct;
 function confirmDeleteProduct(id) {
   const p = KR.store.findProductById(id);
   if (!p) return;
-  confirmDialog('Hapus Produk?', `Produk "${p.name}" akan dihapus permanen.`, () => {
+  confirmDialog('Hapus Produk?', `Produk "${p.name}" akan dihapus permanen.`, async () => {
+    // Hapus foto di GitHub kalau ada
+    const filename = extractPhotoFilename(p.image);
+    if (filename && KR.github.isConfigured()) {
+      try { await deletePhotoFromGithub(filename); } catch (e) { console.warn(e); }
+    }
     KR.store.deleteProduct(id);
     KR.toast.success('Produk dihapus');
     renderProductList();
@@ -390,6 +389,7 @@ function confirmDeleteProduct(id) {
     autoSync();
   });
 }
+
 window.confirmDeleteProduct = confirmDeleteProduct;
 
 /* ==================== TRANSACTION LIST ==================== */
