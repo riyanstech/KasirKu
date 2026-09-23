@@ -21,15 +21,15 @@ KR.vision = (function () {
       desc: 'Gratis, akurasi tinggi, cocok untuk produk warung',
       format: 'gemini',
     },
-    groq: {
-      name: 'Groq (Gratis & Cepat)',
-      icon: '⚡',
-      endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-      model: 'llama-3.2-90b-vision-preview',
-      keyUrl: 'https://console.groq.com/keys',
-      desc: 'Gratis, sangat cepat',
-      format: 'openai',
-    },
+   groq: {
+     name: 'Groq (Gratis & Cepat)',
+     icon: '⚡',
+     endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+     model: 'meta-llama/llama-4-scout-17b-16e-instruct',   // ← MODEL BARU
+     keyUrl: 'https://console.groq.com/keys',
+     desc: 'Gratis, sangat cepat',
+     format: 'openai',
+   },
     openai: {
       name: 'OpenAI GPT-4o (Berbayar)',
       icon: '🤖',
