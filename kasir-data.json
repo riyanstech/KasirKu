@@ -39,6 +39,16 @@
       "stock": 7,
       "category": "Perlengkapan Bayi",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790142588802.jpg"
+    },
+    {
+      "id": "p-1790148698917-rkvz",
+      "name": "Hi",
+      "sku": "124",
+      "cost": 5200,
+      "price": 558,
+      "stock": 10,
+      "category": "Anjinh",
+      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790148695986.jpg"
     }
   ],
   "transactions": [],
