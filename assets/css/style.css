@@ -2080,4 +2080,234 @@ button.nav-tab.active svg * {
   scroll-behavior: smooth;
 }
 
+/* ============================================================
+   ANALYTICS / REPORT
+   ============================================================ */
+
+.report-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: all var(--t-base);
+}
+.kpi-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px -8px rgba(16,185,129,.25);
+}
+.kpi-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+.kpi-icon svg { width: 22px; height: 22px; }
+.kpi-icon.green { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 6px 14px -4px rgba(16,185,129,.5); }
+.kpi-icon.blue  { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 6px 14px -4px rgba(59,130,246,.5); }
+.kpi-icon.purple{ background: linear-gradient(135deg, #8b5cf6, #7c3aed); box-shadow: 0 6px 14px -4px rgba(139,92,246,.5); }
+.kpi-icon.orange{ background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 6px 14px -4px rgba(245,158,11,.5); }
+
+.kpi-body { flex: 1; min-width: 0; }
+.kpi-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-3);
+  margin-bottom: 3px;
+}
+.kpi-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  line-height: 1.2;
+  word-break: break-all;
+}
+
+/* ---------- Chart ---------- */
+.report-chart {
+  min-height: 220px;
+  padding: 12px 0;
+}
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 200px;
+  padding: 0 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.chart-bars::-webkit-scrollbar { height: 6px; }
+.chart-bars::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+
+.chart-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 32px;
+  flex: 1 0 auto;
+  height: 100%;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.chart-bar-wrap:hover { opacity: .85; }
+
+.chart-bar {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, #10b981, #059669);
+  transition: all .2s ease;
+  box-shadow: 0 2px 6px -2px rgba(16,185,129,.4);
+}
+.chart-bar.empty { background: var(--bg-muted); box-shadow: none; }
+
+.chart-bar-label {
+  font-size: .62rem;
+  font-weight: 700;
+  color: var(--text-3);
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.chart-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-3);
+  font-size: .85rem;
+}
+.chart-empty svg {
+  width: 48px; height: 48px;
+  margin: 0 auto 12px;
+  opacity: .35;
+  display: block;
+}
+
+/* ---------- Top Products & Categories List ---------- */
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  transition: all var(--t-fast);
+}
+.report-item:hover { background: var(--bg-muted); }
+
+.report-rank {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  font-size: .75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  background: var(--bg-elev);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.report-rank.gold   { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #fff; border-color: transparent; }
+.report-rank.silver { background: linear-gradient(135deg, #d1d5db, #9ca3af); color: #fff; border-color: transparent; }
+.report-rank.bronze { background: linear-gradient(135deg, #fb923c, #ea580c); color: #fff; border-color: transparent; }
+
+.report-item-body { flex: 1; min-width: 0; }
+.report-item-name {
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.report-item-sub {
+  font-size: .7rem;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.report-item-value {
+  font-size: .88rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Progress bar untuk kategori */
+.report-cat-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-muted);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.report-cat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #10b981, #059669);
+  transition: width .5s ease;
+}
+
+.report-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-3);
+  font-size: .82rem;
+}
+
+/* ---------- Two Column Layout ---------- */
+.report-two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .report-two-col { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- HP ---------- */
+@media (max-width: 640px) {
+  .report-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .kpi-card { padding: 12px; gap: 10px; border-radius: 12px; }
+  .kpi-icon { width: 40px; height: 40px; border-radius: 10px; }
+  .kpi-icon svg { width: 18px; height: 18px; }
+  .kpi-label { font-size: .65rem; }
+  .kpi-value { font-size: .95rem; }
+
+  .chart-bars { height: 160px; gap: 3px; }
+  .chart-bar-wrap { min-width: 26px; }
+  .chart-bar-label { font-size: .55rem; }
+
+  .report-item { padding: 9px 10px; gap: 10px; }
+  .report-item-name { font-size: .78rem; }
+  .report-item-value { font-size: .82rem; }
+}
+
 /* ==================== END OF FILE ==================== */
