@@ -89,6 +89,16 @@
       "stock": 20,
       "category": "Pasta Gigi",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180689567.jpg"
+    },
+    {
+      "id": "p-1790180763260-cl8z",
+      "name": "Sabun",
+      "sku": "7998805608312",
+      "cost": 3000,
+      "price": 3500,
+      "stock": 20,
+      "category": "Sabun",
+      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180758903.jpg"
     }
   ],
   "transactions": [
