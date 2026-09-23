@@ -43,7 +43,7 @@ KR.store = (function () {
     } catch (e) {
       console.error('[Store] set failed', key, e);
       if (e.name === 'QuotaExceededError') {
-        KR.toast?.error('Storage penuh! Hapus produk lama atau kompres foto.');
+        KR.toast?.error('Storage penuh! Migrasi foto ke GitHub atau hapus produk lama.');
       }
       return false;
     }
@@ -54,9 +54,7 @@ KR.store = (function () {
   }
 
   /* ---------- Products ---------- */
-  function getProducts() {
-    return get(KEYS.products, []);
-  }
+  function getProducts() { return get(KEYS.products, []); }
   function setProducts(arr) {
     set(KEYS.products, arr);
     window.dispatchEvent(new Event('products:changed'));
@@ -90,9 +88,7 @@ KR.store = (function () {
   }
 
   /* ---------- Transactions ---------- */
-  function getTransactions() {
-    return get(KEYS.transactions, []);
-  }
+  function getTransactions() { return get(KEYS.transactions, []); }
   function setTransactions(arr) {
     set(KEYS.transactions, arr);
     window.dispatchEvent(new Event('transactions:changed'));
@@ -117,15 +113,9 @@ KR.store = (function () {
   }
 
   /* ---------- GitHub config ---------- */
-  function getGitHubConfig() {
-    return get(KEYS.github, null);
-  }
-  function setGitHubConfig(cfg) {
-    set(KEYS.github, cfg);
-  }
-  function clearGitHubConfig() {
-    remove(KEYS.github);
-  }
+  function getGitHubConfig() { return get(KEYS.github, null); }
+  function setGitHubConfig(cfg) { set(KEYS.github, cfg); }
+  function clearGitHubConfig() { remove(KEYS.github); }
 
   return {
     getProducts, setProducts, addProduct, updateProduct, deleteProduct,
@@ -143,10 +133,7 @@ KR.toast = (function () {
 
   function show(msg, type = 'info', duration = 3000) {
     const container = document.getElementById('toasts');
-    if (!container) {
-      console.log('[Toast]', type, msg);
-      return;
-    }
+    if (!container) { console.log('[Toast]', type, msg); return; }
     const div = document.createElement('div');
     div.className = 'toast ' + type;
     div.textContent = String(msg);
@@ -172,10 +159,7 @@ KR.github = (function () {
 
   const API = 'https://api.github.com';
 
-  function getConfig() {
-    return KR.store.getGitHubConfig();
-  }
-
+  function getConfig() { return KR.store.getGitHubConfig(); }
   function isConfigured() {
     const c = getConfig();
     return !!(c && c.owner && c.repo && c.token && c.branch);
@@ -192,10 +176,7 @@ KR.github = (function () {
   }
 
   function encodePath(path) {
-    return String(path || '')
-      .split('/')
-      .map(s => encodeURIComponent(s))
-      .join('/');
+    return String(path || '').split('/').map(s => encodeURIComponent(s)).join('/');
   }
 
   async function testConnection() {
@@ -223,9 +204,7 @@ KR.github = (function () {
       if (!res.ok) return null;
       const data = await res.json();
       return data.sha || null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
   async function getFileContent(path) {
@@ -238,18 +217,9 @@ KR.github = (function () {
       const data = await res.json();
       if (!data.content) return null;
       return decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
-  /**
-   * Upload file ke GitHub
-   * @param {string} path - Path file di repo
-   * @param {string} content - Konten (text atau base64)
-   * @param {string} message - Commit message
-   * @param {object} options - { isBase64: true } jika content sudah base64
-   */
   async function uploadFile(path, content, message, options = {}) {
     if (!isConfigured()) throw new Error('GitHub belum dikonfigurasi');
     const c = getConfig();
@@ -329,8 +299,23 @@ function escapeHtml(s) {
   })[c]);
 }
 
+/* ✅ Helper: image tag dengan lazy loading */
+function imgTag(src, alt = '', cls = '') {
+  if (!src) return '';
+  return `<img src="${src}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async"${cls ? ` class="${cls}"` : ''}>`;
+}
+
+/* ✅ Helper: debounce */
+function debounce(fn, wait = 200) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
 /* ==========================================
-   COMPRESS IMAGE v2 — Support HEIC, big files, fallback
+   COMPRESS IMAGE — Support HEIC, big files, fallback
    ========================================== */
 function compressImage(file, maxDim = 800, quality = 0.8) {
   return new Promise((resolve, reject) => {
@@ -455,14 +440,12 @@ function fileToDataUrl(file) {
 
 /* ==========================================
    PHOTO UPLOAD TO GITHUB
-   Simpan foto sebagai file di repo → URL permanen
    ========================================== */
 async function uploadPhotoToGithub(base64DataUrl, filename) {
   if (!KR.github.isConfigured()) {
     throw new Error('Login GitHub dulu untuk simpan foto');
   }
   const path = `photos/${filename}`;
-  // Strip data URL prefix → ambil base64 murni
   const base64 = String(base64DataUrl || '').replace(/^data:image\/\w+;base64,/, '');
   if (!base64) throw new Error('Data foto kosong');
 
@@ -484,6 +467,8 @@ async function deletePhotoFromGithub(filename) {
 window.formatRupiah = formatRupiah;
 window.formatDate = formatDate;
 window.escapeHtml = escapeHtml;
+window.imgTag = imgTag;
+window.debounce = debounce;
 window.compressImage = compressImage;
 window.uploadPhotoToGithub = uploadPhotoToGithub;
 window.deletePhotoFromGithub = deletePhotoFromGithub;
