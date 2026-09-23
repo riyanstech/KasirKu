@@ -1,6 +1,7 @@
 /* ==========================================
    KasirKu — Service Worker v3
-   Network-First untuk HTML/JS/CSS, Cache-First untuk gambar CDN
+   Network-First untuk HTML/JS/CSS
+   Cache-First untuk CDN & gambar
    ========================================== */
 const CACHE_VERSION = 'kasirku-v3';
 const STATIC_CACHE = CACHE_VERSION + '-static';
@@ -17,76 +18,81 @@ const STATIC_ASSETS = [
   './assets/js/app.js',
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', function (event) {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then(cache =>
-      cache.addAll(STATIC_ASSETS).catch(err => console.warn('[SW]', err))
-    )
+    caches.open(STATIC_CACHE).then(function (cache) {
+      return cache.addAll(STATIC_ASSETS).catch(function (err) {
+        console.warn('[SW] cache addAll', err);
+      });
+    })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', function (event) {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
+    caches.keys().then(function (keys) {
+      return Promise.all(
         keys
-          .filter(k => !k.startsWith(CACHE_VERSION))
-          .map(k => caches.delete(k))
-      )
-    )
+          .filter(function (k) { return k.indexOf(CACHE_VERSION) !== 0; })
+          .map(function (k) { return caches.delete(k); })
+      );
+    })
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', function (event) {
   const req = event.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
 
-  // Skip GitHub API — selalu fresh
+  // GitHub API — selalu fresh
   if (url.hostname === 'api.github.com') return;
 
   // Cache-first untuk CDN & gambar
-  const isCDN = url.hostname.includes('unpkg.com') ||
-                url.hostname.includes('fonts.googleapis.com') ||
-                url.hostname.includes('fonts.gstatic.com') ||
-                url.hostname.includes('raw.githubusercontent.com');
+  const isCDN =
+    url.hostname.indexOf('unpkg.com') !== -1 ||
+    url.hostname.indexOf('fonts.googleapis.com') !== -1 ||
+    url.hostname.indexOf('fonts.gstatic.com') !== -1 ||
+    url.hostname.indexOf('raw.githubusercontent.com') !== -1;
 
   if (isCDN) {
     event.respondWith(
-      caches.open(RUNTIME_CACHE).then(cache =>
-        cache.match(req).then(cached => {
+      caches.open(RUNTIME_CACHE).then(function (cache) {
+        return cache.match(req).then(function (cached) {
           if (cached) return cached;
-          return fetch(req).then(res => {
+          return fetch(req).then(function (res) {
             if (res && res.status === 200) cache.put(req, res.clone());
             return res;
           });
-        })
-      )
+        });
+      })
     );
     return;
   }
 
-  // Network-first untuk HTML/JS/CSS lokal
+  // Network-first untuk file lokal
   if (url.origin === self.location.origin) {
     event.respondWith(
       fetch(req)
-        .then(res => {
+        .then(function (res) {
           if (res && res.status === 200) {
             const clone = res.clone();
-            caches.open(STATIC_CACHE).then(c => c.put(req, clone)).catch(() => {});
+            caches.open(STATIC_CACHE).then(function (c) { c.put(req, clone); }).catch(function () {});
           }
           return res;
         })
-        .catch(() =>
-          caches.match(req).then(cached => cached || caches.match('./index.html'))
-        )
+        .catch(function () {
+          return caches.match(req).then(function (cached) {
+            return cached || caches.match('./index.html');
+          });
+        })
     );
   }
 });
 
-self.addEventListener('message', (event) => {
+self.addEventListener('message', function (event) {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
