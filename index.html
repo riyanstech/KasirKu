@@ -1,29 +1,39 @@
 <!DOCTYPE html>
-<html lang="id" class="light">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
     <meta name="theme-color" content="#10b981">
+    <meta name="color-scheme" content="light dark">
     <title>KasirKu — Point of Sale</title>
+
+    <!-- ✅ Pre-hydrate tema SEBELUM render (anti flash putih→gelap) -->
+    <script>
+      (function(){
+        try {
+          var s = JSON.parse(localStorage.getItem('kasir:settings')||'{}');
+          var theme = s.theme;
+          if (!theme) {
+            theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        } catch(e){}
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
+    <link rel="dns-prefetch" href="https://api.github.com">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <!-- ✅ HAPUS Tailwind CDN — tidak dipakai (semua custom CSS) -->
+    <!-- ✅ Pin versi + defer agar tidak blocking -->
+    <script defer src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -73,7 +83,7 @@
                         <div class="pos-toolbar">
                             <div class="search-box">
                                 <i data-lucide="search"></i>
-                                <input type="text" id="pos-search" placeholder="Cari produk atau scan barcode..." oninput="renderPosGrid()">
+                                <input type="text" id="pos-search" placeholder="Cari produk atau scan barcode..." autocomplete="off">
                             </div>
                             <button class="btn btn-primary" onclick="openScanner()">
                                 <i data-lucide="scan-line"></i> Scan
@@ -116,9 +126,9 @@
                 <div class="toolbar">
                     <div class="search-box">
                         <i data-lucide="search"></i>
-                        <input type="text" id="prod-search" placeholder="Cari produk, SKU, kategori..." oninput="renderProductList()">
+                        <input type="text" id="prod-search" placeholder="Cari produk, SKU, kategori..." autocomplete="off">
                     </div>
-                    <select id="prod-cat-filter" class="select" onchange="renderProductList()">
+                    <select id="prod-cat-filter" class="select">
                         <option value="">Semua Kategori</option>
                     </select>
                 </div>
@@ -132,7 +142,7 @@
                         <p id="trx-count-label">0 transaksi</p>
                     </div>
                     <div class="page-header-actions">
-                        <input type="date" id="trx-date-filter" class="input" onchange="renderTransactionList()">
+                        <input type="date" id="trx-date-filter" class="input">
                         <button class="btn btn-ghost" onclick="document.getElementById('trx-date-filter').value=''; renderTransactionList();">
                             <i data-lucide="x"></i> Reset
                         </button>
@@ -252,7 +262,7 @@
                                 <i data-lucide="upload"></i> Import JSON
                             </button>
                         </div>
-                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                        <input type="file" id="import-file" accept=".json" class="hidden">
                     </div>
 
                     <div class="settings-card danger">
@@ -276,7 +286,6 @@
             <h1 class="login-title">KasirKu</h1>
             <p class="login-sub">POINT OF SALE</p>
 
-            <!-- STEP 1: GitHub Setup -->
             <div id="login-step-setup">
                 <div class="login-step-badge">Langkah 1 dari 2</div>
                 <p class="login-hint" style="margin-top:0;margin-bottom:18px;">
@@ -314,7 +323,6 @@
                 </div>
             </div>
 
-            <!-- STEP 2: Login / Register -->
             <div id="login-step-auth" class="hidden">
                 <div class="login-step-badge">Langkah 2 dari 2</div>
 
@@ -402,7 +410,7 @@
                 <div class="field">
                     <label>SKU / Kode Barang <span class="req">*</span></label>
                     <div class="input-with-btn">
-                        <input id="pf-sku" class="input" placeholder="Ketik atau scan barcode..." oninput="onSkuChange()">
+                        <input id="pf-sku" class="input" placeholder="Ketik atau scan barcode...">
                         <button type="button" class="input-scan-btn" onclick="openSkuScanner()" title="Scan SKU">
                             <i data-lucide="scan-line"></i>
                         </button>
@@ -463,7 +471,7 @@
         </div>
     </div>
 
-    <!-- ==================== MODAL SCANNER (Kasir) ==================== -->
+    <!-- ==================== MODAL SCANNER ==================== -->
     <div id="modal-scanner" class="modal">
         <div class="modal-backdrop" onclick="closeScanner()"></div>
         <div class="modal-card modal-card-lg">
@@ -544,7 +552,7 @@
                 </div>
                 <div class="field">
                     <label>Uang Diterima</label>
-                    <input id="co-paid" type="number" class="input input-lg" placeholder="0" min="0" oninput="updateChange()">
+                    <input id="co-paid" type="number" class="input input-lg" placeholder="0" min="0" inputmode="numeric">
                 </div>
                 <div class="quick-cash" id="co-quick-cash"></div>
                 <div class="field">
@@ -621,77 +629,37 @@
 
     <div id="toasts"></div>
 
-    <script>
-    (function () {
-      // ✅ Timestamp otomatis — setiap buka halaman dapat angka berbeda
-      // Browser selalu fetch file terbaru, tanpa perlu manual ubah versi
-      var v = 'v=' + Date.now();
-      var scripts = [
-        'assets/js/core.js',
-        'assets/js/auth.js',
-        'assets/js/vision.js',
-        'assets/js/pos.js',
-        'assets/js/app.js'
-      ];
-      // Muat script secara BERURUTAN (sequential) agar tidak race condition
-      var i = 0;
-      function loadNext() {
-        if (i >= scripts.length) return;
-        var s = document.createElement('script');
-        s.src = scripts[i] + '?' + v;
-        s.async = false;
-        s.onload = function () {
-          i++;
-          loadNext();
-        };
-        s.onerror = function () {
-          console.error('[Loader] Gagal load:', scripts[i]);
-          i++;
-          loadNext();
-        };
-        document.head.appendChild(s);
-      }
-      loadNext();
-    })();
-    </script>
+    <!-- ✅ Load scripts dengan defer, TANPA cache-bust timestamp -->
+    <script defer src="assets/js/core.js"></script>
+    <script defer src="assets/js/auth.js"></script>
+    <script defer src="assets/js/vision.js"></script>
+    <script defer src="assets/js/pos.js"></script>
+    <script defer src="assets/js/app.js"></script>
 
     <script>
-    // ✅ Register Service Worker (auto-update + offline)
+    // ✅ Service Worker — auto-update stabil
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then((reg) => {
-          console.log('[SW] Registered, scope:', reg.scope);
-
-          // Cek update setiap 5 menit
-          setInterval(() => reg.update(), 5 * 60 * 1000);
-
-          // Deteksi kalau ada update
+          setInterval(() => reg.update(), 10 * 60 * 1000);
           reg.addEventListener('updatefound', () => {
             const newSW = reg.installing;
             newSW.addEventListener('statechange', () => {
               if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                // Ada versi baru — minta SW baru langsung aktif
-                console.log('[SW] New version installed, activating...');
                 newSW.postMessage('SKIP_WAITING');
               }
             });
           });
-        }).catch(err => {
-          console.warn('[SW] Registration failed', err);
-        });
+        }).catch(err => console.warn('[SW]', err));
 
-        // Auto-reload saat SW baru aktif
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           if (refreshing) return;
           refreshing = true;
-          console.log('[SW] New controller, reloading...');
           window.location.reload();
         });
       });
     }
     </script>
-
-    
 </body>
 </html>
