@@ -28,38 +28,105 @@
     <link rel="stylesheet" href="assets/css/style.css">
 <style>
 /* ============================================================
-   FORCE FIX — Foto produk TIDAK terpotong + Scan button selalu tampil
-   Inline style = bypass cache SW
+   KasirKu FIX v5 — Final (Foto, Chips, Nav Icon)
    ============================================================ */
 
-/* 1. KOTAK FOTO: flex center, background putih */
+/* ---------- FIX 1: FOTO PRODUK UTUH ---------- */
+/* Kunci: padding ditaruh di PARENT, img pakai max-* */
 .pt-img, .pa-img, .ci-img {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: #ffffff !important;
   overflow: hidden !important;
+  background: #ffffff !important;
 }
 .dark .pt-img, .dark .pa-img, .dark .ci-img {
   background: #1e293b !important;
 }
 
-/* 2. GAMBAR: contain = UTUH, tidak dipotong */
 .pt-img img, .pa-img img, .ci-img img {
-  width: 100% !important;
-  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto !important;
+  height: auto !important;
   object-fit: contain !important;
   object-position: center !important;
-  padding: 5px !important;
-  background: transparent !important;
+  display: block !important;
+  border-radius: 6px;
 }
 
-/* 3. FOTO PRODUK: rasio lebih tinggi biar produk lega */
 .pt-img {
   aspect-ratio: 4 / 5 !important;
+  padding: 8px !important;
+}
+.pa-img { padding: 6px !important; }
+.ci-img { padding: 4px !important; }
+
+/* ---------- FIX 2: KATEGORI CHIPS BISA SCROLL ---------- */
+/* Ganti overflow-x: hidden → clip di body */
+html, body { overflow-x: clip !important; }
+
+.cat-chips {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  margin-bottom: 12px !important;
+  padding: 4px 2px 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x !important;
+  overscroll-behavior-x: contain !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.cat-chips::-webkit-scrollbar { display: none !important; height: 0 !important; }
+.cat-chip {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
-/* 4. TOMBOL SCAN: PAKSA selalu tampil di samping search */
+/* Pastikan parent tidak memotong scroll chips */
+.pos-products,
+.pos-layout,
+.app-main,
+#tab-kasir { overflow-x: visible !important; }
+
+/* ---------- FIX 3: NAV ICON SELALU TAMPIL ---------- */
+.nav-tab svg {
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Icon untuk tab yang TIDAK aktif — warna teks biasa */
+.nav-tab:not(.active) {
+  background: transparent !important;
+  color: var(--text-2) !important;
+}
+.nav-tab:not(.active) svg {
+  stroke: var(--text-2) !important;
+}
+
+/* Icon untuk tab AKTIF — selalu putih di background hijau */
+.nav-tab.active {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px -4px rgba(16,185,129,.5) !important;
+}
+.nav-tab.active svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* ---------- FIX 4: TOOLBAR SCAN SELALU TAMPIL ---------- */
 .pos-toolbar {
   display: flex !important;
   flex-wrap: nowrap !important;
@@ -69,33 +136,17 @@
   flex: 1 1 auto !important;
   min-width: 0 !important;
 }
-.pos-toolbar button,
 .pos-toolbar .btn {
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;
-  display: inline-flex !important;
-}
-.pos-toolbar .btn-primary {
-  padding: 10px 14px !important;
-  min-height: 46px !important;
 }
 
-/* 5. HP: layout header rapi */
+/* ---------- RESPONSIVE HP ---------- */
 @media (max-width: 640px) {
-  .hdr-inner { padding: 0 10px !important; gap: 8px !important; height: 58px !important; }
-  .nav-tab span { display: none !important; }
-  .nav-tab { padding: 8px 10px !important; min-width: 40px !important; justify-content: center !important; }
-  .user-badge span { display: none !important; }
-  .app-main { padding: 14px 12px 40px !important; }
-  .product-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 9px !important;
-  }
-  .pt-img { aspect-ratio: 4 / 5 !important; padding: 4px !important; }
-  .pt-img img { padding: 4px !important; }
-  .pt-name { font-size: .78rem !important; }
-  .pt-price { font-size: .88rem !important; }
+  .pt-img { aspect-ratio: 4 / 5 !important; padding: 6px !important; }
+  .pa-img { padding: 5px !important; }
+  .ci-img { padding: 3px !important; }
 }
 </style>
 </head>
