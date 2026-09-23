@@ -2004,10 +2004,6 @@ img { max-width: 100%; display: block; }
   border: none !important;
   cursor: pointer !important;
 }
-.nav-tab:hover {
-  background-color: var(--bg-subtle) !important;
-  color: var(--text) !important;
-}
 .nav-tab.active,
 button.nav-tab.active,
 .nav-tabs .nav-tab.active {
