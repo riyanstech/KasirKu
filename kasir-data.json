@@ -49,6 +49,16 @@
       "stock": 20,
       "category": "Makanan",
       "image": ""
+    },
+    {
+      "id": "p-1790161572114-1c5z",
+      "name": "Gery Salut",
+      "sku": "8992775312452",
+      "cost": 500,
+      "price": 500,
+      "stock": 20,
+      "category": "Makanan",
+      "image": ""
     }
   ],
   "transactions": [
