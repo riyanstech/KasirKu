@@ -1047,6 +1047,66 @@ function renderReportChart(dailyStats, period, bucketBy, bucketCount) {
 }
 window.renderReportChart = renderReportChart;
 
+/* ==================== CLEANUP FOTO YATIM ==================== */
+async function cleanupOrphanPhotos() {
+  if (!KR.github.isConfigured()) {
+    KR.toast.warn('Login GitHub dulu');
+    return;
+  }
+
+  showLoading('Memeriksa foto...');
+  try {
+    const files = await listPhotosInGithub();
+    if (!files.length) {
+      KR.toast.info('Tidak ada foto di GitHub');
+      return;
+    }
+
+    // Kumpulkan nama file yang masih dipakai
+    const products = KR.store.getProducts();
+    const used = new Set();
+    products.forEach(p => {
+      const fn = extractPhotoFilename(p.image);
+      if (fn) used.add(fn);
+    });
+
+    // Cari file yatim
+    const orphans = files.filter(f => !used.has(f));
+    if (!orphans.length) {
+      KR.toast.success(`Semua ${files.length} foto masih dipakai`);
+      return;
+    }
+
+    confirmDialog(
+      'Bersihkan Foto Yatim?',
+      `Ditemukan ${orphans.length} foto tidak terpakai (dari ${files.length} total). Hapus permanen dari GitHub?`,
+      async () => {
+        showLoading(`Menghapus ${orphans.length} foto...`);
+        let ok = 0, fail = 0;
+        for (const fn of orphans) {
+          try {
+            await deletePhotoFromGithub(fn);
+            ok++;
+          } catch (e) {
+            console.warn('[Cleanup]', fn, e);
+            fail++;
+          }
+        }
+        hideLoading();
+        KR.toast[fail ? 'warn' : 'success'](
+          `Selesai: ${ok} dihapus${fail ? `, ${fail} gagal` : ''}`
+        );
+      }
+    );
+  } catch (e) {
+    console.error('[Cleanup]', e);
+    KR.toast.error('Gagal: ' + e.message);
+  } finally {
+    hideLoading();
+  }
+}
+window.cleanupOrphanPhotos = cleanupOrphanPhotos;
+
 /* ==================== INIT ==================== */
 function initApp() {
   // Cegah double-init
