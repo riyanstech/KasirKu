@@ -623,9 +623,7 @@
 
     <script>
     (function () {
-      // ✅ Timestamp otomatis — setiap buka halaman dapat angka berbeda
-      // Browser selalu fetch file terbaru, tanpa perlu manual ubah versi
-      var v = 'v=' + Date.now();
+      // ✅ Hapus cache-busting — biar SW yang handle versioning
       var scripts = [
         'assets/js/core.js',
         'assets/js/auth.js',
@@ -633,17 +631,17 @@
         'assets/js/pos.js',
         'assets/js/app.js'
       ];
-      // Muat script secara BERURUTAN (sequential) agar tidak race condition
       var i = 0;
       function loadNext() {
-        if (i >= scripts.length) return;
+        if (i >= scripts.length) {
+          // Semua script selesai load → trigger init
+          window.dispatchEvent(new Event('kasirku:ready'));
+          return;
+        }
         var s = document.createElement('script');
-        s.src = scripts[i] + '?' + v;
+        s.src = scripts[i];
         s.async = false;
-        s.onload = function () {
-          i++;
-          loadNext();
-        };
+        s.onload = function () { i++; loadNext(); };
         s.onerror = function () {
           console.error('[Loader] Gagal load:', scripts[i]);
           i++;
