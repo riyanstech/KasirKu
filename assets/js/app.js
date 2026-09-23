@@ -53,7 +53,11 @@ function showTab(tabId, btn) {
   if (target) target.classList.add('active');
 
   document.querySelectorAll('.nav-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tabId);
+    if (b.dataset.tab === tabId) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
   });
 
   if (tabId === 'kasir') {
@@ -65,11 +69,14 @@ function showTab(tabId, btn) {
   if (tabId === 'transaksi') renderTransactionList();
   if (tabId === 'pengaturan') loadSettings();
 
-  // Render lucide 3x dengan delay — pastikan ikon selalu muncul
+  // Lucide render bertahap — pastikan icon muncul setelah transisi CSS
   if (window.lucide) {
     lucide.createIcons();
-    setTimeout(() => window.lucide && lucide.createIcons(), 30);
-    setTimeout(() => window.lucide && lucide.createIcons(), 150);
+    requestAnimationFrame(() => {
+      lucide.createIcons();
+      setTimeout(() => lucide.createIcons(), 100);
+      setTimeout(() => lucide.createIcons(), 250);
+    });
   }
 }
 window.showTab = showTab;
