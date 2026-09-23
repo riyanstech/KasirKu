@@ -11,13 +11,14 @@ let _lastCartIds = new Set();
 
 function getCart() { return cart; }
 
-function addToCart(product, qty = 1) {
+function addToCart(product, qty) {
+  qty = qty || 1;
   if (!product) return;
   if (product.stock !== undefined && product.stock !== null && product.stock <= 0) {
     KR.toast.warn('Stok ' + product.name + ' habis');
     return;
   }
-  const existing = cart.find(x => x.productId === product.id);
+  const existing = cart.find(function (x) { return x.productId === product.id; });
   if (existing) {
     if (product.stock !== undefined && product.stock !== null && existing.qty >= product.stock) {
       KR.toast.warn('Stok ' + product.name + ' hanya ' + product.stock);
@@ -39,7 +40,7 @@ function addToCart(product, qty = 1) {
 }
 
 function changeQty(productId, delta) {
-  const item = cart.find(x => x.productId === productId);
+  const item = cart.find(function (x) { return x.productId === productId; });
   if (!item) return;
   const product = KR.store.findProductById(productId);
   const newQty = item.qty + delta;
@@ -53,24 +54,24 @@ function changeQty(productId, delta) {
 }
 
 function removeFromCart(productId) {
-  cart = cart.filter(x => x.productId !== productId);
+  cart = cart.filter(function (x) { return x.productId !== productId; });
   renderCart();
 }
 
 function clearCart() {
   if (!cart.length) return;
-  confirmDialog('Kosongkan keranjang?', 'Semua item di keranjang akan dihapus.', () => {
+  confirmDialog('Kosongkan keranjang?', 'Semua item di keranjang akan dihapus.', function () {
     cart = [];
     renderCart();
   });
 }
 
 function getCartTotals() {
-  const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const subtotal = cart.reduce(function (s, x) { return s + x.price * x.qty; }, 0);
   const discount = 0;
   const total = subtotal - discount;
-  const count = cart.reduce((s, x) => s + x.qty, 0);
-  return { subtotal, discount, total, count };
+  const count = cart.reduce(function (s, x) { return s + x.qty; }, 0);
+  return { subtotal: subtotal, discount: discount, total: total, count: count };
 }
 
 function renderCart() {
@@ -87,34 +88,34 @@ function renderCart() {
   }
 
   if (!cart.length) {
-    container.innerHTML = `<div class="cart-empty">
-      <i data-lucide="shopping-cart"></i>
-      Keranjang kosong<br><small>Pilih produk untuk menambahkan</small>
-    </div>`;
+    container.innerHTML = '<div class="cart-empty">' +
+      '<i data-lucide="shopping-cart"></i>' +
+      'Keranjang kosong<br><small>Pilih produk untuk menambahkan</small>' +
+    '</div>';
     _lastCartIds.clear();
   } else {
-    const currentIds = new Set(cart.map(x => x.productId));
+    const currentIds = new Set(cart.map(function (x) { return x.productId; }));
 
-    container.innerHTML = cart.map(item => {
+    container.innerHTML = cart.map(function (item) {
       const isNew = !_lastCartIds.has(item.productId);
-      const img = item.image ? imgTag(item.image, item.name) : `<i data-lucide="package"></i>`;
+      const img = item.image ? imgTag(item.image, item.name) : '<i data-lucide="package"></i>';
       const sub = item.price * item.qty;
-      return `<div class="cart-item ${isNew ? 'new' : ''}">
-        <div class="ci-img">${img}</div>
-        <div class="ci-body">
-          <div class="ci-name">${escapeHtml(item.name)}</div>
-          <div class="ci-price">${formatRupiah(item.price)}</div>
-          <div class="ci-controls">
-            <button class="ci-qty-btn" onclick="changeQty('${item.productId}', -1)" aria-label="Kurangi">−</button>
-            <span class="ci-qty">${item.qty}</span>
-            <button class="ci-qty-btn" onclick="changeQty('${item.productId}', 1)" aria-label="Tambah">+</button>
-            <button class="ci-remove" onclick="removeFromCart('${item.productId}')" aria-label="Hapus">
-              <i data-lucide="x"></i>
-            </button>
-          </div>
-        </div>
-        <div class="ci-sub">${formatRupiah(sub)}</div>
-      </div>`;
+      return '<div class="cart-item ' + (isNew ? 'new' : '') + '">' +
+        '<div class="ci-img">' + img + '</div>' +
+        '<div class="ci-body">' +
+          '<div class="ci-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="ci-price">' + formatRupiah(item.price) + '</div>' +
+          '<div class="ci-controls">' +
+            '<button class="ci-qty-btn" onclick="changeQty(\'' + item.productId + '\', -1)" aria-label="Kurangi">−</button>' +
+            '<span class="ci-qty">' + item.qty + '</span>' +
+            '<button class="ci-qty-btn" onclick="changeQty(\'' + item.productId + '\', 1)" aria-label="Tambah">+</button>' +
+            '<button class="ci-remove" onclick="removeFromCart(\'' + item.productId + '\')" aria-label="Hapus">' +
+              '<i data-lucide="x"></i>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ci-sub">' + formatRupiah(sub) + '</div>' +
+      '</div>';
     }).join('');
 
     _lastCartIds = currentIds;
@@ -137,39 +138,39 @@ function renderPosGrid() {
   if (!container) return;
   const products = KR.store.getProducts();
   const searchEl = document.getElementById('pos-search');
-  const search = (searchEl?.value || '').toLowerCase().trim();
+  const search = (searchEl && searchEl.value || '').toLowerCase().trim();
 
-  const filtered = products.filter(p => {
+  const filtered = products.filter(function (p) {
     if (currentCategory && p.category !== currentCategory) return false;
     if (!search) return true;
-    return (p.name || '').toLowerCase().includes(search) ||
-           (p.sku || '').toLowerCase().includes(search) ||
-           (p.category || '').toLowerCase().includes(search);
+    return (p.name || '').toLowerCase().indexOf(search) !== -1 ||
+           (p.sku || '').toLowerCase().indexOf(search) !== -1 ||
+           (p.category || '').toLowerCase().indexOf(search) !== -1;
   });
 
   if (!filtered.length) {
-    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
-      <i data-lucide="package-open"></i>
-      <h3>${products.length ? 'Produk tidak ditemukan' : 'Belum ada produk'}</h3>
-      <p style="font-size:.85rem">${products.length ? 'Coba kata kunci lain' : 'Tambah produk dulu di tab Produk'}</p>
-    </div>`;
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">' +
+      '<i data-lucide="package-open"></i>' +
+      '<h3>' + (products.length ? 'Produk tidak ditemukan' : 'Belum ada produk') + '</h3>' +
+      '<p style="font-size:.85rem">' + (products.length ? 'Coba kata kunci lain' : 'Tambah produk dulu di tab Produk') + '</p>' +
+    '</div>';
     if (window.lucide) lucide.createIcons();
     return;
   }
 
-  container.innerHTML = filtered.map(p => {
+  container.innerHTML = filtered.map(function (p) {
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
-    const img = p.image ? imgTag(p.image, p.name) : `<i data-lucide="package"></i>`;
+    const img = p.image ? imgTag(p.image, p.name) : '<i data-lucide="package"></i>';
     const stockClass = out ? 'empty' : (low ? 'low' : '');
-    const stockLabel = out ? 'Habis' : `Stok: ${p.stock != null ? p.stock : '∞'}`;
-    return `<div class="product-tile ${out ? 'out' : ''}" onclick="handleTileClick('${p.id}')">
-      ${p.category ? `<span class="pt-cat">${escapeHtml(p.category)}</span>` : ''}
-      <div class="pt-img">${img}</div>
-      <div class="pt-name">${escapeHtml(p.name)}</div>
-      <div class="pt-price">${formatRupiah(p.price)}</div>
-      <div class="pt-stock ${stockClass}">${stockLabel}</div>
-    </div>`;
+    const stockLabel = out ? 'Habis' : ('Stok: ' + (p.stock != null ? p.stock : '∞'));
+    return '<div class="product-tile ' + (out ? 'out' : '') + '" onclick="handleTileClick(\'' + p.id + '\')">' +
+      (p.category ? '<span class="pt-cat">' + escapeHtml(p.category) + '</span>' : '') +
+      '<div class="pt-img">' + img + '</div>' +
+      '<div class="pt-name">' + escapeHtml(p.name) + '</div>' +
+      '<div class="pt-price">' + formatRupiah(p.price) + '</div>' +
+      '<div class="pt-stock ' + stockClass + '">' + stockLabel + '</div>' +
+    '</div>';
   }).join('');
   if (window.lucide) lucide.createIcons();
 }
@@ -185,11 +186,18 @@ function renderCategoryChips() {
   const container = document.getElementById('pos-category-filter');
   if (!container) return;
   const products = KR.store.getProducts();
-  const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+  const cats = Array.from(new Set(products.map(function (p) { return p.category; }).filter(Boolean))).sort();
 
-  let html = `<button class="cat-chip ${!currentCategory ? 'active' : ''}" onclick="setCategory('')">Semua</button>`;
-  html += cats.map(c => `<button class="cat-chip ${currentCategory === c ? 'active' : ''}" onclick="setCategory('${escapeHtml(c)}')">${escapeHtml(c)}</button>`).join('');
+  let html = '<button class="cat-chip ' + (!currentCategory ? 'active' : '') + '" onclick="setCategory(\'\')">Semua</button>';
+  html += cats.map(function (c) {
+    return '<button class="cat-chip ' + (currentCategory === c ? 'active' : '') + '" onclick="setCategory(\'' + escapeHtml(c) + '\')">' + escapeHtml(c) + '</button>';
+  }).join('');
   container.innerHTML = html;
+
+  requestAnimationFrame(function () {
+    const needScroll = container.scrollWidth > container.clientWidth + 4;
+    container.classList.toggle('no-scroll', !needScroll);
+  });
 }
 
 function setCategory(cat) {
@@ -214,20 +222,23 @@ function openCheckout() {
 
   const quickCash = document.getElementById('co-quick-cash');
   if (quickCash) {
-    const suggestions = [...new Set([
-      t.total,
-      Math.ceil(t.total / 5000) * 5000,
-      Math.ceil(t.total / 10000) * 10000,
-      Math.ceil(t.total / 50000) * 50000,
-      100000,
-    ])].filter(v => v >= t.total).slice(0, 6);
-    quickCash.innerHTML = suggestions.map(v =>
-      `<button onclick="setCash(${v})">${formatRupiah(v)}</button>`
-    ).join('');
+    const set = new Set();
+    set.add(t.total);
+    set.add(Math.ceil(t.total / 5000) * 5000);
+    set.add(Math.ceil(t.total / 10000) * 10000);
+    set.add(Math.ceil(t.total / 50000) * 50000);
+    set.add(100000);
+    const suggestions = Array.from(set).filter(function (v) { return v >= t.total; }).slice(0, 6);
+    quickCash.innerHTML = suggestions.map(function (v) {
+      return '<button onclick="setCash(' + v + ')">' + formatRupiah(v) + '</button>';
+    }).join('');
   }
 
   openModal('modal-checkout');
-  setTimeout(() => document.getElementById('co-paid')?.focus(), 200);
+  setTimeout(function () {
+    const el = document.getElementById('co-paid');
+    if (el) el.focus();
+  }, 200);
 }
 
 function setCash(n) {
@@ -259,7 +270,7 @@ function submitCheckout() {
   const trx = {
     id: 'TRX-' + Date.now().toString(36).toUpperCase(),
     at: Date.now(),
-    items: cart.map(x => ({ ...x })),
+    items: cart.map(function (x) { return Object.assign({}, x); }),
     subtotal: t.subtotal,
     discount: t.discount,
     total: t.total,
@@ -272,8 +283,8 @@ function submitCheckout() {
   KR.store.addTransaction(trx);
 
   const products = KR.store.getProducts();
-  cart.forEach(item => {
-    const p = products.find(x => x.id === item.productId);
+  cart.forEach(function (item) {
+    const p = products.find(function (x) { return x.id === item.productId; });
     if (p && p.stock !== undefined && p.stock !== null) {
       p.stock = Math.max(0, p.stock - item.qty);
     }
@@ -299,37 +310,35 @@ let currentReceipt = null;
 function buildReceiptHtml(trx) {
   const s = KR.store.getSettings();
   const date = formatDate(trx.at);
-  const itemsHtml = trx.items.map(it => `
-    <div class="r-row">
-      <span class="r-item-name">${escapeHtml(it.name)}</span>
-      <span>${it.qty}x${formatRupiah(it.price).replace('Rp ','')}</span>
-      <span style="text-align:right;min-width:70px">${formatRupiah(it.price * it.qty).replace('Rp ','')}</span>
-    </div>
-  `).join('');
+  const itemsHtml = trx.items.map(function (it) {
+    return '<div class="r-row">' +
+      '<span class="r-item-name">' + escapeHtml(it.name) + '</span>' +
+      '<span>' + it.qty + 'x' + formatRupiah(it.price).replace('Rp ', '') + '</span>' +
+      '<span style="text-align:right;min-width:70px">' + formatRupiah(it.price * it.qty).replace('Rp ', '') + '</span>' +
+    '</div>';
+  }).join('');
 
-  return `
-    <div class="r-center">
-      <div class="r-store-name">${escapeHtml(s.storeName)}</div>
-      ${s.storeAddress ? `<div class="r-store-info">${escapeHtml(s.storeAddress)}</div>` : ''}
-      ${s.storePhone ? `<div class="r-store-info">Telp: ${escapeHtml(s.storePhone)}</div>` : ''}
-    </div>
-    <div class="r-divider"></div>
-    <div class="r-meta">
-      <div class="r-row"><span>No. Transaksi</span><span>${escapeHtml(trx.id)}</span></div>
-      <div class="r-row"><span>Tanggal</span><span>${date}</span></div>
-      <div class="r-row"><span>Metode</span><span>${escapeHtml(trx.method)}</span></div>
-    </div>
-    <div class="r-divider"></div>
-    <div>${itemsHtml}</div>
-    <div class="r-divider"></div>
-    <div class="r-row"><span>Subtotal</span><span>${formatRupiah(trx.subtotal).replace('Rp ','')}</span></div>
-    ${trx.discount ? `<div class="r-row"><span>Diskon</span><span>-${formatRupiah(trx.discount).replace('Rp ','')}</span></div>` : ''}
-    <div class="r-row total"><span>TOTAL</span><span>${formatRupiah(trx.total).replace('Rp ','')}</span></div>
-    <div class="r-row"><span>Bayar</span><span>${formatRupiah(trx.paid).replace('Rp ','')}</span></div>
-    <div class="r-row bold"><span>Kembali</span><span>${formatRupiah(trx.change).replace('Rp ','')}</span></div>
-    <div class="r-divider"></div>
-    <div class="r-footer">${escapeHtml(s.receiptFooter || 'Terima kasih')}</div>
-  `;
+  return '<div class="r-center">' +
+      '<div class="r-store-name">' + escapeHtml(s.storeName) + '</div>' +
+      (s.storeAddress ? '<div class="r-store-info">' + escapeHtml(s.storeAddress) + '</div>' : '') +
+      (s.storePhone ? '<div class="r-store-info">Telp: ' + escapeHtml(s.storePhone) + '</div>' : '') +
+    '</div>' +
+    '<div class="r-divider"></div>' +
+    '<div class="r-meta">' +
+      '<div class="r-row"><span>No. Transaksi</span><span>' + escapeHtml(trx.id) + '</span></div>' +
+      '<div class="r-row"><span>Tanggal</span><span>' + date + '</span></div>' +
+      '<div class="r-row"><span>Metode</span><span>' + escapeHtml(trx.method) + '</span></div>' +
+    '</div>' +
+    '<div class="r-divider"></div>' +
+    '<div>' + itemsHtml + '</div>' +
+    '<div class="r-divider"></div>' +
+    '<div class="r-row"><span>Subtotal</span><span>' + formatRupiah(trx.subtotal).replace('Rp ', '') + '</span></div>' +
+    (trx.discount ? '<div class="r-row"><span>Diskon</span><span>-' + formatRupiah(trx.discount).replace('Rp ', '') + '</span></div>' : '') +
+    '<div class="r-row total"><span>TOTAL</span><span>' + formatRupiah(trx.total).replace('Rp ', '') + '</span></div>' +
+    '<div class="r-row"><span>Bayar</span><span>' + formatRupiah(trx.paid).replace('Rp ', '') + '</span></div>' +
+    '<div class="r-row bold"><span>Kembali</span><span>' + formatRupiah(trx.change).replace('Rp ', '') + '</span></div>' +
+    '<div class="r-divider"></div>' +
+    '<div class="r-footer">' + escapeHtml(s.receiptFooter || 'Terima kasih') + '</div>';
 }
 
 function showReceipt(trx) {
@@ -355,7 +364,9 @@ function shareReceipt() {
     'Tgl: ' + formatDate(trx.at),
     'Metode: ' + trx.method,
     '----------------',
-    ...trx.items.map(it => it.name + ' ' + it.qty + 'x = ' + formatRupiah(it.price * it.qty)),
+  ].concat(trx.items.map(function (it) {
+    return it.name + ' ' + it.qty + 'x = ' + formatRupiah(it.price * it.qty);
+  })).concat([
     '----------------',
     'Subtotal: ' + formatRupiah(trx.subtotal),
     'TOTAL: ' + formatRupiah(trx.total),
@@ -363,29 +374,30 @@ function shareReceipt() {
     'Kembali: ' + formatRupiah(trx.change),
     '',
     s.receiptFooter || 'Terima kasih',
-  ].filter(Boolean);
+  ]).filter(Boolean);
   const text = lines.join('\n');
 
   if (navigator.share) {
-    navigator.share({ title: 'Struk ' + trx.id, text: text }).catch(() => {});
+    navigator.share({ title: 'Struk ' + trx.id, text: text }).catch(function () {});
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(text)
-      .then(() => KR.toast.success('Struk disalin ke clipboard'))
-      .catch(() => KR.toast.error('Gagal berbagi'));
+      .then(function () { KR.toast.success('Struk disalin ke clipboard'); })
+      .catch(function () { KR.toast.error('Gagal berbagi'); });
   } else {
     KR.toast.error('Browser tidak mendukung share');
   }
 }
 
 /* ==================== BEEP ==================== */
-function playBeep(type = 'success') {
+function playBeep(type) {
+  type = type || 'success';
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
 
     if (type === 'success') {
-      [880, 1320].forEach((freq, i) => {
+      [880, 1320].forEach(function (freq, i) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
@@ -411,7 +423,7 @@ function playBeep(type = 'success') {
       osc.stop(ctx.currentTime + 0.3);
     }
 
-    setTimeout(() => { try { ctx.close(); } catch {} }, 600);
+    setTimeout(function () { try { ctx.close(); } catch (e) {} }, 600);
   } catch (e) {
     console.warn('[Beep]', e);
   }
@@ -457,18 +469,18 @@ function openScanner() {
 
 function switchScanMode(mode) {
   currentScanMode = mode;
-  document.querySelectorAll('.scanner-tab').forEach(t => {
+  document.querySelectorAll('.scanner-tab').forEach(function (t) {
     t.classList.toggle('active', t.dataset.scanMode === mode);
   });
-  document.querySelectorAll('.scan-mode-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.scan-mode-panel').forEach(function (p) { p.classList.remove('active'); });
   const panel = document.getElementById('scan-mode-' + mode);
   if (panel) panel.classList.add('active');
 
   if (mode !== 'barcode' && scanner) {
-    scanner.stop().then(() => {
-      try { scanner.clear(); } catch {}
+    scanner.stop().then(function () {
+      try { scanner.clear(); } catch (e) {}
       scanner = null;
-    }).catch(() => { scanner = null; });
+    }).catch(function () { scanner = null; });
   }
   if (mode === 'barcode') startBarcodeScanner();
   if (window.lucide) lucide.createIcons();
@@ -479,8 +491,8 @@ function startBarcodeScanner() {
     KR.toast.error('Library scanner tidak dimuat');
     return;
   }
-  setTimeout(() => {
-    if (scanner) { try { scanner.clear(); } catch {} scanner = null; }
+  setTimeout(function () {
+    if (scanner) { try { scanner.clear(); } catch (e) {} scanner = null; }
     const readerEl = document.getElementById('scanner-reader');
     if (!readerEl) return;
 
@@ -500,9 +512,9 @@ function startBarcodeScanner() {
 
     const cameraConfig = { facingMode: 'environment' };
 
-    scanner.start(cameraConfig, config, onScanSuccess, () => {})
-      .then(() => setTimeout(applyCameraImprovements, 800))
-      .catch(err => {
+    scanner.start(cameraConfig, config, onScanSuccess, function () {})
+      .then(function () { setTimeout(applyCameraImprovements, 800); })
+      .catch(function (err) {
         console.error('[Scanner]', err);
         KR.toast.error('Gagal buka kamera: ' + (err.message || err));
       });
@@ -519,9 +531,9 @@ async function applyCameraImprovements() {
     const caps = track.getCapabilities ? track.getCapabilities() : {};
     const advanced = [];
 
-    if (caps.focusMode && caps.focusMode.includes('continuous')) {
+    if (caps.focusMode && caps.focusMode.indexOf('continuous') !== -1) {
       advanced.push({ focusMode: 'continuous' });
-    } else if (caps.focusMode && caps.focusMode.includes('auto')) {
+    } else if (caps.focusMode && caps.focusMode.indexOf('auto') !== -1) {
       advanced.push({ focusMode: 'auto' });
     }
     if (caps.torch) advanced.push({ torch: false });
@@ -531,7 +543,7 @@ async function applyCameraImprovements() {
     }
 
     if (advanced.length > 0) {
-      try { await track.applyConstraints({ advanced }); } catch (e) { console.warn('[Camera]', e); }
+      try { await track.applyConstraints({ advanced: advanced }); } catch (e) { console.warn('[Camera]', e); }
     }
   } catch (e) {
     console.warn('[Camera] applyCameraImprovements error', e);
@@ -554,35 +566,31 @@ function onScanSuccess(decodedText) {
     playBeep('success');
     addToCart(product, 1);
     resultEl.className = 'scan-result';
-    resultEl.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:34px;height:34px;border-radius:50%;background:var(--primary);display:grid;place-items:center;flex-shrink:0;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:800;line-height:1.2;">${escapeHtml(product.name)}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--primary);margin-top:2px;font-size:.9rem;">${formatRupiah(product.price)}</div>
-        </div>
-      </div>
-    `;
+    resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;">' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:var(--primary);display:grid;place-items:center;flex-shrink:0;">' +
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+      '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-weight:800;line-height:1.2;">' + escapeHtml(product.name) + '</div>' +
+        '<div style="font-family:\'JetBrains Mono\',monospace;font-weight:700;color:var(--primary);margin-top:2px;font-size:.9rem;">' + formatRupiah(product.price) + '</div>' +
+      '</div>' +
+    '</div>';
   } else {
     playBeep('error');
     resultEl.className = 'scan-result error';
-    resultEl.innerHTML = `
-      <div style="font-weight:800;margin-bottom:4px;">❌ Produk tidak ditemukan</div>
-      <div style="font-size:.85rem;">SKU: <code>${escapeHtml(decodedText)}</code></div>
-      <button class="btn btn-primary" style="margin-top:10px;" onclick="closeScanner(); openProductForm({ sku: '${escapeHtml(decodedText)}' });">
-        + Tambah Produk Baru dengan SKU ini
-      </button>
-    `;
+    resultEl.innerHTML = '<div style="font-weight:800;margin-bottom:4px;">❌ Produk tidak ditemukan</div>' +
+      '<div style="font-size:.85rem;">SKU: <code>' + escapeHtml(decodedText) + '</code></div>' +
+      '<button class="btn btn-primary" style="margin-top:10px;" onclick="closeScanner(); openProductForm({ sku: \'' + escapeHtml(decodedText) + '\' });">' +
+        '+ Tambah Produk Baru dengan SKU ini' +
+      '</button>';
   }
 }
 
 function closeScanner() {
   if (scanner) {
     scanner.stop()
-      .then(() => { try { scanner.clear(); } catch {} scanner = null; })
-      .catch(() => { scanner = null; });
+      .then(function () { try { scanner.clear(); } catch (e) {} scanner = null; })
+      .catch(function () { scanner = null; });
   }
   _lastScannedSku = '';
   _lastScanTime = 0;
@@ -602,8 +610,8 @@ function openSkuScanner() {
 
   openModal('modal-sku-scanner');
 
-  setTimeout(() => {
-    if (skuScanner) { try { skuScanner.clear(); } catch {} skuScanner = null; }
+  setTimeout(function () {
+    if (skuScanner) { try { skuScanner.clear(); } catch (e) {} skuScanner = null; }
     const readerEl = document.getElementById('sku-scanner-reader');
     if (!readerEl) return;
 
@@ -622,7 +630,7 @@ function openSkuScanner() {
 
     const cameraConfig = { facingMode: 'environment' };
 
-    skuScanner.start(cameraConfig, config, (decoded) => {
+    skuScanner.start(cameraConfig, config, function (decoded) {
       playBeep('success');
       const resultEl = document.getElementById('sku-scanner-result');
       if (resultEl) resultEl.textContent = decoded;
@@ -630,12 +638,12 @@ function openSkuScanner() {
       const skuInput = document.getElementById('pf-sku');
       if (skuInput) { skuInput.value = decoded; onSkuChange(); }
 
-      setTimeout(() => {
+      setTimeout(function () {
         closeSkuScanner();
         KR.toast.success('SKU terisi: ' + decoded);
       }, 800);
-    }, () => {})
-      .catch(err => {
+    }, function () {})
+      .catch(function (err) {
         console.error('[SKU Scanner]', err);
         KR.toast.error('Gagal buka kamera: ' + (err.message || err));
       });
@@ -645,8 +653,8 @@ function openSkuScanner() {
 function closeSkuScanner() {
   if (skuScanner) {
     skuScanner.stop()
-      .then(() => { try { skuScanner.clear(); } catch {} skuScanner = null; })
-      .catch(() => { skuScanner = null; });
+      .then(function () { try { skuScanner.clear(); } catch (e) {} skuScanner = null; })
+      .catch(function () { skuScanner = null; });
   }
   closeModal('modal-sku-scanner');
 }
@@ -658,15 +666,15 @@ function onSkuChange() {
   const sku = skuInput.value.trim();
   if (!sku) { status.innerHTML = ''; return; }
   const existing = KR.store.findProductBySku(sku);
-  const currentId = document.getElementById('pf-id')?.value;
+  const currentId = (document.getElementById('pf-id') || {}).value;
   if (existing && existing.id !== currentId) {
-    status.innerHTML = `<div style="margin-top:6px;font-size:.75rem;color:var(--warning);font-weight:700;">
-      ⚠ SKU sudah dipakai produk: <strong>${escapeHtml(existing.name)}</strong>
-    </div>`;
+    status.innerHTML = '<div style="margin-top:6px;font-size:.75rem;color:var(--warning);font-weight:700;">' +
+      '⚠ SKU sudah dipakai produk: <strong>' + escapeHtml(existing.name) + '</strong>' +
+    '</div>';
   } else {
-    status.innerHTML = `<div style="margin-top:6px;font-size:.75rem;color:var(--success);font-weight:700;">
-      ✓ SKU tersedia
-    </div>`;
+    status.innerHTML = '<div style="margin-top:6px;font-size:.75rem;color:var(--success);font-weight:700;">' +
+      '✓ SKU tersedia' +
+    '</div>';
   }
 }
 
@@ -675,10 +683,10 @@ function setupVisionListeners() {
   const camInput = document.getElementById('vision-camera-input');
   const galInput = document.getElementById('vision-gallery-input');
 
-  [camInput, galInput].forEach(inp => {
+  [camInput, galInput].forEach(function (inp) {
     if (!inp) return;
-    inp.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
+    inp.addEventListener('change', async function (e) {
+      const file = e.target.files && e.target.files[0];
       e.target.value = '';
       if (!file) return;
       KR.toast.info('Memproses gambar...', 1500);
@@ -690,7 +698,7 @@ function setupVisionListeners() {
         KR.toast.success('Foto siap dianalisa');
       } catch (err) {
         console.error('[Vision] Compress error:', err);
-        KR.toast.error('Gagal: ' + (err?.message || 'Unknown error'));
+        KR.toast.error('Gagal: ' + (err && err.message || 'Unknown error'));
       }
     });
   });
@@ -700,17 +708,15 @@ function showVisionPreview(imageData) {
   const preview = document.getElementById('vision-preview');
   if (!preview) return;
   preview.classList.remove('hidden');
-  preview.innerHTML = `
-    <img src="${imageData}" alt="Preview">
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="resetVision()">
-        <i data-lucide="x"></i> Ganti Foto
-      </button>
-      <button class="btn btn-primary" onclick="processVision()">
-        <i data-lucide="sparkles"></i> Kenali Produk
-      </button>
-    </div>
-  `;
+  preview.innerHTML = '<img src="' + imageData + '" alt="Preview">' +
+    '<div class="btn-row">' +
+      '<button class="btn btn-ghost" onclick="resetVision()">' +
+        '<i data-lucide="x"></i> Ganti Foto' +
+      '</button>' +
+      '<button class="btn btn-primary" onclick="processVision()">' +
+        '<i data-lucide="sparkles"></i> Kenali Produk' +
+      '</button>' +
+    '</div>';
   const resultEl = document.getElementById('vision-result');
   if (resultEl) resultEl.classList.add('hidden');
   if (window.lucide) lucide.createIcons();
@@ -734,7 +740,7 @@ async function processVision() {
   if (cachedProduct) {
     KR.toast.success(cachedProduct.name + ' (dari cache)');
     addToCart(cachedProduct, 1);
-    setTimeout(() => closeScanner(), 700);
+    setTimeout(function () { closeScanner(); }, 700);
     return;
   }
 
@@ -765,20 +771,18 @@ function renderVisionNoResult() {
   const el = document.getElementById('vision-result');
   if (!el) return;
   el.classList.remove('hidden');
-  el.innerHTML = `
-    <div class="vision-noresult">
-      <strong>😕 Produk tidak terdeteksi</strong>
-      <p style="font-size:.85rem;margin:6px 0 12px;">Coba foto lebih dekat & jelas, atau cari manual.</p>
-    </div>
-    <div class="vision-manual" style="margin-top:12px">
-      <button class="btn btn-secondary" onclick="focusSearchBar()">
-        <i data-lucide="search"></i> Cari Manual
-      </button>
-      <button class="btn btn-primary" onclick="addProductFromVision()">
-        <i data-lucide="plus"></i> Produk Baru
-      </button>
-    </div>
-  `;
+  el.innerHTML = '<div class="vision-noresult">' +
+      '<strong>😕 Produk tidak terdeteksi</strong>' +
+      '<p style="font-size:.85rem;margin:6px 0 12px;">Coba foto lebih dekat & jelas, atau cari manual.</p>' +
+    '</div>' +
+    '<div class="vision-manual" style="margin-top:12px">' +
+      '<button class="btn btn-secondary" onclick="focusSearchBar()">' +
+        '<i data-lucide="search"></i> Cari Manual' +
+      '</button>' +
+      '<button class="btn btn-primary" onclick="addProductFromVision()">' +
+        '<i data-lucide="plus"></i> Produk Baru' +
+      '</button>' +
+    '</div>';
   if (window.lucide) lucide.createIcons();
 }
 
@@ -787,60 +791,56 @@ function renderVisionCandidates(result) {
   if (!el) return;
   el.classList.remove('hidden');
 
-  const items = result.products.map((p, i) => {
+  const items = result.products.map(function (p, i) {
     const matches = KR.vision.findProductMatches(p);
     const bestMatch = matches[0];
     return { ai: p, match: bestMatch, rank: i + 1 };
   });
 
-  const candidateHtml = items.map((it, idx) => {
+  const candidateHtml = items.map(function (it, idx) {
     const conf = Math.round(it.ai.confidence || 0);
     const confClass = conf >= 70 ? '' : 'low';
     const isBest = idx === 0 && it.match && it.match.score > 0.5;
 
     const metaChips = [
-      it.ai.brand ? `<span class="pa-chip neutral">${escapeHtml(it.ai.brand)}</span>` : '',
-      it.ai.variant ? `<span class="pa-chip neutral">${escapeHtml(it.ai.variant)}</span>` : '',
-      it.ai.size ? `<span class="pa-chip neutral">${escapeHtml(it.ai.size)}</span>` : '',
-      it.ai.category ? `<span class="pa-chip primary">${escapeHtml(it.ai.category)}</span>` : '',
+      it.ai.brand ? '<span class="pa-chip neutral">' + escapeHtml(it.ai.brand) + '</span>' : '',
+      it.ai.variant ? '<span class="pa-chip neutral">' + escapeHtml(it.ai.variant) + '</span>' : '',
+      it.ai.size ? '<span class="pa-chip neutral">' + escapeHtml(it.ai.size) + '</span>' : '',
+      it.ai.category ? '<span class="pa-chip primary">' + escapeHtml(it.ai.category) + '</span>' : '',
     ].filter(Boolean).join('');
 
     const matchNote = it.match
-      ? `<div style="font-size:.72rem;color:var(--text-3);margin-top:4px;">
-           → Cocok dengan: <strong>${escapeHtml(it.match.product.name)}</strong>
-           (${formatRupiah(it.match.product.price)})
-         </div>`
-      : `<div style="font-size:.72rem;color:var(--warning);margin-top:4px;">
-           ⚠ Belum ada di produk — akan ditambah baru
-         </div>`;
+      ? '<div style="font-size:.72rem;color:var(--text-3);margin-top:4px;">' +
+          '→ Cocok dengan: <strong>' + escapeHtml(it.match.product.name) + '</strong> ' +
+          '(' + formatRupiah(it.match.product.price) + ')' +
+        '</div>'
+      : '<div style="font-size:.72rem;color:var(--warning);margin-top:4px;">' +
+          '⚠ Belum ada di produk — akan ditambah baru' +
+        '</div>';
 
-    return `
-      <button class="candidate ${isBest ? 'best' : ''}" onclick="pickCandidate(${idx})">
-        <div class="candidate-rank">${it.rank}</div>
-        <div class="candidate-body">
-          <div class="candidate-name">${escapeHtml(it.ai.name)}</div>
-          <div class="candidate-meta">${metaChips}</div>
-          ${matchNote}
-        </div>
-        <span class="candidate-conf ${confClass}">${conf}%</span>
-      </button>
-    `;
+    return '<button class="candidate ' + (isBest ? 'best' : '') + '" onclick="pickCandidate(' + idx + ')">' +
+      '<div class="candidate-rank">' + it.rank + '</div>' +
+      '<div class="candidate-body">' +
+        '<div class="candidate-name">' + escapeHtml(it.ai.name) + '</div>' +
+        '<div class="candidate-meta">' + metaChips + '</div>' +
+        matchNote +
+      '</div>' +
+      '<span class="candidate-conf ' + confClass + '">' + conf + '%</span>' +
+    '</button>';
   }).join('');
 
-  el.innerHTML = `
-    <div class="vision-result-title">
-      <i data-lucide="sparkles"></i> Hasil AI — Pilih produk yang benar
-    </div>
-    <div class="candidate-list">${candidateHtml}</div>
-    <div class="vision-manual">
-      <button class="btn btn-secondary" onclick="focusSearchBar()">
-        <i data-lucide="search"></i> Cari Manual
-      </button>
-      <button class="btn btn-ghost" onclick="resetVision()">
-        <i data-lucide="rotate-ccw"></i> Ulangi Foto
-      </button>
-    </div>
-  `;
+  el.innerHTML = '<div class="vision-result-title">' +
+      '<i data-lucide="sparkles"></i> Hasil AI — Pilih produk yang benar' +
+    '</div>' +
+    '<div class="candidate-list">' + candidateHtml + '</div>' +
+    '<div class="vision-manual">' +
+      '<button class="btn btn-secondary" onclick="focusSearchBar()">' +
+        '<i data-lucide="search"></i> Cari Manual' +
+      '</button>' +
+      '<button class="btn btn-ghost" onclick="resetVision()">' +
+        '<i data-lucide="rotate-ccw"></i> Ulangi Foto' +
+      '</button>' +
+    '</div>';
   window.__visionCandidates = items;
   if (window.lucide) lucide.createIcons();
 }
@@ -855,14 +855,14 @@ function pickCandidate(idx) {
     KR.vision.cacheSave(visionImageData, product.id);
     addToCart(product, 1);
     KR.toast.success(product.name);
-    setTimeout(() => closeScanner(), 500);
+    setTimeout(function () { closeScanner(); }, 500);
   } else {
     addProductFromVision(item.ai);
   }
 }
 
-function addProductFromVision(aiData = null) {
-  const ai = aiData || (visionResultData?.products?.[0] || {});
+function addProductFromVision(aiData) {
+  const ai = aiData || (visionResultData && visionResultData.products && visionResultData.products[0] || {});
   const preset = {
     name: ai.name || '',
     category: ai.category || '',
@@ -876,7 +876,7 @@ function addProductFromVision(aiData = null) {
 function focusSearchBar() {
   closeScanner();
   const search = document.getElementById('pos-search');
-  const name = visionResultData?.products?.[0]?.name || '';
+  const name = (visionResultData && visionResultData.products && visionResultData.products[0] && visionResultData.products[0].name) || '';
   if (search) {
     search.value = name;
     search.focus();
@@ -885,33 +885,31 @@ function focusSearchBar() {
 }
 
 /* ==================== INIT LISTENERS ==================== */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
   setTimeout(setupVisionListeners, 500);
 
-  // ✅ Debounced search POS
   const posSearch = document.getElementById('pos-search');
   if (posSearch) {
     posSearch.addEventListener('input', renderPosGridDebounced);
-    posSearch.addEventListener('keydown', (e) => {
+    posSearch.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') renderPosGrid();
     });
   }
 
-  // ✅ Debounced search Produk
   const prodSearch = document.getElementById('prod-search');
   if (prodSearch) {
-    prodSearch.addEventListener('input', debounce(() => {
+    prodSearch.addEventListener('input', debounce(function () {
       if (typeof renderProductList === 'function') renderProductList();
     }, 180));
   }
 
   const prodCat = document.getElementById('prod-cat-filter');
-  if (prodCat) prodCat.addEventListener('change', () => {
+  if (prodCat) prodCat.addEventListener('change', function () {
     if (typeof renderProductList === 'function') renderProductList();
   });
 
   const trxDate = document.getElementById('trx-date-filter');
-  if (trxDate) trxDate.addEventListener('change', () => {
+  if (trxDate) trxDate.addEventListener('change', function () {
     if (typeof renderTransactionList === 'function') renderTransactionList();
   });
 
