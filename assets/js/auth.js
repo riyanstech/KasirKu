@@ -1,7 +1,6 @@
 /* ==========================================
    KasirKu — Auth Module
    Login Username + Password (PBKDF2 hash)
-   Data user tersimpan di GitHub (kasir-users.json)
    ========================================== */
 window.KR = window.KR || {};
 
@@ -13,27 +12,16 @@ KR.auth = (function () {
   const PBKDF2_ITERATIONS = 100000;
   const SALT_LENGTH = 16;
 
-  /* ---------- STORAGE ---------- */
-  function getAuth() {
-    return KR.store.get(AUTH_KEY, null);
-  }
-  function setAuth(data) {
-    KR.store.set(AUTH_KEY, data);
-  }
-  function clearAuth() {
-    KR.store.remove(AUTH_KEY);
-  }
+  function getAuth() { return KR.store.get(AUTH_KEY, null); }
+  function setAuth(data) { KR.store.set(AUTH_KEY, data); }
+  function clearAuth() { KR.store.remove(AUTH_KEY); }
 
   function isLoggedIn() {
     const a = getAuth();
     return !!(a && a.loggedIn);
   }
-  function isGitHubUser() {
-    return KR.github.isConfigured();
-  }
-  function getUser() {
-    return getAuth();
-  }
+  function isGitHubUser() { return KR.github.isConfigured(); }
+  function getUser() { return getAuth(); }
 
   /* ---------- CRYPTO (PBKDF2) ---------- */
   function randomSalt() {
@@ -45,25 +33,13 @@ KR.auth = (function () {
   async function hashPassword(password, salt) {
     const encoder = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(password),
-      { name: 'PBKDF2' },
-      false,
-      ['deriveBits']
+      'raw', encoder.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
     );
     const bits = await crypto.subtle.deriveBits(
-      {
-        name: 'PBKDF2',
-        salt: encoder.encode(salt),
-        iterations: PBKDF2_ITERATIONS,
-        hash: 'SHA-256',
-      },
-      keyMaterial,
-      256
+      { name: 'PBKDF2', salt: encoder.encode(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      keyMaterial, 256
     );
-    return Array.from(new Uint8Array(bits))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   async function verifyPassword(password, salt, expectedHash) {
@@ -76,7 +52,7 @@ KR.auth = (function () {
     return diff === 0;
   }
 
-  /* ---------- USERS FILE (GitHub) ---------- */
+  /* ---------- USERS FILE ---------- */
   async function loadUsers() {
     try {
       const content = await KR.github.getFileContent(USERS_FILE);
@@ -91,11 +67,7 @@ KR.auth = (function () {
   }
 
   async function saveUsers(data) {
-    await KR.github.uploadFile(
-      USERS_FILE,
-      JSON.stringify(data, null, 2),
-      'chore: update users'
-    );
+    await KR.github.uploadFile(USERS_FILE, JSON.stringify(data, null, 2), 'chore: update users');
   }
 
   /* ---------- UI ---------- */
@@ -240,39 +212,24 @@ KR.auth = (function () {
     const password = passwordEl.value;
     const password2 = password2El.value;
 
-    if (username.length < 3) {
-      setStatus('register', 'error', 'Username minimal 3 karakter');
-      return;
-    }
-    if (!/^[a-z0-9_-]+$/.test(username)) {
-      setStatus('register', 'error', 'Username hanya huruf kecil, angka, _ dan -');
-      return;
-    }
-    if (password.length < 6) {
-      setStatus('register', 'error', 'Password minimal 6 karakter');
-      return;
-    }
-    if (password !== password2) {
-      setStatus('register', 'error', 'Konfirmasi password tidak cocok');
-      return;
-    }
+    if (username.length < 3) return setStatus('register', 'error', 'Username minimal 3 karakter');
+    if (!/^[a-z0-9_-]+$/.test(username)) return setStatus('register', 'error', 'Username hanya huruf kecil, angka, _ dan -');
+    if (password.length < 6) return setStatus('register', 'error', 'Password minimal 6 karakter');
+    if (password !== password2) return setStatus('register', 'error', 'Konfirmasi password tidak cocok');
 
     setStatus('register', 'warn', 'Membuat akun...');
 
     try {
       const usersData = await loadUsers();
       if (usersData.users.find(u => u.username === username)) {
-        setStatus('register', 'error', 'Username sudah dipakai');
-        return;
+        return setStatus('register', 'error', 'Username sudah dipakai');
       }
 
       const salt = randomSalt();
       const passwordHash = await hashPassword(password, salt);
 
       usersData.users.push({
-        username,
-        salt,
-        passwordHash,
+        username, salt, passwordHash,
         role: usersData.users.length === 0 ? 'admin' : 'kasir',
         createdAt: Date.now(),
       });
@@ -310,26 +267,17 @@ KR.auth = (function () {
     const username = usernameEl.value.trim().toLowerCase();
     const password = passwordEl.value;
 
-    if (!username || !password) {
-      setStatus('login', 'error', 'Isi username & password');
-      return;
-    }
+    if (!username || !password) return setStatus('login', 'error', 'Isi username & password');
 
     setStatus('login', 'warn', 'Memverifikasi...');
 
     try {
       const usersData = await loadUsers();
       const user = usersData.users.find(u => u.username === username);
-      if (!user) {
-        setStatus('login', 'error', 'Username tidak ditemukan');
-        return;
-      }
+      if (!user) return setStatus('login', 'error', 'Username tidak ditemukan');
 
       const ok = await verifyPassword(password, user.salt, user.passwordHash);
-      if (!ok) {
-        setStatus('login', 'error', 'Password salah');
-        return;
-      }
+      if (!ok) return setStatus('login', 'error', 'Password salah');
 
       setAuth({
         loggedIn: true,
@@ -342,7 +290,6 @@ KR.auth = (function () {
       setStatus('login', 'ok', 'Berhasil masuk!');
       KR.toast.success('Selamat datang, ' + user.username + '!');
 
-      // Pull data dari GitHub
       try {
         const content = await KR.github.getFileContent('kasir-data.json');
         if (content) {
@@ -458,7 +405,6 @@ KR.auth = (function () {
       showLoginScreen();
     }
 
-    // Keyboard shortcuts
     document.getElementById('setup-gh-token')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') submitSetup();
     });
