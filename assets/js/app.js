@@ -1078,8 +1078,9 @@ async function cleanupOrphanPhotos() {
     }
 
     confirmDialog(
-      'Bersihkan Foto Yatim?',
-      `Ditemukan ${orphans.length} foto tidak terpakai (dari ${files.length} total). Hapus permanen dari GitHub?`,
+       'Optimalkan Penyimpanan?',
+       `Sistem menemukan ${orphans.length} file foto yang sudah tidak terpakai (dari total ${files.length} file). File ini akan dihapus dari GitHub untuk menghemat penyimpanan.\n\nLanjutkan?`,
+       ...
       async () => {
         showLoading(`Menghapus ${orphans.length} foto...`);
         let ok = 0, fail = 0;
