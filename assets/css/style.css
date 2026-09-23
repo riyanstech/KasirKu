@@ -1744,4 +1744,542 @@ img { max-width: 100%; display: block; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
 .custom-scroll::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
 
+/* ============================================================
+   RESPONSIVE FIXES v2 — Mobile First Polish
+   Tempel di PALING BAWAH style.css
+   ============================================================ */
+
+/* ---------- GLOBAL: cegah overflow ---------- */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+img { max-width: 100%; height: auto; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* ============================================================
+   1. FOTO PRODUK — JANGAN TERPOTONG (FIX UTAMA)
+   ============================================================ */
+.pt-img,
+.pa-img,
+.ci-img {
+  background: #fff;
+  padding: 0;
+}
+.dark .pt-img,
+.dark .pa-img { background: var(--bg-subtle); }
+.dark .ci-img { background: var(--bg-muted); }
+
+.pt-img img,
+.pa-img img,
+.ci-img img {
+  object-fit: contain;      /* ← KUNCI: gambar utuh, tidak terpotong */
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  background: transparent;
+}
+.ci-img img { padding: 3px; }
+
+/* ============================================================
+   2. HEADER / NAVBAR — RAPI DI SEMUA UKURAN
+   ============================================================ */
+.hdr-inner {
+  padding: 0 14px;
+  gap: 12px;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .hdr-inner { padding: 0 12px; gap: 10px; height: 62px; }
+  .logo-box { width: 36px; height: 36px; border-radius: 10px; }
+  .logo-box svg { width: 20px; height: 20px; }
+  .logo-title { font-size: 1rem; }
+  .nav-tab { padding: 8px 12px; }
+}
+
+/* HP */
+@media (max-width: 640px) {
+  .hdr-inner {
+    padding: 0 10px;
+    gap: 8px;
+    height: 58px;
+  }
+  .hdr-logo { gap: 8px; }
+  .logo-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+  .logo-box svg { width: 18px; height: 18px; }
+  .logo-title { font-size: .95rem; }
+  .logo-sub { display: none; }
+
+  .nav-tabs { gap: 2px; }
+  .nav-tab {
+    padding: 8px 10px;
+    border-radius: 9px;
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  .nav-tab svg { width: 18px; height: 18px; }
+  .nav-tab span { display: none; }
+
+  .hdr-actions { gap: 5px; }
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+  }
+  .icon-btn svg { width: 17px; height: 17px; }
+
+  .user-badge {
+    padding: 8px 10px;
+    max-width: 44px;
+    border-radius: 9px;
+  }
+  .user-badge span { display: none; }
+
+  .cart-badge {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-size: .68rem;
+  }
+}
+
+/* HP kecil (≤360px) */
+@media (max-width: 380px) {
+  .hdr-inner { padding: 0 8px; gap: 6px; }
+  .logo-box { width: 30px; height: 30px; border-radius: 8px; }
+  .logo-box svg { width: 16px; height: 16px; }
+  .logo-title { font-size: .85rem; }
+  .nav-tab { padding: 7px 8px; min-width: 36px; }
+  .nav-tab svg { width: 17px; height: 17px; }
+  .icon-btn { width: 34px; height: 34px; }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .cart-badge { min-width: 22px; height: 22px; font-size: .62rem; padding: 0 5px; }
+}
+
+/* HP sangat kecil (≤340px) */
+@media (max-width: 340px) {
+  .hdr-inner { padding: 0 6px; gap: 4px; }
+  .logo-box { width: 28px; height: 28px; }
+  .logo-box svg { width: 15px; height: 15px; }
+  .logo-title { font-size: .78rem; }
+  .nav-tab { padding: 6px 6px; min-width: 32px; }
+  .nav-tab svg { width: 16px; height: 16px; }
+  .icon-btn { width: 32px; height: 32px; }
+  .cart-badge { min-width: 20px; height: 20px; font-size: .58rem; }
+}
+
+/* ============================================================
+   3. MAIN LAYOUT — padding adaptif
+   ============================================================ */
+.app-main {
+  padding: 20px 16px 56px;
+}
+@media (max-width: 900px) {
+  .app-main { padding: 18px 14px 48px; }
+}
+@media (max-width: 640px) {
+  .app-main { padding: 14px 12px 40px; }
+}
+@media (max-width: 400px) {
+  .app-main { padding: 12px 10px 36px; }
+}
+@media (max-width: 340px) {
+  .app-main { padding: 10px 8px 32px; }
+}
+
+/* ============================================================
+   4. GRID PRODUK — adaptif & tile lebih ramping
+   ============================================================ */
+.product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 10px;
+  }
+}
+@media (max-width: 640px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+    gap: 9px;
+  }
+}
+@media (max-width: 400px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+@media (max-width: 340px) {
+  .product-grid { gap: 6px; }
+}
+
+/* Tile produk — lebih compact di HP */
+.product-tile {
+  padding: 10px;
+  border-radius: 13px;
+}
+@media (max-width: 640px) {
+  .product-tile { padding: 8px; border-radius: 11px; }
+  .pt-img { border-radius: 8px; margin-bottom: 8px; }
+  .pt-name {
+    font-size: .78rem;
+    min-height: 2.4em;
+    line-height: 1.25;
+  }
+  .pt-price { font-size: .88rem; }
+  .pt-stock { font-size: .66rem; }
+  .pt-cat {
+    font-size: .58rem;
+    padding: 2px 7px;
+    top: 6px;
+    left: 6px;
+  }
+}
+@media (max-width: 400px) {
+  .product-tile { padding: 7px; }
+  .pt-img { margin-bottom: 6px; }
+  .pt-name { font-size: .74rem; }
+  .pt-price { font-size: .82rem; }
+  .pt-stock { font-size: .62rem; }
+}
+
+/* ============================================================
+   5. TOOLBAR POS + KATEGORI CHIPS
+   ============================================================ */
+.pos-toolbar { gap: 10px; margin-bottom: 14px; }
+@media (max-width: 640px) {
+  .pos-toolbar { gap: 8px; margin-bottom: 12px; }
+  .pos-toolbar .btn {
+    padding: 10px 12px;
+    font-size: .82rem;
+    min-height: 44px;
+  }
+}
+
+.search-box input {
+  min-height: 46px;
+  font-size: 16px;
+}
+@media (max-width: 640px) {
+  .search-box input {
+    min-height: 44px;
+    padding: 11px 13px 11px 40px;
+  }
+  .search-box > svg { left: 12px; width: 16px; height: 16px; }
+}
+
+.cat-chips {
+  gap: 7px;
+  margin-bottom: 12px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.cat-chip {
+  scroll-snap-align: start;
+  padding: 8px 14px;
+  font-size: .78rem;
+  min-height: 34px;
+}
+@media (max-width: 640px) {
+  .cat-chips { gap: 6px; margin-bottom: 10px; }
+  .cat-chip {
+    padding: 7px 12px;
+    font-size: .74rem;
+    min-height: 32px;
+  }
+}
+
+/* ============================================================
+   6. CART — lebih rapi & sentuh-ramah
+   ============================================================ */
+.pos-cart { padding: 14px; border-radius: 16px; }
+@media (max-width: 640px) {
+  .pos-cart { padding: 12px; border-radius: 14px; }
+  .cart-header { margin-bottom: 12px; padding-bottom: 12px; }
+  .cart-header h3 { font-size: .92rem; }
+}
+
+.cart-item { padding: 10px; gap: 10px; }
+@media (max-width: 640px) {
+  .cart-item { padding: 9px; gap: 8px; border-radius: 10px; }
+  .ci-img { width: 44px; height: 44px; }
+  .ci-name { font-size: .78rem; }
+  .ci-price { font-size: .68rem; }
+  .ci-sub { font-size: .8rem; }
+  .ci-qty-btn {
+    width: 32px;                    /* touch target ramah */
+    height: 32px;
+    border-radius: 8px;
+  }
+  .ci-qty { min-width: 24px; font-size: .88rem; }
+}
+@media (max-width: 400px) {
+  .ci-qty-btn { width: 30px; height: 30px; }
+  .ci-img { width: 40px; height: 40px; }
+}
+
+.btn-checkout { min-height: 54px; font-size: 1rem; }
+@media (max-width: 640px) {
+  .btn-checkout { min-height: 52px; font-size: .95rem; }
+}
+
+/* ============================================================
+   7. KARTU PRODUK ADMIN (.pa-card)
+   ============================================================ */
+.product-admin-list {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 640px) {
+  .product-admin-list { gap: 10px; }
+  .pa-card {
+    padding: 11px;
+    gap: 11px;
+    border-radius: 12px;
+  }
+  .pa-img { width: 66px; height: 66px; border-radius: 9px; }
+  .pa-name { font-size: .88rem; }
+  .pa-sku { font-size: .68rem; }
+  .pa-price { font-size: .9rem; }
+  .pa-actions { gap: 5px; }
+  .pa-actions .icon-btn,
+  .pa-actions .icon-btn-danger {
+    width: 34px; height: 34px;
+  }
+}
+@media (max-width: 400px) {
+  .pa-card { padding: 10px; gap: 10px; }
+  .pa-img { width: 58px; height: 58px; }
+  .pa-name { font-size: .82rem; }
+  .pa-chip { font-size: .62rem; padding: 3px 8px; }
+}
+
+/* ============================================================
+   8. TRANSAKSI
+   ============================================================ */
+@media (max-width: 640px) {
+  .trx-card {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 12px;
+  }
+  .trx-icon { width: 40px; height: 40px; border-radius: 10px; }
+  .trx-icon svg { width: 18px; height: 18px; }
+  .trx-total { font-size: .95rem; }
+  .trx-date { font-size: .78rem; }
+  .trx-id { font-size: .66rem; }
+}
+@media (max-width: 400px) {
+  .trx-card { padding: 10px; }
+  .trx-actions .icon-btn,
+  .trx-actions .icon-btn-danger { width: 34px; height: 34px; }
+}
+
+/* ============================================================
+   9. PENGATURAN
+   ============================================================ */
+@media (max-width: 640px) {
+  .settings-grid { gap: 12px; }
+  .settings-card { padding: 16px; border-radius: 14px; }
+  .settings-card h3 { font-size: .95rem; }
+  .settings-desc { font-size: .78rem; }
+}
+
+/* ============================================================
+   10. MODAL & FORM
+   ============================================================ */
+@media (max-width: 640px) {
+  .modal-body { padding: 16px; }
+  .modal-head { padding: 14px 16px; }
+  .modal-head h3 { font-size: .95rem; }
+  .modal-foot {
+    padding: 12px 14px;
+    padding-bottom: calc(12px + var(--safe-bottom));
+  }
+}
+
+/* Field grid jadi 1 kolom di HP sempit */
+@media (max-width: 520px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* Form di modal: pastikan input tidak zoom di iOS */
+@media (max-width: 640px) {
+  .input, .select, .textarea {
+    font-size: 16px;  /* prevent iOS zoom */
+    min-height: 46px;
+  }
+}
+
+/* ============================================================
+   11. CHECKOUT — tombol quick cash lebih besar
+   ============================================================ */
+@media (max-width: 640px) {
+  .checkout-total {
+    padding: 20px 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+  .checkout-total-value { font-size: 1.7rem; }
+  .quick-cash {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .quick-cash button {
+    padding: 11px 8px;
+    font-size: .78rem;
+    min-height: 42px;
+  }
+  .change-value { font-size: 1.2rem; padding: 14px 16px; }
+  .input-lg { font-size: 1.2rem; min-height: 54px; }
+}
+
+/* ============================================================
+   12. LOGIN SCREEN
+   ============================================================ */
+@media (max-width: 640px) {
+  .login-screen { padding: 14px; }
+  .login-card { padding: 26px 20px 20px; border-radius: 20px; }
+  .logo-box-lg { width: 66px; height: 66px; border-radius: 20px; }
+  .logo-box-lg svg { width: 34px; height: 34px; }
+  .login-title { font-size: 1.5rem; }
+  .login-sub { font-size: .66rem; margin-bottom: 22px; }
+}
+@media (max-width: 400px) {
+  .login-card { padding: 22px 16px 18px; border-radius: 18px; }
+  .logo-box-lg { width: 60px; height: 60px; border-radius: 18px; }
+  .logo-box-lg svg { width: 30px; height: 30px; }
+  .login-title { font-size: 1.35rem; }
+}
+
+/* ============================================================
+   13. TOASTS & LOADING
+   ============================================================ */
+@media (max-width: 480px) {
+  #toasts { left: 10px; right: 10px; max-width: none; }
+  .toast { font-size: .82rem; padding: 11px 14px; }
+  .loading-card { padding: 24px 26px; }
+}
+
+/* ============================================================
+   14. SCANNER
+   ============================================================ */
+@media (max-width: 640px) {
+  .scanner-reader { min-height: 220px; border-radius: 10px; }
+  .scanner-tab { padding: 10px 12px; font-size: .82rem; }
+  .scanner-hint { font-size: .72rem; }
+}
+
+/* ============================================================
+   15. AI VISION — card & candidate
+   ============================================================ */
+@media (max-width: 640px) {
+  .candidate { padding: 12px; gap: 10px; border-radius: 10px; }
+  .candidate-rank { width: 32px; height: 32px; border-radius: 9px; }
+  .candidate-name { font-size: .86rem; }
+  .candidate-conf { font-size: .66rem; padding: 3px 8px; }
+  .vision-btn { padding: 20px 16px; min-height: 108px; }
+  .vision-btn svg { width: 28px; height: 28px; }
+  .vision-btn span { font-size: .92rem; }
+  .vision-btn small { font-size: .7rem; }
+}
+
+/* ============================================================
+   16. TOUCH DEVICE — disable hover yang mengganggu
+   ============================================================ */
+@media (hover: none) {
+  .product-tile:hover {
+    transform: none;
+    border-color: var(--border);
+    box-shadow: none;
+  }
+  .product-tile:active {
+    transform: scale(.97);
+    border-color: var(--primary);
+  }
+  .pa-card:hover { transform: none; box-shadow: none; }
+  .cat-chip:hover { border-color: var(--border); color: var(--text-2); }
+  .btn-primary:hover { transform: none; filter: none; }
+  .nav-tab:hover { background: transparent; }
+  .icon-btn:hover { background: var(--bg-subtle); }
+  .candidate:hover { transform: none; }
+}
+
+/* ============================================================
+   17. SCROLLING SMOOTH
+   ============================================================ */
+.nav-tabs,
+.cat-chips,
+.cart-items,
+.modal-body {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ============================================================
+   18. HEADER: cegah nav-tab ketekan padding
+   ============================================================ */
+.nav-tabs {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.hdr-actions {
+  flex-shrink: 0;
+}
+.hdr-logo {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   19. PAGE HEADER (produk/transaksi) di HP
+   ============================================================ */
+@media (max-width: 640px) {
+  .page-header { gap: 12px; margin-bottom: 16px; }
+  .page-header h2 { font-size: 1.25rem; }
+  .page-header p { font-size: .8rem; }
+  .page-header-actions { width: 100%; }
+  .page-header-actions .input,
+  .page-header-actions .btn { flex: 1; min-width: 0; }
+}
+
+/* ============================================================
+   20. TOOLBAR (produk list)
+   ============================================================ */
+@media (max-width: 640px) {
+  .toolbar { gap: 8px; }
+  .toolbar .search-box { min-width: 0; width: 100%; flex: 1 1 100%; }
+  .toolbar .select { max-width: 100%; width: 100%; }
+}
+
+/* ============================================================
+   21. SKU SCANNER modal
+   ============================================================ */
+@media (max-width: 640px) {
+  .sku-result-value { font-size: 1rem; }
+  .sku-result-box { padding: 12px; }
+}
+
+/* ============================================================
+   22. RECEIPT — tetap pas di layar HP
+   ============================================================ */
+@media (max-width: 640px) {
+  .receipt-paper {
+    font-size: 11px;
+    padding: 18px 14px;
+    max-width: 100%;
+  }
+  .r-store-name { font-size: 15px; }
+}
+
 /* ==================== END OF FILE ==================== */
