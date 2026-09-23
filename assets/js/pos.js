@@ -989,10 +989,19 @@ function focusSearchBar() {
   }
 }
 
-/* Init listeners on DOM ready */
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(setupVisionListeners, 500);
-});
+/* Init listeners — cek dulu DOM sudah siap atau belum */
+function initVisionListeners() {
+  if (window.__kasirku_vision_inited) return;
+  window.__kasirku_vision_inited = true;
+  setupVisionListeners();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initVisionListeners);
+} else {
+  // DOM sudah siap → jalankan langsung
+  initVisionListeners();
+}
 
 /* ==================== EXPOSE ==================== */
 window.getCart = getCart;
