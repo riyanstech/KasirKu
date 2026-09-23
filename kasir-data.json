@@ -69,6 +69,16 @@
       "stock": 18,
       "category": "Sabun",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790180763260-cl8z.jpg"
+    },
+    {
+      "id": "p-1790183743145-6z3e",
+      "name": "Joyko Correction Fluid JK-101A",
+      "sku": "8993988052647",
+      "cost": 4000,
+      "price": 5000,
+      "stock": 20,
+      "category": "Alat Tulis",
+      "image": ""
     }
   ],
   "transactions": [
