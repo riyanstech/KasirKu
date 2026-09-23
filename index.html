@@ -64,43 +64,42 @@
 </head>
 <body>
     <div id="app">
-        <header class="app-header">
-            <div class="hdr-inner">
-                <div class="hdr-logo">
-                    <div class="logo-box"><i data-lucide="shopping-cart"></i></div>
-                    <div class="logo-text">
-                        <h1 class="logo-title">KasirKu</h1>
-                        <p class="logo-sub">POS</p>
-                    </div>
+<section id="tab-kasir" class="tab-content active">
+    <div class="pos-layout">
+        <div class="pos-products">
+            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:stretch;width:100%;">
+                <div style="position:relative;flex:1;min-width:0;">
+                    <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#94a3b8;pointer-events:none;z-index:2;"></i>
+                    <input type="text" id="pos-search" placeholder="Cari produk..." autocomplete="off" style="width:100%;padding:12px 12px 12px 38px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:16px;background:#fff;color:#0f172a;outline:none;box-sizing:border-box;min-height:46px;">
                 </div>
-
-                <nav class="nav-tabs">
-                    <button class="nav-tab active" data-tab="kasir" onclick="showTab('kasir', this)">
-                        <i data-lucide="store"></i><span>Kasir</span>
-                    </button>
-                    <button class="nav-tab" data-tab="produk" onclick="showTab('produk', this)">
-                        <i data-lucide="package"></i><span>Produk</span>
-                    </button>
-                    <button class="nav-tab" data-tab="transaksi" onclick="showTab('transaksi', this)">
-                        <i data-lucide="receipt-text"></i><span>Transaksi</span>
-                    </button>
-                    <button class="nav-tab" data-tab="pengaturan" onclick="showTab('pengaturan', this)">
-                        <i data-lucide="settings"></i><span>Atur</span>
-                    </button>
-                </nav>
-
-                <div class="hdr-actions">
-                    <span id="cart-badge-hdr" class="cart-badge hidden">0</span>
-                    <button id="user-badge-btn" onclick="showTab('pengaturan')" class="user-badge" title="Akun" style="display:none">
-                        <i data-lucide="user"></i>
-                        <span id="user-badge-name"></span>
-                    </button>
-                    <button onclick="toggleTheme()" class="icon-btn" aria-label="Tema">
-                        <i id="theme-icon" data-lucide="moon"></i>
-                    </button>
-                </div>
+                <button type="button" onclick="openScanner()" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:0 14px;min-height:46px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:.82rem;border:none;flex-shrink:0;cursor:pointer;box-shadow:0 4px 12px -4px rgba(16,185,129,.5);">
+                    <i data-lucide="scan-line" style="width:17px;height:17px;"></i>
+                    <span>Scan</span>
+                </button>
             </div>
-        </header>
+            <div id="pos-category-filter" style="display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:4px 4px 8px 0;margin-bottom:8px;min-height:40px;touch-action:pan-x;"></div>
+            <div id="pos-grid" class="product-grid"></div>
+        </div>
+
+        <div class="pos-cart">
+            <div class="cart-header">
+                <h3><i data-lucide="shopping-bag"></i> Keranjang</h3>
+                <button class="btn-icon-danger" onclick="clearCart()" title="Kosongkan">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="cart-summary">
+                <div class="sum-row"><span>Subtotal</span><span id="sum-subtotal">Rp 0</span></div>
+                <div class="sum-row"><span>Diskon</span><span id="sum-discount">Rp 0</span></div>
+                <div class="sum-row total"><span>Total</span><span id="sum-total">Rp 0</span></div>
+                <button id="checkout-btn" class="btn-checkout" onclick="openCheckout()" disabled>
+                    <i data-lucide="banknote"></i> Bayar
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
 
         <main class="app-main">
             <section id="tab-kasir" class="tab-content active">
