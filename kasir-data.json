@@ -41,26 +41,6 @@
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790142588802.jpg"
     },
     {
-      "id": "p-1790161533005-kojx",
-      "name": "Siip",
-      "sku": "8993175531702",
-      "cost": 500,
-      "price": 500,
-      "stock": 19,
-      "category": "Makanan",
-      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790161533005-kojx.jpg"
-    },
-    {
-      "id": "p-1790161572114-1c5z",
-      "name": "Gery Salut",
-      "sku": "8992775312452",
-      "cost": 500,
-      "price": 500,
-      "stock": 18,
-      "category": "Makanan",
-      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790161572114-1c5z.jpg"
-    },
-    {
       "id": "p-1790165418736-89lr",
       "name": "Telur Ayam Negeri",
       "sku": "2256",
