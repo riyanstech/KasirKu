@@ -50,7 +50,7 @@ KR.store = (function () {
   }
 
   function remove(key) {
-    try { localStorage.removeItem('kasir:' + key); } catch {}
+    try { localStorage.removeItem('kasir:' + key); } catch (e) {}
   }
 
   /* ---------- Products ---------- */
@@ -183,13 +183,13 @@ KR.github = (function () {
     if (!isConfigured()) return { ok: false, msg: 'Konfigurasi belum lengkap' };
     try {
       const c = getConfig();
-      const res = await fetch(`${API}/repos/${c.owner}/${c.repo}`, { headers: headers() });
+      const res = await fetch(API + '/repos/' + c.owner + '/' + c.repo, { headers: headers() });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        return { ok: false, msg: err.message || `HTTP ${res.status}` };
+        return { ok: false, msg: err.message || ('HTTP ' + res.status) };
       }
       const data = await res.json();
-      return { ok: true, msg: `Terhubung ke ${data.full_name}`, data };
+      return { ok: true, msg: 'Terhubung ke ' + data.full_name, data: data };
     } catch (e) {
       return { ok: false, msg: e.message || 'Gagal koneksi' };
     }
@@ -199,28 +199,29 @@ KR.github = (function () {
     try {
       const c = getConfig();
       if (!c) return null;
-      const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}?ref=${c.branch}&t=${Date.now()}`;
+      const url = API + '/repos/' + c.owner + '/' + c.repo + '/contents/' + encodePath(path) + '?ref=' + c.branch + '&t=' + Date.now();
       const res = await fetch(url, { headers: headers() });
       if (!res.ok) return null;
       const data = await res.json();
       return data.sha || null;
-    } catch { return null; }
+    } catch (e) { return null; }
   }
 
   async function getFileContent(path) {
     try {
       const c = getConfig();
       if (!c) return null;
-      const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}?ref=${c.branch}&t=${Date.now()}`;
+      const url = API + '/repos/' + c.owner + '/' + c.repo + '/contents/' + encodePath(path) + '?ref=' + c.branch + '&t=' + Date.now();
       const res = await fetch(url, { headers: headers() });
       if (!res.ok) return null;
       const data = await res.json();
       if (!data.content) return null;
       return decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-    } catch { return null; }
+    } catch (e) { return null; }
   }
 
-  async function uploadFile(path, content, message, options = {}) {
+  async function uploadFile(path, content, message, options) {
+    options = options || {};
     if (!isConfigured()) throw new Error('GitHub belum dikonfigurasi');
     const c = getConfig();
     const sha = await getFileSha(path);
@@ -230,13 +231,13 @@ KR.github = (function () {
       : btoa(unescape(encodeURIComponent(String(content || ''))));
 
     const body = {
-      message: message || `Update ${path}`,
+      message: message || ('Update ' + path),
       content: encodedContent,
       branch: c.branch,
     };
     if (sha) body.sha = sha;
 
-    const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}`;
+    const url = API + '/repos/' + c.owner + '/' + c.repo + '/contents/' + encodePath(path);
     const res = await fetch(url, {
       method: 'PUT',
       headers: headers(),
@@ -244,7 +245,7 @@ KR.github = (function () {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
+      throw new Error(err.message || ('HTTP ' + res.status));
     }
     return await res.json();
   }
@@ -254,26 +255,31 @@ KR.github = (function () {
     const c = getConfig();
     const sha = await getFileSha(path);
     if (!sha) return null;
-    const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}`;
+    const url = API + '/repos/' + c.owner + '/' + c.repo + '/contents/' + encodePath(path);
     const res = await fetch(url, {
       method: 'DELETE',
       headers: headers(),
       body: JSON.stringify({
-        message: message || `Delete ${path}`,
-        sha,
+        message: message || ('Delete ' + path),
+        sha: sha,
         branch: c.branch,
       }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
+      throw new Error(err.message || ('HTTP ' + res.status));
     }
     return await res.json();
   }
 
   return {
-    getConfig, isConfigured,
-    testConnection, getFileContent, uploadFile, getFileSha, deleteFile,
+    getConfig: getConfig,
+    isConfigured: isConfigured,
+    testConnection: testConnection,
+    getFileContent: getFileContent,
+    uploadFile: uploadFile,
+    getFileSha: getFileSha,
+    deleteFile: deleteFile,
   };
 })();
 
@@ -284,41 +290,48 @@ function formatRupiah(n) {
 
 function formatDate(ts) {
   const d = new Date(ts);
-  const pad = n => String(n).padStart(2, '0');
+  const pad = function (n) { return String(n).padStart(2, '0'); };
   const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  return `${pad(d.getDate())} ${months[d.getMonth()]} ${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return pad(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[c]);
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c];
+  });
 }
 
-/* ✅ Helper: image tag dengan lazy loading */
-function imgTag(src, alt = '', cls = '') {
+function imgTag(src, alt, cls) {
+  alt = alt || '';
+  cls = cls || '';
   if (!src) return '';
-  return `<img src="${src}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async"${cls ? ` class="${cls}"` : ''}>`;
+  return '<img src="' + src + '" alt="' + escapeHtml(alt) + '" loading="lazy" decoding="async"' + (cls ? ' class="' + cls + '"' : '') + '>';
 }
 
-/* ✅ Helper: debounce */
-function debounce(fn, wait = 200) {
+function debounce(fn, wait) {
+  wait = wait || 200;
   let t;
-  return function (...args) {
+  return function () {
+    const args = arguments;
+    const self = this;
     clearTimeout(t);
-    t = setTimeout(() => fn.apply(this, args), wait);
+    t = setTimeout(function () { fn.apply(self, args); }, wait);
   };
 }
 
 /* ==========================================
-   COMPRESS IMAGE — Support HEIC, big files, fallback
+   COMPRESS IMAGE
    ========================================== */
-function compressImage(file, maxDim = 800, quality = 0.8) {
-  return new Promise((resolve, reject) => {
+function compressImage(file, maxDim, quality) {
+  maxDim = maxDim || 800;
+  quality = quality || 0.8;
+  return new Promise(function (resolve, reject) {
     if (!file || (!(file instanceof File) && !(file instanceof Blob))) {
       return reject(new Error('File tidak valid'));
     }
@@ -327,10 +340,10 @@ function compressImage(file, maxDim = 800, quality = 0.8) {
     }
 
     let resolved = false;
-    const timeout = setTimeout(() => {
+    const timeout = setTimeout(function () {
       if (!resolved) {
         resolved = true;
-        fileToDataUrl(file).then(resolve).catch(() => reject(new Error('Timeout memproses foto')));
+        fileToDataUrl(file).then(resolve).catch(function () { reject(new Error('Timeout memproses foto')); });
       }
     }, 20000);
 
@@ -375,7 +388,7 @@ function compressImage(file, maxDim = 800, quality = 0.8) {
         try {
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-        } catch {}
+        } catch (e) {}
 
         ctx.drawImage(source, 0, 0, tw, th);
 
@@ -397,32 +410,32 @@ function compressImage(file, maxDim = 800, quality = 0.8) {
 
     function tryImageElement() {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = function (e) {
         const img = new Image();
-        img.onload = () => processImage(img);
-        img.onerror = () => {
+        img.onload = function () { processImage(img); };
+        img.onerror = function () {
           fileToDataUrl(file)
-            .then(dataUrl => {
+            .then(function (dataUrl) {
               if (dataUrl.length > 2 * 1024 * 1024) {
                 fail(new Error('Format foto tidak didukung (coba JPG/PNG)'));
               } else {
                 done(dataUrl);
               }
             })
-            .catch(() => fail(new Error('Format foto tidak didukung')));
+            .catch(function () { fail(new Error('Format foto tidak didukung')); });
         };
         img.src = e.target.result;
       };
-      reader.onerror = () => {
-        fileToDataUrl(file).then(done).catch(() => fail(new Error('Gagal membaca file')));
+      reader.onerror = function () {
+        fileToDataUrl(file).then(done).catch(function () { fail(new Error('Gagal membaca file')); });
       };
       reader.readAsDataURL(file);
     }
 
     if (typeof createImageBitmap === 'function') {
       createImageBitmap(file, { imageOrientation: 'from-image' })
-        .then(bitmap => processImage(bitmap))
-        .catch(() => tryImageElement());
+        .then(function (bitmap) { processImage(bitmap); })
+        .catch(function () { tryImageElement(); });
     } else {
       tryImageElement();
     }
@@ -430,9 +443,9 @@ function compressImage(file, maxDim = 800, quality = 0.8) {
 }
 
 function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
+  return new Promise(function (resolve, reject) {
     const reader = new FileReader();
-    reader.onload = e => resolve(e.target.result);
+    reader.onload = function (e) { resolve(e.target.result); };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -445,20 +458,20 @@ async function uploadPhotoToGithub(base64DataUrl, filename) {
   if (!KR.github.isConfigured()) {
     throw new Error('Login GitHub dulu untuk simpan foto');
   }
-  const path = `photos/${filename}`;
+  const path = 'photos/' + filename;
   const base64 = String(base64DataUrl || '').replace(/^data:image\/\w+;base64,/, '');
   if (!base64) throw new Error('Data foto kosong');
 
-  await KR.github.uploadFile(path, base64, `feat: add photo ${filename}`, { isBase64: true });
+  await KR.github.uploadFile(path, base64, 'feat: add photo ' + filename, { isBase64: true });
 
   const c = KR.store.getGitHubConfig();
-  return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${path}`;
+  return 'https://raw.githubusercontent.com/' + c.owner + '/' + c.repo + '/' + c.branch + '/' + path;
 }
 
 async function deletePhotoFromGithub(filename) {
   if (!KR.github.isConfigured()) return;
   try {
-    await KR.github.deleteFile(`photos/${filename}`, `chore: delete ${filename}`);
+    await KR.github.deleteFile('photos/' + filename, 'chore: delete ' + filename);
   } catch (e) {
     console.warn('[Photo] Delete failed', e);
   }
