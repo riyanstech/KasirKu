@@ -1,22 +1,29 @@
 /* ==========================================
    KasirKu — Main App Module
-   Navigation, Theme, Product, Transaction, Settings
    ========================================== */
 window.KR = window.KR || {};
 
 /* ==================== MODAL HELPERS ==================== */
 function openModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.add('active');
+  if (!el) return;
+  el.classList.add('active');
+  document.body.classList.add('modal-open');
 }
 function closeModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.remove('active');
+  if (!el) return;
+  el.classList.remove('active');
+  const anyOpen = document.querySelector('.modal.active');
+  if (!anyOpen) {
+    document.body.classList.remove('modal-open');
+  }
 }
 window.openModal = openModal;
 window.closeModal = closeModal;
 
-function showLoading(text = 'Memproses...') {
+function showLoading(text) {
+  text = text || 'Memproses...';
   const loadingText = document.getElementById('loading-text');
   const loading = document.getElementById('loading');
   if (loadingText) loadingText.textContent = text;
@@ -38,7 +45,7 @@ function confirmDialog(title, message, onOk) {
   msgEl.textContent = message;
   const fresh = okBtn.cloneNode(true);
   okBtn.parentNode.replaceChild(fresh, okBtn);
-  fresh.addEventListener('click', () => {
+  fresh.addEventListener('click', function () {
     closeModal('modal-confirm');
     if (typeof onOk === 'function') onOk();
   });
@@ -48,10 +55,10 @@ window.confirmDialog = confirmDialog;
 
 /* ==================== NAVIGATION ==================== */
 function showTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(function (el) { el.classList.remove('active'); });
   const target = document.getElementById('tab-' + tabId);
   if (target) target.classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(b => {
+  document.querySelectorAll('.nav-tab').forEach(function (b) {
     b.classList.toggle('active', b.dataset.tab === tabId);
   });
 
@@ -70,7 +77,6 @@ window.showTab = showTab;
 
 /* ==================== THEME ==================== */
 function initTheme() {
-  // ✅ Kelas dark sudah diterapkan di <head>, jadi cukup sinkronkan icon
   const isDark = document.documentElement.classList.contains('dark');
   const icon = document.getElementById('theme-icon');
   if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
@@ -108,80 +114,80 @@ function renderProductList() {
   const products = KR.store.getProducts();
   const searchEl = document.getElementById('prod-search');
   const catEl = document.getElementById('prod-cat-filter');
-  const search = (searchEl?.value || '').toLowerCase().trim();
-  const catFilter = catEl?.value || '';
+  const search = (searchEl && searchEl.value || '').toLowerCase().trim();
+  const catFilter = catEl && catEl.value || '';
 
   if (catEl) {
-    const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+    const cats = Array.from(new Set(products.map(function (p) { return p.category; }).filter(Boolean))).sort();
     const currentVal = catEl.value;
-    catEl.innerHTML = `<option value="">Semua Kategori</option>` +
-      cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    catEl.innerHTML = '<option value="">Semua Kategori</option>' +
+      cats.map(function (c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
     catEl.value = currentVal;
   }
 
   const countEl = document.getElementById('prod-count-label');
   if (countEl) countEl.textContent = products.length + ' produk';
 
-  const filtered = products.filter(p => {
+  const filtered = products.filter(function (p) {
     if (catFilter && p.category !== catFilter) return false;
     if (!search) return true;
-    return (p.name || '').toLowerCase().includes(search) ||
-           (p.sku || '').toLowerCase().includes(search) ||
-           (p.category || '').toLowerCase().includes(search);
+    return (p.name || '').toLowerCase().indexOf(search) !== -1 ||
+           (p.sku || '').toLowerCase().indexOf(search) !== -1 ||
+           (p.category || '').toLowerCase().indexOf(search) !== -1;
   });
 
   if (!filtered.length) {
-    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
-      <i data-lucide="package-open"></i>
-      <h3>${products.length ? 'Tidak ada hasil' : 'Belum ada produk'}</h3>
-      <p style="font-size:.85rem">${products.length ? 'Coba kata kunci lain' : 'Klik "Tambah Produk" untuk memulai'}</p>
-    </div>`;
+    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">' +
+      '<i data-lucide="package-open"></i>' +
+      '<h3>' + (products.length ? 'Tidak ada hasil' : 'Belum ada produk') + '</h3>' +
+      '<p style="font-size:.85rem">' + (products.length ? 'Coba kata kunci lain' : 'Klik "Tambah Produk" untuk memulai') + '</p>' +
+    '</div>';
     if (window.lucide) lucide.createIcons();
     return;
   }
 
-  container.innerHTML = filtered.map(p => {
-    const img = p.image ? imgTag(p.image, p.name) : `<i data-lucide="package"></i>`;
+  container.innerHTML = filtered.map(function (p) {
+    const img = p.image ? imgTag(p.image, p.name) : '<i data-lucide="package"></i>';
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
 
-    let stockChip = `<span class="pa-chip neutral">∞</span>`;
+    let stockChip = '<span class="pa-chip neutral">∞</span>';
     if (p.stock !== undefined && p.stock !== null) {
-      if (out) stockChip = `<span class="pa-chip danger">Habis</span>`;
-      else if (low) stockChip = `<span class="pa-chip warn">Stok ${p.stock}</span>`;
-      else stockChip = `<span class="pa-chip neutral">Stok ${p.stock}</span>`;
+      if (out) stockChip = '<span class="pa-chip danger">Habis</span>';
+      else if (low) stockChip = '<span class="pa-chip warn">Stok ' + p.stock + '</span>';
+      else stockChip = '<span class="pa-chip neutral">Stok ' + p.stock + '</span>';
     }
 
     const profit = (Number(p.price) || 0) - (Number(p.cost) || 0);
-    const profitChip = profit > 0 ? `<span class="pa-chip neutral">Margin ${formatRupiah(profit)}</span>` : '';
+    const profitChip = profit > 0 ? '<span class="pa-chip neutral">Margin ' + formatRupiah(profit) + '</span>' : '';
 
-    return `<div class="pa-card">
-      <div class="pa-img">${img}</div>
-      <div class="pa-body">
-        <div class="pa-name">${escapeHtml(p.name)}</div>
-        <div class="pa-sku">SKU: ${escapeHtml(p.sku || '-')}</div>
-        <div class="pa-meta">
-          ${p.category ? `<span class="pa-chip primary">${escapeHtml(p.category)}</span>` : ''}
-          ${stockChip}
-          ${profitChip}
-        </div>
-        <div class="pa-price">${formatRupiah(p.price)}</div>
-      </div>
-      <div class="pa-actions">
-        <button class="icon-btn" onclick="openProductForm(null, '${p.id}')" title="Edit">
-          <i data-lucide="pencil"></i>
-        </button>
-        <button class="icon-btn-danger" onclick="confirmDeleteProduct('${p.id}')" title="Hapus">
-          <i data-lucide="trash-2"></i>
-        </button>
-      </div>
-    </div>`;
+    return '<div class="pa-card">' +
+      '<div class="pa-img">' + img + '</div>' +
+      '<div class="pa-body">' +
+        '<div class="pa-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="pa-sku">SKU: ' + escapeHtml(p.sku || '-') + '</div>' +
+        '<div class="pa-meta">' +
+          (p.category ? '<span class="pa-chip primary">' + escapeHtml(p.category) + '</span>' : '') +
+          stockChip +
+          profitChip +
+        '</div>' +
+        '<div class="pa-price">' + formatRupiah(p.price) + '</div>' +
+      '</div>' +
+      '<div class="pa-actions">' +
+        '<button class="icon-btn" onclick="openProductForm(null, \'' + p.id + '\')" title="Edit">' +
+          '<i data-lucide="pencil"></i>' +
+        '</button>' +
+        '<button class="icon-btn-danger" onclick="confirmDeleteProduct(\'' + p.id + '\')" title="Hapus">' +
+          '<i data-lucide="trash-2"></i>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
   }).join('');
   if (window.lucide) lucide.createIcons();
 }
 window.renderProductList = renderProductList;
 
-function openProductForm(preset = null, editId = null) {
+function openProductForm(preset, editId) {
   pfImageData = '';
   const isEdit = !!editId;
 
@@ -225,7 +231,9 @@ function openProductForm(preset = null, editId = null) {
 
   renderPfImage();
   openModal('modal-product');
-  setTimeout(() => nameEl?.focus(), 200);
+  setTimeout(function () {
+    if (nameEl) nameEl.focus();
+  }, 200);
 }
 window.openProductForm = openProductForm;
 
@@ -233,18 +241,16 @@ function renderPfImage() {
   const area = document.getElementById('pf-image-area');
   if (!area) return;
   if (pfImageData) {
-    area.innerHTML = `
-      <div class="img-preview">
-        <img src="${pfImageData}" alt="">
-        <button type="button" class="img-preview-remove" onclick="removePfImage()">
-          <i data-lucide="x"></i>
-        </button>
-      </div>`;
+    area.innerHTML = '<div class="img-preview">' +
+      '<img src="' + pfImageData + '" alt="">' +
+      '<button type="button" class="img-preview-remove" onclick="removePfImage()">' +
+        '<i data-lucide="x"></i>' +
+      '</button>' +
+    '</div>';
   } else {
-    area.innerHTML = `
-      <button type="button" class="img-upload-btn" onclick="document.getElementById('pf-image-input').click()">
-        <i data-lucide="image-plus"></i> Upload Foto Produk
-      </button>`;
+    area.innerHTML = '<button type="button" class="img-upload-btn" onclick="document.getElementById(\'pf-image-input\').click()">' +
+      '<i data-lucide="image-plus"></i> Upload Foto Produk' +
+    '</button>';
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -257,14 +263,14 @@ function removePfImage() {
 }
 window.removePfImage = removePfImage;
 
-document.addEventListener('change', async (e) => {
+document.addEventListener('change', async function (e) {
   if (e.target.id === 'pf-image-input') {
-    const file = e.target.files?.[0];
+    const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file) return;
 
     const statusEl = document.getElementById('pf-image-status');
-    if (statusEl) statusEl.innerHTML = `<div style="margin-top:8px;font-size:.78rem;color:var(--text-3);">Memproses foto...</div>`;
+    if (statusEl) statusEl.innerHTML = '<div style="margin-top:8px;font-size:.78rem;color:var(--text-3);">Memproses foto...</div>';
 
     try {
       const data = await compressImage(file, 700, 0.78);
@@ -272,13 +278,13 @@ document.addEventListener('change', async (e) => {
       pfImageData = data;
       renderPfImage();
       if (statusEl) {
-        statusEl.innerHTML = `<div style="margin-top:8px;font-size:.78rem;color:var(--success);font-weight:700;">✓ Foto siap (${Math.round(data.length / 1024)} KB)</div>`;
+        statusEl.innerHTML = '<div style="margin-top:8px;font-size:.78rem;color:var(--success);font-weight:700;">✓ Foto siap (' + Math.round(data.length / 1024) + ' KB)</div>';
       }
     } catch (err) {
       console.error('[Product image]', err);
-      const msg = err?.message || 'Unknown error';
+      const msg = (err && err.message) || 'Unknown error';
       if (statusEl) {
-        statusEl.innerHTML = `<div style="margin-top:8px;font-size:.78rem;color:var(--danger);font-weight:700;">✗ ${escapeHtml(msg)}</div>`;
+        statusEl.innerHTML = '<div style="margin-top:8px;font-size:.78rem;color:var(--danger);font-weight:700;">✗ ' + escapeHtml(msg) + '</div>';
       }
       KR.toast.error('Gagal: ' + msg);
     }
@@ -298,10 +304,10 @@ async function saveProduct() {
   const id = idEl.value;
   const name = nameEl.value.trim();
   const sku = skuEl.value.trim();
-  const cost = Number(costEl?.value) || 0;
+  const cost = Number(costEl && costEl.value) || 0;
   const price = Number(priceEl.value) || 0;
-  const stock = Number(stockEl?.value) || 0;
-  const category = (catEl?.value || '').trim();
+  const stock = Number(stockEl && stockEl.value) || 0;
+  const category = ((catEl && catEl.value) || '').trim();
 
   if (!name) return KR.toast.error('Nama produk wajib diisi');
   if (!sku) return KR.toast.error('SKU wajib diisi');
@@ -311,7 +317,7 @@ async function saveProduct() {
   if (dup && dup.id !== id) return KR.toast.error('SKU sudah dipakai produk lain');
 
   let imageUrl = pfImageData || '';
-  if (imageUrl && imageUrl.startsWith('data:') && KR.auth && KR.auth.isGitHubUser()) {
+  if (imageUrl && imageUrl.indexOf('data:') === 0 && KR.auth && KR.auth.isGitHubUser()) {
     showLoading('Mengunggah foto...');
     try {
       const prodId = id || ('p-' + Date.now());
@@ -327,7 +333,7 @@ async function saveProduct() {
     }
   }
 
-  const data = { name, sku, cost, price, stock, category, image: imageUrl };
+  const data = { name: name, sku: sku, cost: cost, price: price, stock: stock, category: category, image: imageUrl };
 
   if (id) {
     KR.store.updateProduct(id, data);
@@ -348,7 +354,7 @@ window.saveProduct = saveProduct;
 function confirmDeleteProduct(id) {
   const p = KR.store.findProductById(id);
   if (!p) return;
-  confirmDialog('Hapus Produk?', `Produk "${p.name}" akan dihapus permanen.`, () => {
+  confirmDialog('Hapus Produk?', 'Produk "' + p.name + '" akan dihapus permanen.', function () {
     KR.store.deleteProduct(id);
     KR.toast.success('Produk dihapus');
     renderProductList();
@@ -366,66 +372,66 @@ function renderTransactionList() {
 
   const trxList = KR.store.getTransactions();
   const dateEl = document.getElementById('trx-date-filter');
-  const dateFilter = dateEl?.value || '';
+  const dateFilter = dateEl && dateEl.value || '';
 
   const countEl = document.getElementById('trx-count-label');
   if (countEl) countEl.textContent = trxList.length + ' transaksi';
 
-  const filtered = trxList.filter(t => {
+  const filtered = trxList.filter(function (t) {
     if (!dateFilter) return true;
     const d = new Date(t.at);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}` === dateFilter;
+    return (y + '-' + m + '-' + day) === dateFilter;
   });
 
   if (!filtered.length) {
-    container.innerHTML = `<div class="empty-state">
-      <i data-lucide="receipt-text"></i>
-      <h3>${trxList.length ? 'Tidak ada transaksi di tanggal ini' : 'Belum ada transaksi'}</h3>
-    </div>`;
+    container.innerHTML = '<div class="empty-state">' +
+      '<i data-lucide="receipt-text"></i>' +
+      '<h3>' + (trxList.length ? 'Tidak ada transaksi di tanggal ini' : 'Belum ada transaksi') + '</h3>' +
+    '</div>';
     if (window.lucide) lucide.createIcons();
     return;
   }
 
-  container.innerHTML = filtered.map(t => `
-    <div class="trx-card">
-      <div class="trx-icon"><i data-lucide="receipt"></i></div>
-      <div class="trx-body">
-        <div class="trx-id">${escapeHtml(t.id)}</div>
-        <div class="trx-date">${formatDate(t.at)}</div>
-        <div class="trx-meta">
-          <span class="pa-chip primary">${t.itemCount} item</span>
-          <span class="pa-chip neutral">${escapeHtml(t.method)}</span>
-        </div>
-      </div>
-      <div>
-        <div class="trx-total">${formatRupiah(t.total)}</div>
-      </div>
-      <div class="trx-actions">
-        <button class="icon-btn" onclick="viewTransaction('${t.id}')" title="Lihat Struk">
-          <i data-lucide="eye"></i>
-        </button>
-        <button class="icon-btn-danger" onclick="confirmDeleteTrx('${t.id}')" title="Hapus">
-          <i data-lucide="trash-2"></i>
-        </button>
-      </div>
-    </div>
-  `).join('');
+  container.innerHTML = filtered.map(function (t) {
+    return '<div class="trx-card">' +
+      '<div class="trx-icon"><i data-lucide="receipt"></i></div>' +
+      '<div class="trx-body">' +
+        '<div class="trx-id">' + escapeHtml(t.id) + '</div>' +
+        '<div class="trx-date">' + formatDate(t.at) + '</div>' +
+        '<div class="trx-meta">' +
+          '<span class="pa-chip primary">' + t.itemCount + ' item</span>' +
+          '<span class="pa-chip neutral">' + escapeHtml(t.method) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="trx-total">' + formatRupiah(t.total) + '</div>' +
+      '</div>' +
+      '<div class="trx-actions">' +
+        '<button class="icon-btn" onclick="viewTransaction(\'' + t.id + '\')" title="Lihat Struk">' +
+          '<i data-lucide="eye"></i>' +
+        '</button>' +
+        '<button class="icon-btn-danger" onclick="confirmDeleteTrx(\'' + t.id + '\')" title="Hapus">' +
+          '<i data-lucide="trash-2"></i>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
   if (window.lucide) lucide.createIcons();
 }
 window.renderTransactionList = renderTransactionList;
 
 function viewTransaction(id) {
-  const trx = KR.store.getTransactions().find(t => t.id === id);
+  const trx = KR.store.getTransactions().find(function (t) { return t.id === id; });
   if (!trx) return;
   showReceipt(trx);
 }
 window.viewTransaction = viewTransaction;
 
 function confirmDeleteTrx(id) {
-  confirmDialog('Hapus Transaksi?', 'Transaksi ini akan dihapus dari riwayat.', () => {
+  confirmDialog('Hapus Transaksi?', 'Transaksi ini akan dihapus dari riwayat.', function () {
     KR.store.deleteTransaction(id);
     KR.toast.success('Transaksi dihapus');
     renderTransactionList();
@@ -437,7 +443,7 @@ window.confirmDeleteTrx = confirmDeleteTrx;
 /* ==================== SETTINGS ==================== */
 function loadSettings() {
   const s = KR.store.getSettings();
-  const setVal = (id, val) => {
+  const setVal = function (id, val) {
     const el = document.getElementById(id);
     if (el) el.value = val || '';
   };
@@ -452,7 +458,10 @@ function loadSettings() {
 window.loadSettings = loadSettings;
 
 function saveStoreInfo() {
-  const getVal = id => document.getElementById(id)?.value.trim() || '';
+  const getVal = function (id) {
+    const el = document.getElementById(id);
+    return (el && el.value.trim()) || '';
+  };
   KR.store.setSettings({
     storeName: getVal('set-store-name') || 'KasirKu',
     storeAddress: getVal('set-store-address'),
@@ -470,9 +479,11 @@ function initAiSettings() {
 
   const sel = document.getElementById('ai-provider');
   if (sel) {
-    sel.innerHTML = Object.entries(KR.vision.PROVIDERS).map(([id, p]) =>
-      `<option value="${id}">${p.icon} ${p.name}</option>`
-    ).join('');
+    sel.innerHTML = Object.entries(KR.vision.PROVIDERS).map(function (entry) {
+      const id = entry[0];
+      const p = entry[1];
+      return '<option value="' + id + '">' + p.icon + ' ' + p.name + '</option>';
+    }).join('');
     sel.value = cfg.provider || 'gemini';
   }
 
@@ -527,7 +538,7 @@ function saveAiKey() {
   const provider = providerEl.value;
   const apiKey = keyEl.value.trim();
   if (!apiKey) return KR.toast.error('API Key kosong');
-  KR.vision.saveConfig({ provider, apiKey, enabled: true });
+  KR.vision.saveConfig({ provider: provider, apiKey: apiKey, enabled: true });
   const enabledEl = document.getElementById('ai-enabled');
   if (enabledEl) enabledEl.checked = true;
   const configArea = document.getElementById('ai-config-area');
@@ -543,15 +554,15 @@ function updateAiStatus() {
   if (!el) return;
   if (!cfg.enabled) {
     el.className = 'gh-status warn';
-    el.innerHTML = `<i data-lucide="power-off"></i><span>AI Vision nonaktif</span>`;
+    el.innerHTML = '<i data-lucide="power-off"></i><span>AI Vision nonaktif</span>';
   } else if (!cfg.apiKey) {
     el.className = 'gh-status warn';
-    el.innerHTML = `<i data-lucide="alert-triangle"></i><span>API Key belum diisi</span>`;
+    el.innerHTML = '<i data-lucide="alert-triangle"></i><span>API Key belum diisi</span>';
   } else {
     el.className = 'gh-status ok';
     const p = KR.vision.PROVIDERS[cfg.provider];
     const name = p ? p.name : cfg.provider;
-    el.innerHTML = `<i data-lucide="check-circle"></i><span>Aktif — ${escapeHtml(name)}</span>`;
+    el.innerHTML = '<i data-lucide="check-circle"></i><span>Aktif — ' + escapeHtml(name) + '</span>';
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -577,7 +588,7 @@ async function testAiConnection() {
 window.testAiConnection = testAiConnection;
 
 function clearAiCache() {
-  confirmDialog('Hapus Cache Foto?', 'Semua mapping foto → produk akan dihapus. Foto baru akan dikenali ulang oleh AI.', () => {
+  confirmDialog('Hapus Cache Foto?', 'Semua mapping foto → produk akan dihapus. Foto baru akan dikenali ulang oleh AI.', function () {
     KR.vision.clearCache();
     KR.toast.success('Cache dihapus');
   });
@@ -589,7 +600,7 @@ function loadGithubConfig() {
   const c = KR.store.getGitHubConfig();
   updateGhStatus();
   if (!c) return;
-  const setVal = (id, val) => {
+  const setVal = function (id, val) {
     const el = document.getElementById(id);
     if (el) el.value = val || '';
   };
@@ -606,21 +617,24 @@ function updateGhStatus() {
   const c = KR.store.getGitHubConfig();
   el.className = 'gh-status ' + (ok ? 'ok' : 'warn');
   if (ok && c) {
-    el.innerHTML = `<i data-lucide="check-circle"></i><span>Terhubung: <strong>${escapeHtml(c.owner)}/${escapeHtml(c.repo)}</strong></span>`;
+    el.innerHTML = '<i data-lucide="check-circle"></i><span>Terhubung: <strong>' + escapeHtml(c.owner) + '/' + escapeHtml(c.repo) + '</strong></span>';
   } else {
-    el.innerHTML = `<i data-lucide="alert-triangle"></i><span>Belum dikonfigurasi</span>`;
+    el.innerHTML = '<i data-lucide="alert-triangle"></i><span>Belum dikonfigurasi</span>';
   }
   if (window.lucide) lucide.createIcons();
 }
 
 async function saveGithub() {
-  const getVal = id => document.getElementById(id)?.value.trim() || '';
+  const getVal = function (id) {
+    const el = document.getElementById(id);
+    return (el && el.value.trim()) || '';
+  };
   const owner = getVal('gh-owner');
   const repo = getVal('gh-repo');
   const branch = getVal('gh-branch') || 'main';
   const token = getVal('gh-token');
   if (!owner || !repo || !token) return KR.toast.error('Semua field wajib diisi');
-  KR.store.setGitHubConfig({ owner, repo, branch, token });
+  KR.store.setGitHubConfig({ owner: owner, repo: repo, branch: branch, token: token });
   KR.toast.info('Testing...');
   const r = await KR.github.testConnection();
   KR.toast[r.ok ? 'success' : 'error'](r.msg);
@@ -635,9 +649,9 @@ async function testGithub() {
 window.testGithub = testGithub;
 
 function clearGithub() {
-  confirmDialog('Hapus Konfigurasi?', 'Konfigurasi GitHub akan dihapus dari browser.', () => {
+  confirmDialog('Hapus Konfigurasi?', 'Konfigurasi GitHub akan dihapus dari browser.', function () {
     KR.store.clearGitHubConfig();
-    ['gh-owner', 'gh-repo', 'gh-token'].forEach(id => {
+    ['gh-owner', 'gh-repo', 'gh-token'].forEach(function (id) {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -672,7 +686,7 @@ window.pushToGithub = pushToGithub;
 
 async function pullFromGithub() {
   if (!KR.github.isConfigured()) return KR.toast.warn('Konfigurasi GitHub dulu');
-  confirmDialog('Ambil dari GitHub?', 'Data lokal akan ditimpa dengan data dari GitHub.', async () => {
+  confirmDialog('Ambil dari GitHub?', 'Data lokal akan ditimpa dengan data dari GitHub.', async function () {
     showLoading('Mengambil dari GitHub...');
     try {
       const content = await KR.github.getFileContent('kasir-data.json');
@@ -701,14 +715,14 @@ let autoSyncTimer;
 function autoSync() {
   if (!KR.github.isConfigured()) return;
   clearTimeout(autoSyncTimer);
-  autoSyncTimer = setTimeout(() => {
+  autoSyncTimer = setTimeout(function () {
     const data = {
       products: KR.store.getProducts(),
       transactions: KR.store.getTransactions(),
       settings: KR.store.getSettings(),
     };
     KR.github.uploadFile('kasir-data.json', JSON.stringify(data, null, 2), 'chore: auto-sync')
-      .catch(e => console.warn('[AutoSync]', e));
+      .catch(function (e) { console.warn('[AutoSync]', e); });
   }, 3000);
 }
 window.autoSync = autoSync;
@@ -717,14 +731,16 @@ window.autoSync = autoSync;
 async function migrateBase64Photos() {
   if (!KR.github.isConfigured()) return KR.toast.warn('Login GitHub dulu untuk migrasi');
   const products = KR.store.getProducts();
-  const base64Products = products.filter(p => p.image && p.image.startsWith('data:image/'));
+  const base64Products = products.filter(function (p) {
+    return p.image && p.image.indexOf('data:image/') === 0;
+  });
   if (!base64Products.length) return KR.toast.info('Semua foto sudah di GitHub');
 
   confirmDialog(
     'Migrasi Foto ke GitHub?',
-    `${base64Products.length} foto base64 akan di-upload ke repo dan diganti URL. Menghemat ruang besar.`,
-    async () => {
-      showLoading(`Mengunggah 0/${base64Products.length}...`);
+    base64Products.length + ' foto base64 akan di-upload ke repo dan diganti URL. Menghemat ruang besar.',
+    async function () {
+      showLoading('Mengunggah 0/' + base64Products.length + '...');
       let ok = 0, fail = 0;
       for (let i = 0; i < base64Products.length; i++) {
         const p = base64Products[i];
@@ -738,10 +754,10 @@ async function migrateBase64Photos() {
           fail++;
         }
         const textEl = document.getElementById('loading-text');
-        if (textEl) textEl.textContent = `Mengunggah ${i + 1}/${base64Products.length}...`;
+        if (textEl) textEl.textContent = 'Mengunggah ' + (i + 1) + '/' + base64Products.length + '...';
       }
       hideLoading();
-      KR.toast.success(`Selesai: ${ok} sukses${fail ? `, ${fail} gagal` : ''}`);
+      KR.toast.success('Selesai: ' + ok + ' sukses' + (fail ? ', ' + fail + ' gagal' : ''));
       renderProductList();
       renderPosGrid();
       autoSync();
@@ -763,7 +779,7 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `kasir-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = 'kasir-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click();
   URL.revokeObjectURL(url);
   KR.toast.success('Data diexport');
@@ -771,14 +787,14 @@ function exportData() {
 window.exportData = exportData;
 
 function importData(event) {
-  const file = event.target.files?.[0];
+  const file = event.target.files && event.target.files[0];
   event.target.value = '';
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = function (e) {
     try {
       const data = JSON.parse(e.target.result);
-      confirmDialog('Import Data?', 'Data lokal akan ditimpa dengan data dari file.', () => {
+      confirmDialog('Import Data?', 'Data lokal akan ditimpa dengan data dari file.', function () {
         if (data.products) KR.store.setProducts(data.products);
         if (data.transactions) KR.store.setTransactions(data.transactions);
         if (data.settings) KR.store.setSettings(data.settings);
@@ -802,21 +818,21 @@ function confirmReset() {
   confirmDialog(
     'Hapus Semua Data?',
     'Semua produk, transaksi, dan pengaturan akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.',
-    () => {
+    function () {
       localStorage.removeItem('kasir:products');
       localStorage.removeItem('kasir:transactions');
       localStorage.removeItem('kasir:settings');
       localStorage.removeItem('kasir:visionCache');
       localStorage.removeItem('kasir:aiConfig');
       KR.toast.success('Semua data dihapus');
-      setTimeout(() => location.reload(), 500);
+      setTimeout(function () { location.reload(); }, 500);
     }
   );
 }
 window.confirmReset = confirmReset;
 
 /* ==================== INIT ==================== */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
   initTheme();
   if (KR.auth) KR.auth.init();
 
@@ -824,11 +840,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategoryChips();
   renderCart();
 
-  window.addEventListener('products:changed', () => {
+  window.addEventListener('products:changed', function () {
     const tab = document.getElementById('tab-kasir');
     if (tab && tab.classList.contains('active')) renderPosGrid();
   });
-  window.addEventListener('transactions:changed', () => {
+  window.addEventListener('transactions:changed', function () {
     const tab = document.getElementById('tab-transaksi');
     if (tab && tab.classList.contains('active')) renderTransactionList();
   });
