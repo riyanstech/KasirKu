@@ -48,6 +48,10 @@
                     <button class="nav-tab" data-tab="transaksi" onclick="showTab('transaksi', this)">
                         <i data-lucide="receipt-text"></i><span>Transaksi</span>
                     </button>
+                    <button class="nav-tab" data-tab="laporan" onclick="showTab('laporan', this)">
+                        <i data-lucide="bar-chart-3"></i><span>Laporan</span>
+                    </button>
+
                     <button class="nav-tab" data-tab="pengaturan" onclick="showTab('pengaturan', this)">
                         <i data-lucide="settings"></i><span>Pengaturan</span>
                     </button>
@@ -139,6 +143,44 @@
                     </div>
                 </div>
                 <div id="trx-list" class="trx-list"></div>
+            </section>
+            <section id="tab-laporan" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Laporan & Analitik</h2>
+                        <p>Pantau perkembangan usaha Anda</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <select id="report-period" class="select" onchange="renderReport()">
+                            <option value="today">Hari Ini</option>
+                            <option value="7d">7 Hari Terakhir</option>
+                            <option value="30d" selected>30 Hari Terakhir</option>
+                            <option value="month">Bulan Ini</option>
+                            <option value="all">Semua Waktu</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div id="report-kpis" class="report-kpi-grid"></div>
+
+                <!-- Chart -->
+                <div class="settings-card" style="margin-bottom:16px;">
+                    <h3><i data-lucide="trending-up"></i> Grafik Penjualan</h3>
+                    <div id="report-chart" class="report-chart"></div>
+                </div>
+
+                <!-- Two Columns: Top Products & Categories -->
+                <div class="report-two-col">
+                    <div class="settings-card">
+                        <h3><i data-lucide="trophy"></i> Produk Terlaris</h3>
+                        <div id="report-top-products"></div>
+                    </div>
+                    <div class="settings-card">
+                        <h3><i data-lucide="layers"></i> Per Kategori</h3>
+                        <div id="report-categories"></div>
+                    </div>
+                </div>
             </section>
 
             <section id="tab-pengaturan" class="tab-content">
