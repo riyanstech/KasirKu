@@ -59,6 +59,16 @@
       "stock": 19,
       "category": "Makanan",
       "image": ""
+    },
+    {
+      "id": "p-1790165418736-89lr",
+      "name": "Telur",
+      "sku": "2256",
+      "cost": 2000,
+      "price": 2500,
+      "stock": 20,
+      "category": "Makanan",
+      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790165416458.jpg"
     }
   ],
   "transactions": [
