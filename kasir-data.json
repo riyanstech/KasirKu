@@ -6,7 +6,7 @@
       "sku": "8991002135376",
       "cost": 1750,
       "price": 2000,
-      "stock": 20,
+      "stock": 19,
       "category": "Kopi",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137343525-ixmz.jpg"
     },
@@ -16,7 +16,7 @@
       "sku": "9311931024036",
       "cost": 1700,
       "price": 2000,
-      "stock": 20,
+      "stock": 19,
       "category": "Kopi",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137628461-n71i.jpg"
     },
@@ -81,7 +81,37 @@
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790166588941-le9f.jpg"
     }
   ],
-  "transactions": [],
+  "transactions": [
+    {
+      "id": "TRX-MUE41C0H",
+      "at": 1790168387345,
+      "items": [
+        {
+          "productId": "p-1790137343525-ixmz",
+          "name": "Kapal Api",
+          "price": 2000,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137343525-ixmz.jpg",
+          "qty": 1,
+          "sku": "8991002135376"
+        },
+        {
+          "productId": "p-1790137628461-n71i",
+          "name": "Indocafe",
+          "price": 2000,
+          "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790137628461-n71i.jpg",
+          "qty": 1,
+          "sku": "9311931024036"
+        }
+      ],
+      "subtotal": 4000,
+      "discount": 0,
+      "total": 4000,
+      "paid": 5000,
+      "change": 1000,
+      "method": "Cash",
+      "itemCount": 2
+    }
+  ],
   "settings": {
     "storeName": "Waroeng",
     "storeAddress": "Kp. Darmaga, RT 03/RW01, Kec. Bojongpicung, Kab. Cianjur",
