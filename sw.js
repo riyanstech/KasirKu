@@ -1,9 +1,12 @@
 /* ==========================================
-   KasirKu — Service Worker
-   Auto-update + Offline support
+   KasirKu — Service Worker v3
+   Network-First untuk HTML/JS/CSS, Cache-First untuk gambar CDN
    ========================================== */
-const CACHE_VERSION = 'kasirku-' + Date.now(); // ← otomatis berubah tiap deploy
-const ASSETS = [
+const CACHE_VERSION = 'kasirku-v3';
+const STATIC_CACHE = CACHE_VERSION + '-static';
+const RUNTIME_CACHE = CACHE_VERSION + '-runtime';
+
+const STATIC_ASSETS = [
   './',
   './index.html',
   './assets/css/style.css',
@@ -14,66 +17,76 @@ const ASSETS = [
   './assets/js/app.js',
 ];
 
-/* Install — cache semua file */
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then(cache => {
-      return cache.addAll(ASSETS).catch(err => {
-        console.warn('[SW] Cache partial failed', err);
-      });
-    })
+    caches.open(STATIC_CACHE).then(cache =>
+      cache.addAll(STATIC_ASSETS).catch(err => console.warn('[SW]', err))
+    )
   );
-  // Langsung aktif (tidak tunggu user close tab)
   self.skipWaiting();
 });
 
-/* Activate — hapus cache versi lama */
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
+    caches.keys().then(keys =>
+      Promise.all(
         keys
-          .filter(key => key !== CACHE_VERSION && key.startsWith('kasirku-'))
-          .map(key => caches.delete(key))
-      );
-    })
+          .filter(k => !k.startsWith(CACHE_VERSION))
+          .map(k => caches.delete(k))
+      )
+    )
   );
   self.clients.claim();
 });
 
-/* Fetch — Network First, Cache Fallback */
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-
-  // Skip request non-GET atau ke API eksternal
   if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    fetch(req)
-      .then(res => {
-        // Update cache dengan response terbaru
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put(req, clone)).catch(() => {});
-        }
-        return res;
-      })
-      .catch(() => {
-        // Kalau offline → pakai cache
-        return caches.match(req).then(cached => {
+  const url = new URL(req.url);
+
+  // Skip GitHub API — selalu fresh
+  if (url.hostname === 'api.github.com') return;
+
+  // Cache-first untuk CDN & gambar
+  const isCDN = url.hostname.includes('unpkg.com') ||
+                url.hostname.includes('fonts.googleapis.com') ||
+                url.hostname.includes('fonts.gstatic.com') ||
+                url.hostname.includes('raw.githubusercontent.com');
+
+  if (isCDN) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then(cache =>
+        cache.match(req).then(cached => {
           if (cached) return cached;
-          // Kalau tidak ada cache, return index.html (SPA fallback)
-          return caches.match('./index.html');
-        });
-      })
-  );
+          return fetch(req).then(res => {
+            if (res && res.status === 200) cache.put(req, res.clone());
+            return res;
+          });
+        })
+      )
+    );
+    return;
+  }
+
+  // Network-first untuk HTML/JS/CSS lokal
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(req)
+        .then(res => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(STATIC_CACHE).then(c => c.put(req, clone)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then(cached => cached || caches.match('./index.html'))
+        )
+    );
+  }
 });
 
-/* Message handler — untuk force update */
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
