@@ -481,6 +481,34 @@ async function deletePhotoFromGithub(filename) {
   }
 }
 
+/* ==========================================
+   PHOTO CLEANUP — Bersihkan foto yatim
+   ========================================== */
+function extractPhotoFilename(url) {
+  if (!url || typeof url !== 'string') return null;
+  const match = url.match(/\/photos\/([^/?#]+)/);
+  return match ? match[1] : null;
+}
+
+async function listPhotosInGithub() {
+  if (!KR.github.isConfigured()) return [];
+  const c = KR.store.getGitHubConfig();
+  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/photos?ref=${c.branch}&t=${Date.now()}`;
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': 'Bearer ' + c.token,
+      'Accept': 'application/vnd.github.v3+json',
+    },
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  if (!Array.isArray(data)) return [];
+  return data.filter(f => f.type === 'file').map(f => f.name);
+}
+
+window.extractPhotoFilename = extractPhotoFilename;
+window.listPhotosInGithub = listPhotosInGithub;
+
 window.formatRupiah = formatRupiah;
 window.formatDate = formatDate;
 window.escapeHtml = escapeHtml;
