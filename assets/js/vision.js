@@ -12,15 +12,15 @@ KR.vision = (function () {
   const AI_CONFIG_KEY = 'aiConfig';
 
   const PROVIDERS = {
-    gemini: {
-      name: 'Google Gemini',
-      icon: '✨',
-      endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
-      model: 'gemini-2.0-flash',
-      keyUrl: 'https://aistudio.google.com/app/apikey',
-      desc: 'Gratis, akurasi tinggi, cocok untuk produk warung',
-      format: 'gemini',
-    },
+   gemini: {
+     name: 'Google Gemini',
+     icon: '✨',
+     endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
+     model: 'gemini-3.6-flash',
+     keyUrl: 'https://aistudio.google.com/app/apikey',
+     desc: 'Gratis, akurasi tinggi, cocok untuk produk warung',
+     format: 'gemini',
+   },
    groq: {
      name: 'Groq (Gratis & Cepat)',
      icon: '⚡',
