@@ -494,16 +494,33 @@ async function listPhotosInGithub() {
   if (!KR.github.isConfigured()) return [];
   const c = KR.store.getGitHubConfig();
   const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/photos?ref=${c.branch}&t=${Date.now()}`;
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': 'Bearer ' + c.token,
-      'Accept': 'application/vnd.github.v3+json',
-    },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  if (!Array.isArray(data)) return [];
-  return data.filter(f => f.type === 'file').map(f => f.name);
+
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': 'Bearer ' + c.token,
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    });
+
+    // Folder photos belum ada → anggap kosong
+    if (res.status === 404) return [];
+    if (!res.ok) {
+      console.warn('[ListPhotos] HTTP', res.status);
+      return [];
+    }
+
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .filter(f => f && f.type === 'file')
+      .map(f => String(f.name || ''))
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('[ListPhotos] Error:', e);
+    return [];
+  }
 }
 
 window.extractPhotoFilename = extractPhotoFilename;
