@@ -70,11 +70,13 @@ window.showTab = showTab;
 
 /* ==================== THEME ==================== */
 function initTheme() {
-  const s = KR.store.getSettings();
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = s.theme || (prefersDark ? 'dark' : 'light');
-  applyTheme(theme);
+  // ✅ Kelas dark sudah diterapkan di <head>, jadi cukup sinkronkan icon
+  const isDark = document.documentElement.classList.contains('dark');
+  const icon = document.getElementById('theme-icon');
+  if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+  if (window.lucide) lucide.createIcons();
 }
+
 function applyTheme(theme) {
   if (theme === 'dark') {
     document.documentElement.classList.add('dark');
@@ -87,6 +89,7 @@ function applyTheme(theme) {
   }
   if (window.lucide) lucide.createIcons();
 }
+
 function toggleTheme() {
   const isDark = document.documentElement.classList.contains('dark');
   const next = isDark ? 'light' : 'dark';
@@ -138,7 +141,7 @@ function renderProductList() {
   }
 
   container.innerHTML = filtered.map(p => {
-    const img = p.image ? `<img src="${p.image}" alt="">` : `<i data-lucide="package"></i>`;
+    const img = p.image ? imgTag(p.image, p.name) : `<i data-lucide="package"></i>`;
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
 
@@ -152,28 +155,27 @@ function renderProductList() {
     const profit = (Number(p.price) || 0) - (Number(p.cost) || 0);
     const profitChip = profit > 0 ? `<span class="pa-chip neutral">Margin ${formatRupiah(profit)}</span>` : '';
 
-    return `
-      <div class="pa-card">
-        <div class="pa-img">${img}</div>
-        <div class="pa-body">
-          <div class="pa-name">${escapeHtml(p.name)}</div>
-          <div class="pa-sku">SKU: ${escapeHtml(p.sku || '-')}</div>
-          <div class="pa-meta">
-            ${p.category ? `<span class="pa-chip primary">${escapeHtml(p.category)}</span>` : ''}
-            ${stockChip}
-            ${profitChip}
-          </div>
-          <div class="pa-price">${formatRupiah(p.price)}</div>
+    return `<div class="pa-card">
+      <div class="pa-img">${img}</div>
+      <div class="pa-body">
+        <div class="pa-name">${escapeHtml(p.name)}</div>
+        <div class="pa-sku">SKU: ${escapeHtml(p.sku || '-')}</div>
+        <div class="pa-meta">
+          ${p.category ? `<span class="pa-chip primary">${escapeHtml(p.category)}</span>` : ''}
+          ${stockChip}
+          ${profitChip}
         </div>
-        <div class="pa-actions">
-          <button class="icon-btn" onclick="openProductForm(null, '${p.id}')" title="Edit">
-            <i data-lucide="pencil"></i>
-          </button>
-          <button class="icon-btn-danger" onclick="confirmDeleteProduct('${p.id}')" title="Hapus">
-            <i data-lucide="trash-2"></i>
-          </button>
-        </div>
-      </div>`;
+        <div class="pa-price">${formatRupiah(p.price)}</div>
+      </div>
+      <div class="pa-actions">
+        <button class="icon-btn" onclick="openProductForm(null, '${p.id}')" title="Edit">
+          <i data-lucide="pencil"></i>
+        </button>
+        <button class="icon-btn-danger" onclick="confirmDeleteProduct('${p.id}')" title="Hapus">
+          <i data-lucide="trash-2"></i>
+        </button>
+      </div>
+    </div>`;
   }).join('');
   if (window.lucide) lucide.createIcons();
 }
@@ -301,26 +303,13 @@ async function saveProduct() {
   const stock = Number(stockEl?.value) || 0;
   const category = (catEl?.value || '').trim();
 
-  if (!name) {
-    KR.toast.error('Nama produk wajib diisi');
-    return;
-  }
-  if (!sku) {
-    KR.toast.error('SKU wajib diisi');
-    return;
-  }
-  if (price <= 0) {
-    KR.toast.error('Harga jual harus lebih dari 0');
-    return;
-  }
+  if (!name) return KR.toast.error('Nama produk wajib diisi');
+  if (!sku) return KR.toast.error('SKU wajib diisi');
+  if (price <= 0) return KR.toast.error('Harga jual harus lebih dari 0');
 
   const dup = KR.store.findProductBySku(sku);
-  if (dup && dup.id !== id) {
-    KR.toast.error('SKU sudah dipakai produk lain');
-    return;
-  }
+  if (dup && dup.id !== id) return KR.toast.error('SKU sudah dipakai produk lain');
 
-  // Upload foto ke GitHub kalau ada foto baru (base64) & login GitHub
   let imageUrl = pfImageData || '';
   if (imageUrl && imageUrl.startsWith('data:') && KR.auth && KR.auth.isGitHubUser()) {
     showLoading('Mengunggah foto...');
@@ -338,15 +327,7 @@ async function saveProduct() {
     }
   }
 
-  const data = {
-    name: name,
-    sku: sku,
-    cost: cost,
-    price: price,
-    stock: stock,
-    category: category,
-    image: imageUrl,
-  };
+  const data = { name, sku, cost, price, stock, category, image: imageUrl };
 
   if (id) {
     KR.store.updateProduct(id, data);
@@ -545,11 +526,8 @@ function saveAiKey() {
   if (!providerEl || !keyEl) return;
   const provider = providerEl.value;
   const apiKey = keyEl.value.trim();
-  if (!apiKey) {
-    KR.toast.error('API Key kosong');
-    return;
-  }
-  KR.vision.saveConfig({ provider: provider, apiKey: apiKey, enabled: true });
+  if (!apiKey) return KR.toast.error('API Key kosong');
+  KR.vision.saveConfig({ provider, apiKey, enabled: true });
   const enabledEl = document.getElementById('ai-enabled');
   if (enabledEl) enabledEl.checked = true;
   const configArea = document.getElementById('ai-config-area');
@@ -583,10 +561,7 @@ async function testAiConnection() {
   const keyEl = document.getElementById('ai-key');
   if (!keyEl) return;
   const apiKey = keyEl.value.trim();
-  if (!apiKey) {
-    KR.toast.error('Isi API Key dulu');
-    return;
-  }
+  if (!apiKey) return KR.toast.error('Isi API Key dulu');
   KR.vision.saveConfig({ apiKey: apiKey });
   showLoading('Testing AI...');
   try {
@@ -644,10 +619,7 @@ async function saveGithub() {
   const repo = getVal('gh-repo');
   const branch = getVal('gh-branch') || 'main';
   const token = getVal('gh-token');
-  if (!owner || !repo || !token) {
-    KR.toast.error('Semua field wajib diisi');
-    return;
-  }
+  if (!owner || !repo || !token) return KR.toast.error('Semua field wajib diisi');
   KR.store.setGitHubConfig({ owner, repo, branch, token });
   KR.toast.info('Testing...');
   const r = await KR.github.testConnection();
@@ -679,10 +651,7 @@ window.clearGithub = clearGithub;
 
 /* ==================== GITHUB SYNC ==================== */
 async function pushToGithub() {
-  if (!KR.github.isConfigured()) {
-    KR.toast.warn('Konfigurasi GitHub dulu');
-    return;
-  }
+  if (!KR.github.isConfigured()) return KR.toast.warn('Konfigurasi GitHub dulu');
   showLoading('Mengirim ke GitHub...');
   try {
     const data = {
@@ -702,18 +671,12 @@ async function pushToGithub() {
 window.pushToGithub = pushToGithub;
 
 async function pullFromGithub() {
-  if (!KR.github.isConfigured()) {
-    KR.toast.warn('Konfigurasi GitHub dulu');
-    return;
-  }
+  if (!KR.github.isConfigured()) return KR.toast.warn('Konfigurasi GitHub dulu');
   confirmDialog('Ambil dari GitHub?', 'Data lokal akan ditimpa dengan data dari GitHub.', async () => {
     showLoading('Mengambil dari GitHub...');
     try {
       const content = await KR.github.getFileContent('kasir-data.json');
-      if (!content) {
-        KR.toast.error('File kasir-data.json belum ada di repo');
-        return;
-      }
+      if (!content) return KR.toast.error('File kasir-data.json belum ada di repo');
       const data = JSON.parse(content);
       if (data.products) KR.store.setProducts(data.products);
       if (data.transactions) KR.store.setTransactions(data.transactions);
@@ -749,6 +712,43 @@ function autoSync() {
   }, 3000);
 }
 window.autoSync = autoSync;
+
+/* ==================== MIGRASI FOTO BASE64 → GITHUB ==================== */
+async function migrateBase64Photos() {
+  if (!KR.github.isConfigured()) return KR.toast.warn('Login GitHub dulu untuk migrasi');
+  const products = KR.store.getProducts();
+  const base64Products = products.filter(p => p.image && p.image.startsWith('data:image/'));
+  if (!base64Products.length) return KR.toast.info('Semua foto sudah di GitHub');
+
+  confirmDialog(
+    'Migrasi Foto ke GitHub?',
+    `${base64Products.length} foto base64 akan di-upload ke repo dan diganti URL. Menghemat ruang besar.`,
+    async () => {
+      showLoading(`Mengunggah 0/${base64Products.length}...`);
+      let ok = 0, fail = 0;
+      for (let i = 0; i < base64Products.length; i++) {
+        const p = base64Products[i];
+        try {
+          const filename = p.id + '.jpg';
+          const url = await uploadPhotoToGithub(p.image, filename);
+          KR.store.updateProduct(p.id, { image: url });
+          ok++;
+        } catch (e) {
+          console.error('[Migrate]', p.name, e);
+          fail++;
+        }
+        const textEl = document.getElementById('loading-text');
+        if (textEl) textEl.textContent = `Mengunggah ${i + 1}/${base64Products.length}...`;
+      }
+      hideLoading();
+      KR.toast.success(`Selesai: ${ok} sukses${fail ? `, ${fail} gagal` : ''}`);
+      renderProductList();
+      renderPosGrid();
+      autoSync();
+    }
+  );
+}
+window.migrateBase64Photos = migrateBase64Photos;
 
 /* ==================== BACKUP ==================== */
 function exportData() {
@@ -817,18 +817,13 @@ window.confirmReset = confirmReset;
 
 /* ==================== INIT ==================== */
 document.addEventListener('DOMContentLoaded', () => {
-  // Init theme
   initTheme();
-
-  // Init auth (shows login screen if not logged in)
   if (KR.auth) KR.auth.init();
 
-  // Init renders (background — will show once login closes)
   renderPosGrid();
   renderCategoryChips();
   renderCart();
 
-  // Listen events
   window.addEventListener('products:changed', () => {
     const tab = document.getElementById('tab-kasir');
     if (tab && tab.classList.contains('active')) renderPosGrid();
