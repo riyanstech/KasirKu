@@ -7,6 +7,7 @@ window.KR = window.KR || {};
 /* ==================== CART STATE ==================== */
 let cart = [];
 let currentCategory = '';
+let _lastCartIds = new Set();
 
 function getCart() { return cart; }
 
@@ -42,10 +43,7 @@ function changeQty(productId, delta) {
   if (!item) return;
   const product = KR.store.findProductById(productId);
   const newQty = item.qty + delta;
-  if (newQty <= 0) {
-    removeFromCart(productId);
-    return;
-  }
+  if (newQty <= 0) { removeFromCart(productId); return; }
   if (product && product.stock !== undefined && product.stock !== null && newQty > product.stock) {
     KR.toast.warn('Stok hanya ' + product.stock);
     return;
@@ -90,33 +88,36 @@ function renderCart() {
 
   if (!cart.length) {
     container.innerHTML = `<div class="cart-empty">
-      <i data-lucide="shopping-cart" style="width:40px;height:40px;margin:0 auto 8px;display:block;opacity:.4;"></i>
+      <i data-lucide="shopping-cart"></i>
       Keranjang kosong<br><small>Pilih produk untuk menambahkan</small>
     </div>`;
+    _lastCartIds.clear();
   } else {
+    const currentIds = new Set(cart.map(x => x.productId));
+
     container.innerHTML = cart.map(item => {
-      const img = item.image
-        ? `<img src="${item.image}" alt="">`
-        : `<i data-lucide="package"></i>`;
+      const isNew = !_lastCartIds.has(item.productId);
+      const img = item.image ? imgTag(item.image, item.name) : `<i data-lucide="package"></i>`;
       const sub = item.price * item.qty;
-      return `
-        <div class="cart-item">
-          <div class="ci-img">${img}</div>
-          <div class="ci-body">
-            <div class="ci-name">${escapeHtml(item.name)}</div>
-            <div class="ci-price">${formatRupiah(item.price)}</div>
-            <div class="ci-controls">
-              <button class="ci-qty-btn" onclick="changeQty('${item.productId}', -1)">−</button>
-              <span class="ci-qty">${item.qty}</span>
-              <button class="ci-qty-btn" onclick="changeQty('${item.productId}', 1)">+</button>
-              <button class="ci-remove" onclick="removeFromCart('${item.productId}')" title="Hapus">
-                <i data-lucide="x"></i>
-              </button>
-            </div>
+      return `<div class="cart-item ${isNew ? 'new' : ''}">
+        <div class="ci-img">${img}</div>
+        <div class="ci-body">
+          <div class="ci-name">${escapeHtml(item.name)}</div>
+          <div class="ci-price">${formatRupiah(item.price)}</div>
+          <div class="ci-controls">
+            <button class="ci-qty-btn" onclick="changeQty('${item.productId}', -1)" aria-label="Kurangi">−</button>
+            <span class="ci-qty">${item.qty}</span>
+            <button class="ci-qty-btn" onclick="changeQty('${item.productId}', 1)" aria-label="Tambah">+</button>
+            <button class="ci-remove" onclick="removeFromCart('${item.productId}')" aria-label="Hapus">
+              <i data-lucide="x"></i>
+            </button>
           </div>
-          <div class="ci-sub">${formatRupiah(sub)}</div>
-        </div>`;
+        </div>
+        <div class="ci-sub">${formatRupiah(sub)}</div>
+      </div>`;
     }).join('');
+
+    _lastCartIds = currentIds;
   }
 
   const subEl = document.getElementById('sum-subtotal');
@@ -159,20 +160,21 @@ function renderPosGrid() {
   container.innerHTML = filtered.map(p => {
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
-    const img = p.image ? `<img src="${p.image}" alt="">` : `<i data-lucide="package"></i>`;
+    const img = p.image ? imgTag(p.image, p.name) : `<i data-lucide="package"></i>`;
     const stockClass = out ? 'empty' : (low ? 'low' : '');
     const stockLabel = out ? 'Habis' : `Stok: ${p.stock != null ? p.stock : '∞'}`;
-    return `
-      <div class="product-tile ${out ? 'out' : ''}" onclick="handleTileClick('${p.id}')">
-        ${p.category ? `<span class="pt-cat">${escapeHtml(p.category)}</span>` : ''}
-        <div class="pt-img">${img}</div>
-        <div class="pt-name">${escapeHtml(p.name)}</div>
-        <div class="pt-price">${formatRupiah(p.price)}</div>
-        <div class="pt-stock ${stockClass}">${stockLabel}</div>
-      </div>`;
+    return `<div class="product-tile ${out ? 'out' : ''}" onclick="handleTileClick('${p.id}')">
+      ${p.category ? `<span class="pt-cat">${escapeHtml(p.category)}</span>` : ''}
+      <div class="pt-img">${img}</div>
+      <div class="pt-name">${escapeHtml(p.name)}</div>
+      <div class="pt-price">${formatRupiah(p.price)}</div>
+      <div class="pt-stock ${stockClass}">${stockLabel}</div>
+    </div>`;
   }).join('');
   if (window.lucide) lucide.createIcons();
 }
+
+const renderPosGridDebounced = debounce(renderPosGrid, 180);
 
 function handleTileClick(productId) {
   const product = KR.store.findProductById(productId);
@@ -230,10 +232,7 @@ function openCheckout() {
 
 function setCash(n) {
   const el = document.getElementById('co-paid');
-  if (el) {
-    el.value = n;
-    updateChange();
-  }
+  if (el) { el.value = n; updateChange(); }
 }
 
 function updateChange() {
@@ -253,10 +252,7 @@ function submitCheckout() {
   const methodEl = document.getElementById('co-method');
   if (!paidEl || !methodEl) return;
   const paid = Number(paidEl.value) || 0;
-  if (paid < t.total) {
-    KR.toast.error('Uang diterima kurang dari total');
-    return;
-  }
+  if (paid < t.total) { KR.toast.error('Uang diterima kurang dari total'); return; }
   const method = methodEl.value;
   const change = paid - t.total;
 
@@ -275,7 +271,6 @@ function submitCheckout() {
 
   KR.store.addTransaction(trx);
 
-  // Reduce stock
   const products = KR.store.getProducts();
   cart.forEach(item => {
     const p = products.find(x => x.id === item.productId);
@@ -286,6 +281,7 @@ function submitCheckout() {
   KR.store.setProducts(products);
 
   cart = [];
+  _lastCartIds.clear();
   renderCart();
   renderPosGrid();
   renderCategoryChips();
@@ -344,9 +340,7 @@ function showReceipt(trx) {
   if (window.lucide) lucide.createIcons();
 }
 
-function printReceipt() {
-  window.print();
-}
+function printReceipt() { window.print(); }
 
 function shareReceipt() {
   if (!currentReceipt) return;
@@ -383,7 +377,7 @@ function shareReceipt() {
   }
 }
 
-/* ==================== BEEP SOUND ==================== */
+/* ==================== BEEP ==================== */
 function playBeep(type = 'success') {
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -457,9 +451,7 @@ function openScanner() {
   visionImageData = null;
   visionResultData = null;
 
-  if (currentScanMode === 'barcode') {
-    startBarcodeScanner();
-  }
+  if (currentScanMode === 'barcode') startBarcodeScanner();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -488,129 +480,64 @@ function startBarcodeScanner() {
     return;
   }
   setTimeout(() => {
-    if (scanner) {
-      try { scanner.clear(); } catch {}
-      scanner = null;
-    }
-
+    if (scanner) { try { scanner.clear(); } catch {} scanner = null; }
     const readerEl = document.getElementById('scanner-reader');
     if (!readerEl) return;
 
     scanner = new Html5Qrcode('scanner-reader', { verbose: false });
 
     const config = {
-      fps: 15,
+      fps: 10,
       qrbox: function (w, h) {
         const minEdge = Math.min(w, h);
-        const size = Math.floor(minEdge * 0.75);
-        return { width: size, height: Math.floor(size * 0.65) };
+        const size = Math.floor(minEdge * 0.7);
+        return { width: size, height: Math.floor(size * 0.55) };
       },
       aspectRatio: 1.777,
       disableFlip: false,
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true,
-      },
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
     };
 
-    // ✅ FIX: html5-qrcode hanya terima 1 key saja
     const cameraConfig = { facingMode: 'environment' };
 
     scanner.start(cameraConfig, config, onScanSuccess, () => {})
-      .then(() => {
-        // Setelah kamera nyala, apply resolusi tinggi + continuous focus
-        setTimeout(applyCameraImprovements, 1200);
-      })
+      .then(() => setTimeout(applyCameraImprovements, 800))
       .catch(err => {
         console.error('[Scanner]', err);
-        const msg = err && err.message ? err.message : String(err);
-        KR.toast.error('Gagal buka kamera: ' + msg);
+        KR.toast.error('Gagal buka kamera: ' + (err.message || err));
       });
-  }, 400);
+  }, 300);
 }
 
-/* ✅ Apply resolusi tinggi + continuous focus SETELAH kamera jalan */
 async function applyCameraImprovements() {
   try {
     const videoEl = document.querySelector('#scanner-reader video');
     if (!videoEl || !videoEl.srcObject) return;
-
     const track = videoEl.srcObject.getVideoTracks()[0];
     if (!track) return;
 
     const caps = track.getCapabilities ? track.getCapabilities() : {};
     const advanced = [];
 
-    // Continuous / auto focus
     if (caps.focusMode && caps.focusMode.includes('continuous')) {
       advanced.push({ focusMode: 'continuous' });
     } else if (caps.focusMode && caps.focusMode.includes('auto')) {
       advanced.push({ focusMode: 'auto' });
     }
-
-    // Torch off
-    if (caps.torch) {
-      advanced.push({ torch: false });
-    }
-
-    // Zoom sedang (kalau support)
+    if (caps.torch) advanced.push({ torch: false });
     if (caps.zoom && caps.zoom.max > caps.zoom.min) {
       const midZoom = caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.25;
       advanced.push({ zoom: midZoom });
     }
 
     if (advanced.length > 0) {
-      try {
-        await track.applyConstraints({ advanced: advanced });
-        console.log('[Camera] Improvements applied:', advanced);
-      } catch (e) {
-        console.warn('[Camera] Apply failed', e);
-      }
-    }
-
-    // Try set resolusi tinggi secara terpisah
-    try {
-      const currentSettings = track.getSettings ? track.getSettings() : {};
-      const wants = {};
-      if (caps.width && (caps.width.max || 0) >= 1920) wants.width = 1920;
-      if (caps.height && (caps.height.max || 0) >= 1080) wants.height = 1080;
-      if (Object.keys(wants).length > 0) {
-        // Best effort — kalau gagal, diabaikan
-        await track.applyConstraints(wants).catch(() => {});
-      }
-    } catch (e) {
-      // Silently ignore
+      try { await track.applyConstraints({ advanced }); } catch (e) { console.warn('[Camera]', e); }
     }
   } catch (e) {
     console.warn('[Camera] applyCameraImprovements error', e);
   }
 }
 window.applyCameraImprovements = applyCameraImprovements;
-
-function enableContinuousFocus() {
-  try {
-    const videoEl = document.querySelector('#scanner-reader video');
-    if (!videoEl || !videoEl.srcObject) return;
-    const track = videoEl.srcObject.getVideoTracks()[0];
-    if (!track) return;
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    const constraints = {};
-    if (caps.focusMode && caps.focusMode.includes('continuous')) {
-      constraints.focusMode = 'continuous';
-    } else if (caps.focusMode && caps.focusMode.includes('auto')) {
-      constraints.focusMode = 'auto';
-    }
-    if (caps.torch) {
-      constraints.torch = false;
-    }
-    if (Object.keys(constraints).length > 0) {
-      track.applyConstraints({ advanced: [constraints] }).catch(e => {
-        console.warn('[Camera] Constraint apply failed', e);
-      });
-    }
-  } catch (e) {
-    console.warn('[Camera] Focus helper error', e);
-  }
-}
 
 function onScanSuccess(decodedText) {
   const now = Date.now();
@@ -626,7 +553,6 @@ function onScanSuccess(decodedText) {
   if (product) {
     playBeep('success');
     addToCart(product, 1);
-
     resultEl.className = 'scan-result';
     resultEl.innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;">
@@ -636,10 +562,6 @@ function onScanSuccess(decodedText) {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:800;line-height:1.2;">${escapeHtml(product.name)}</div>
           <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--primary);margin-top:2px;font-size:.9rem;">${formatRupiah(product.price)}</div>
-        </div>
-        <div style="font-size:.65rem;color:var(--text-3);text-align:right;flex-shrink:0;line-height:1.3;">
-          <div>Otomatis</div>
-          <div>masuk keranjang</div>
         </div>
       </div>
     `;
@@ -667,7 +589,7 @@ function closeScanner() {
   closeModal('modal-scanner');
 }
 
-/* ==================== SKU SCANNER (untuk form produk) ==================== */
+/* ==================== SKU SCANNER ==================== */
 let skuScanner = null;
 
 function openSkuScanner() {
@@ -681,27 +603,21 @@ function openSkuScanner() {
   openModal('modal-sku-scanner');
 
   setTimeout(() => {
-    if (skuScanner) {
-      try { skuScanner.clear(); } catch {}
-      skuScanner = null;
-    }
-
+    if (skuScanner) { try { skuScanner.clear(); } catch {} skuScanner = null; }
     const readerEl = document.getElementById('sku-scanner-reader');
     if (!readerEl) return;
 
     skuScanner = new Html5Qrcode('sku-scanner-reader', { verbose: false });
 
     const config = {
-      fps: 15,
+      fps: 10,
       qrbox: function (w, h) {
         const minEdge = Math.min(w, h);
-        const size = Math.floor(minEdge * 0.75);
-        return { width: size, height: Math.floor(size * 0.65) };
+        const size = Math.floor(minEdge * 0.7);
+        return { width: size, height: Math.floor(size * 0.55) };
       },
       aspectRatio: 1.777,
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true,
-      },
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
     };
 
     const cameraConfig = { facingMode: 'environment' };
@@ -712,35 +628,18 @@ function openSkuScanner() {
       if (resultEl) resultEl.textContent = decoded;
 
       const skuInput = document.getElementById('pf-sku');
-      if (skuInput) {
-        skuInput.value = decoded;
-        onSkuChange();
-      }
+      if (skuInput) { skuInput.value = decoded; onSkuChange(); }
 
       setTimeout(() => {
         closeSkuScanner();
         KR.toast.success('SKU terisi: ' + decoded);
       }, 800);
     }, () => {})
-      .then(() => {
-        setTimeout(() => {
-          try {
-            const videoEl = document.querySelector('#sku-scanner-reader video');
-            if (videoEl && videoEl.srcObject) {
-              const track = videoEl.srcObject.getVideoTracks()[0];
-              const caps = track.getCapabilities ? track.getCapabilities() : {};
-              const cst = {};
-              if (caps.focusMode && caps.focusMode.includes('continuous')) cst.focusMode = 'continuous';
-              if (Object.keys(cst).length) track.applyConstraints({ advanced: [cst] }).catch(() => {});
-            }
-          } catch {}
-        }, 1200);
-      })
       .catch(err => {
         console.error('[SKU Scanner]', err);
         KR.toast.error('Gagal buka kamera: ' + (err.message || err));
       });
-  }, 400);
+  }, 300);
 }
 
 function closeSkuScanner() {
@@ -757,10 +656,7 @@ function onSkuChange() {
   const status = document.getElementById('pf-image-status');
   if (!skuInput || !status) return;
   const sku = skuInput.value.trim();
-  if (!sku) {
-    status.innerHTML = '';
-    return;
-  }
+  if (!sku) { status.innerHTML = ''; return; }
   const existing = KR.store.findProductBySku(sku);
   const currentId = document.getElementById('pf-id')?.value;
   if (existing && existing.id !== currentId) {
@@ -794,8 +690,7 @@ function setupVisionListeners() {
         KR.toast.success('Foto siap dianalisa');
       } catch (err) {
         console.error('[Vision] Compress error:', err);
-        const msg = err?.message || 'Unknown error';
-        KR.toast.error('Gagal: ' + msg);
+        KR.toast.error('Gagal: ' + (err?.message || 'Unknown error'));
       }
     });
   });
@@ -989,9 +884,42 @@ function focusSearchBar() {
   }
 }
 
-/* Init listeners on DOM ready */
+/* ==================== INIT LISTENERS ==================== */
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(setupVisionListeners, 500);
+
+  // ✅ Debounced search POS
+  const posSearch = document.getElementById('pos-search');
+  if (posSearch) {
+    posSearch.addEventListener('input', renderPosGridDebounced);
+    posSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') renderPosGrid();
+    });
+  }
+
+  // ✅ Debounced search Produk
+  const prodSearch = document.getElementById('prod-search');
+  if (prodSearch) {
+    prodSearch.addEventListener('input', debounce(() => {
+      if (typeof renderProductList === 'function') renderProductList();
+    }, 180));
+  }
+
+  const prodCat = document.getElementById('prod-cat-filter');
+  if (prodCat) prodCat.addEventListener('change', () => {
+    if (typeof renderProductList === 'function') renderProductList();
+  });
+
+  const trxDate = document.getElementById('trx-date-filter');
+  if (trxDate) trxDate.addEventListener('change', () => {
+    if (typeof renderTransactionList === 'function') renderTransactionList();
+  });
+
+  const pfSku = document.getElementById('pf-sku');
+  if (pfSku) pfSku.addEventListener('input', debounce(onSkuChange, 250));
+
+  const coPaid = document.getElementById('co-paid');
+  if (coPaid) coPaid.addEventListener('input', updateChange);
 });
 
 /* ==================== EXPOSE ==================== */
@@ -1002,6 +930,7 @@ window.removeFromCart = removeFromCart;
 window.clearCart = clearCart;
 window.renderCart = renderCart;
 window.renderPosGrid = renderPosGrid;
+window.renderPosGridDebounced = renderPosGridDebounced;
 window.renderCategoryChips = renderCategoryChips;
 window.setCategory = setCategory;
 window.handleTileClick = handleTileClick;
