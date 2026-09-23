@@ -1055,56 +1055,69 @@ async function cleanupOrphanPhotos() {
   }
 
   showLoading('Memeriksa foto...');
+
+  let files = [];
   try {
-    const files = await listPhotosInGithub();
-    if (!files.length) {
-      KR.toast.info('Tidak ada foto di GitHub');
-      return;
-    }
-
-    // Kumpulkan nama file yang masih dipakai
-    const products = KR.store.getProducts();
-    const used = new Set();
-    products.forEach(p => {
-      const fn = extractPhotoFilename(p.image);
-      if (fn) used.add(fn);
-    });
-
-    // Cari file yatim
-    const orphans = files.filter(f => !used.has(f));
-    if (!orphans.length) {
-      KR.toast.success(`Semua ${files.length} foto masih dipakai`);
-      return;
-    }
-
-    confirmDialog(
-       'Optimalkan Penyimpanan?',
-       `Sistem menemukan ${orphans.length} file foto yang sudah tidak terpakai (dari total ${files.length} file). File ini akan dihapus dari GitHub untuk menghemat penyimpanan.\n\nLanjutkan?`,
-       ...
-      async () => {
-        showLoading(`Menghapus ${orphans.length} foto...`);
-        let ok = 0, fail = 0;
-        for (const fn of orphans) {
-          try {
-            await deletePhotoFromGithub(fn);
-            ok++;
-          } catch (e) {
-            console.warn('[Cleanup]', fn, e);
-            fail++;
-          }
-        }
-        hideLoading();
-        KR.toast[fail ? 'warn' : 'success'](
-          `Selesai: ${ok} dihapus${fail ? `, ${fail} gagal` : ''}`
-        );
-      }
-    );
+    files = await listPhotosInGithub();
   } catch (e) {
-    console.error('[Cleanup]', e);
-    KR.toast.error('Gagal: ' + e.message);
+    console.warn('[Cleanup] listPhotos failed:', e);
+    files = [];
   } finally {
     hideLoading();
   }
+
+  // Pastikan array (meskipun kosong)
+  if (!Array.isArray(files)) files = [];
+
+  if (files.length === 0) {
+    KR.toast.info('Tidak ada foto di GitHub');
+    return;
+  }
+
+  // Kumpulkan nama file yang masih dipakai produk
+  const products = KR.store.getProducts();
+  const used = new Set();
+  products.forEach(p => {
+    const fn = extractPhotoFilename(p.image);
+    if (fn) used.add(fn);
+  });
+
+  // Cari file yatim — pakai for...of (bukan spread)
+  const orphans = [];
+  for (const f of files) {
+    if (!used.has(f)) orphans.push(f);
+  }
+
+  if (orphans.length === 0) {
+    KR.toast.success(`Semua ${files.length} foto masih dipakai`);
+    return;
+  }
+
+  confirmDialog(
+    'Optimalkan Penyimpanan?',
+    `Ditemukan ${orphans.length} file foto yang tidak terpakai (dari total ${files.length} file). File ini akan dihapus permanen dari GitHub.\n\nLanjutkan?`,
+    async () => {
+      showLoading(`Menghapus ${orphans.length} foto...`);
+      let ok = 0, fail = 0;
+
+      for (const fn of orphans) {
+        try {
+          await deletePhotoFromGithub(fn);
+          ok++;
+        } catch (e) {
+          console.warn('[Cleanup]', fn, e);
+          fail++;
+        }
+      }
+
+      hideLoading();
+      if (fail > 0) {
+        KR.toast.warn(`Selesai: ${ok} dihapus, ${fail} gagal`);
+      } else {
+        KR.toast.success(`Selesai: ${ok} foto dihapus`);
+      }
+    }
+  );
 }
 window.cleanupOrphanPhotos = cleanupOrphanPhotos;
 
