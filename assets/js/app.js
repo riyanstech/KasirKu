@@ -51,6 +51,8 @@ function showTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('tab-' + tabId);
   if (target) target.classList.add('active');
+
+  // Set .active SEBELUM createIcons (urutan penting!)
   document.querySelectorAll('.nav-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tabId);
   });
@@ -64,7 +66,13 @@ function showTab(tabId, btn) {
   if (tabId === 'transaksi') renderTransactionList();
   if (tabId === 'pengaturan') loadSettings();
 
-  if (window.lucide) lucide.createIcons();
+  // Panggil lucide 2x — sinkron + delay untuk handle transisi CSS
+  if (window.lucide) {
+    lucide.createIcons();
+    setTimeout(() => {
+      if (window.lucide) lucide.createIcons();
+    }, 60);
+  }
 }
 window.showTab = showTab;
 
