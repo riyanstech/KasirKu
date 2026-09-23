@@ -1931,4 +1931,132 @@ body.modal-open {
   }
 }
 
+/* ===== FIX FINAL v2 — KOMPAK & PASTI JALAN ===== */
+
+/* Nav tabs */
+.nav-tabs {
+  display: flex !important;
+  gap: 2px !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+.nav-tabs::-webkit-scrollbar { display: none !important; }
+.nav-tab {
+  background: transparent !important;
+  border: none !important;
+  color: #475569 !important;
+  transition: all .12s !important;
+  cursor: pointer !important;
+}
+.nav-tab:hover { background: #f1f5f9 !important; }
+.nav-tab.active {
+  background: linear-gradient(135deg,#10b981,#059669) !important;
+  color: #fff !important;
+}
+
+/* Product grid KOMPAK — 3 kolom di HP kecil */
+.product-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important;
+  gap: 8px !important;
+}
+@media (min-width: 640px) {
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; gap: 12px !important; }
+}
+
+.product-tile {
+  padding: 6px !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  border: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  cursor: pointer !important;
+  transition: transform .12s, border-color .12s !important;
+}
+.product-tile:active { transform: scale(.97) !important; }
+
+.pt-img {
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  max-height: 120px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background: #f1f5f9 !important;
+  display: grid !important;
+  place-items: center !important;
+  margin-bottom: 6px !important;
+}
+.pt-img img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.pt-img svg { width: 32px !important; height: 32px !important; color: #94a3b8 !important; opacity: .5 !important; }
+
+.pt-name {
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin-bottom: 2px !important;
+  min-height: 2.4em !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  color: #0f172a !important;
+}
+.pt-price {
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+  color: #10b981 !important;
+  margin-top: auto !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+.pt-stock {
+  font-size: .58rem !important;
+  color: #94a3b8 !important;
+  margin-top: 1px !important;
+}
+.pt-cat {
+  position: absolute !important;
+  top: 5px !important;
+  left: 5px !important;
+  padding: 2px 6px !important;
+  border-radius: 999px !important;
+  background: rgba(16,185,129,.95) !important;
+  color: #fff !important;
+  font-size: .52rem !important;
+  font-weight: 800 !important;
+  z-index: 2 !important;
+}
+.product-tile { position: relative !important; }
+
+/* Chips kategori */
+.cat-chips { display: flex !important; flex-wrap: nowrap !important; }
+.cat-chip {
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+  background: #fff !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+.cat-chip.active {
+  background: linear-gradient(135deg,#10b981,#059669) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+/* Dark mode overrides */
+.dark .product-tile { background: #111827 !important; border-color: #1e293b !important; }
+.dark .pt-name { color: #f1f5f9 !important; }
+.dark .cat-chip { background: #111827 !important; color: #cbd5e1 !important; border-color: #1e293b !important; }
+.dark .cat-chip.active { background: linear-gradient(135deg,#10b981,#059669) !important; color: #fff !important; }
+.dark #pos-search { background: #111827 !important; color: #f1f5f9 !important; border-color: #1e293b !important; }
+.dark body { background: #0b1220 !important; }
+
 /* ==================== END OF FILE ==================== */
