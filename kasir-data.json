@@ -69,6 +69,16 @@
       "stock": 20,
       "category": "Makanan",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790165416458.jpg"
+    },
+    {
+      "id": "p-1790166588941-le9f",
+      "name": "Garam",
+      "sku": "8993111212504",
+      "cost": 2000,
+      "price": 2500,
+      "stock": 20,
+      "category": "Bumbu Dapur",
+      "image": ""
     }
   ],
   "transactions": [
