@@ -829,7 +829,12 @@ function confirmReset() {
 window.confirmReset = confirmReset;
 
 /* ==================== INIT ==================== */
-document.addEventListener('DOMContentLoaded', () => {
+/* ==================== INIT ==================== */
+function initApp() {
+  // Cegah double-init
+  if (window.__kasirku_inited) return;
+  window.__kasirku_inited = true;
+
   // Init theme
   initTheme();
 
@@ -853,4 +858,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (window.lucide) lucide.createIcons();
   console.log('%c[KasirKu] Ready', 'color:#10b981;font-weight:800;');
-});
+}
+
+// Jalankan SEGERA kalau DOM siap, atau tunggu kalau belum
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  // DOM sudah siap (script dimuat lambat) → jalankan langsung
+  initApp();
+}
