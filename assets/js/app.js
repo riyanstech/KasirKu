@@ -67,6 +67,7 @@ function showTab(tabId, btn) {
   }
   if (tabId === 'produk') renderProductList();
   if (tabId === 'transaksi') renderTransactionList();
+  if (tabId === 'laporan') renderReport();
   if (tabId === 'pengaturan') loadSettings();
 
   // Lucide render bertahap — pastikan icon muncul setelah transisi CSS
@@ -828,7 +829,224 @@ function confirmReset() {
 }
 window.confirmReset = confirmReset;
 
-/* ==================== INIT ==================== */
+/* ==================== LAPORAN / ANALYTICS ==================== */
+function renderReport() {
+  const period = document.getElementById('report-period')?.value || '30d';
+  const trxList = KR.store.getTransactions();
+  const products = KR.store.getProducts();
+
+  // Tentukan rentang waktu
+  const now = Date.now();
+  let since = 0;
+  let bucketBy = 'day'; // 'day' atau 'hour'
+  let bucketCount = 0;
+
+  if (period === 'today') {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    since = d.getTime();
+    bucketBy = 'hour';
+    bucketCount = 24;
+  } else if (period === '7d') {
+    since = now - 7 * 24 * 3600 * 1000;
+    bucketCount = 7;
+  } else if (period === '30d') {
+    since = now - 30 * 24 * 3600 * 1000;
+    bucketCount = 30;
+  } else if (period === 'month') {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0);
+    since = d.getTime();
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    bucketCount = endOfMonth.getDate();
+  } else { // all
+    if (trxList.length) {
+      since = Math.min(...trxList.map(t => t.at));
+      const days = Math.ceil((now - since) / (24 * 3600 * 1000));
+      bucketCount = Math.min(Math.max(days, 7), 60); // batasi 60 hari terakhir
+      if (bucketCount < days) since = now - bucketCount * 24 * 3600 * 1000;
+    }
+  }
+
+  const filtered = trxList.filter(t => t.at >= since);
+
+  // -------- Hitung metrics --------
+  let revenue = 0, cost = 0, itemsSold = 0;
+  const productStats = {};
+  const dailyStats = {};
+  const catStats = {};
+
+  filtered.forEach(t => {
+    revenue += t.total;
+    (t.items || []).forEach(it => {
+      itemsSold += it.qty;
+      const p = products.find(x => x.id === it.productId);
+      const itemCost = (p && p.cost) || 0;
+      cost += itemCost * it.qty;
+
+      // Produk
+      if (!productStats[it.productId]) {
+        productStats[it.productId] = { name: it.name, qty: 0, revenue: 0, profit: 0 };
+      }
+      productStats[it.productId].qty += it.qty;
+      productStats[it.productId].revenue += it.price * it.qty;
+      productStats[it.productId].profit += (it.price - itemCost) * it.qty;
+
+      // Kategori
+      const cat = (p && p.category) || 'Tanpa Kategori';
+      if (!catStats[cat]) catStats[cat] = { qty: 0, revenue: 0 };
+      catStats[cat].qty += it.qty;
+      catStats[cat].revenue += it.price * it.qty;
+    });
+
+    // Daily/hours
+    const d = new Date(t.at);
+    const key = bucketBy === 'hour'
+      ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}`
+      : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    dailyStats[key] = (dailyStats[key] || 0) + t.total;
+  });
+
+  const profit = revenue - cost;
+
+  // -------- Render KPI Cards --------
+  const kpiEl = document.getElementById('report-kpis');
+  if (kpiEl) {
+    kpiEl.innerHTML = `
+      <div class="kpi-card">
+        <div class="kpi-icon green"><i data-lucide="wallet"></i></div>
+        <div class="kpi-body">
+          <div class="kpi-label">Pendapatan</div>
+          <div class="kpi-value">${formatRupiah(revenue)}</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon blue"><i data-lucide="trending-up"></i></div>
+        <div class="kpi-body">
+          <div class="kpi-label">Laba Kotor</div>
+          <div class="kpi-value">${formatRupiah(profit)}</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon purple"><i data-lucide="receipt"></i></div>
+        <div class="kpi-body">
+          <div class="kpi-label">Transaksi</div>
+          <div class="kpi-value">${filtered.length}</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon orange"><i data-lucide="package"></i></div>
+        <div class="kpi-body">
+          <div class="kpi-label">Produk Terjual</div>
+          <div class="kpi-value">${itemsSold} item</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // -------- Render Chart --------
+  renderReportChart(dailyStats, period, bucketBy, bucketCount);
+
+  // -------- Top 5 Products --------
+  const topEl = document.getElementById('report-top-products');
+  if (topEl) {
+    const top = Object.values(productStats).sort((a, b) => b.qty - a.qty).slice(0, 5);
+    if (!top.length) {
+      topEl.innerHTML = `<div class="report-empty">Belum ada penjualan</div>`;
+    } else {
+      topEl.innerHTML = `<div class="report-list">${top.map((p, i) => `
+        <div class="report-item">
+          <div class="report-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}">${i + 1}</div>
+          <div class="report-item-body">
+            <div class="report-item-name">${escapeHtml(p.name)}</div>
+            <div class="report-item-sub">${p.qty} terjual • Laba ${formatRupiah(p.profit)}</div>
+          </div>
+          <div class="report-item-value">${formatRupiah(p.revenue)}</div>
+        </div>
+      `).join('')}</div>`;
+    }
+  }
+
+  // -------- Kategori --------
+  const catEl = document.getElementById('report-categories');
+  if (catEl) {
+    const cats = Object.entries(catStats).sort((a, b) => b[1].revenue - a[1].revenue);
+    if (!cats.length) {
+      catEl.innerHTML = `<div class="report-empty">Belum ada penjualan</div>`;
+    } else {
+      const maxRev = cats[0][1].revenue || 1;
+      catEl.innerHTML = `<div class="report-list">${cats.map(([name, data]) => `
+        <div class="report-item" style="flex-direction:column;align-items:stretch;background:transparent;padding:10px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;">
+            <div class="report-item-name" style="margin:0;">${escapeHtml(name)}</div>
+            <div class="report-item-value">${formatRupiah(data.revenue)}</div>
+          </div>
+          <div class="report-item-sub">${data.qty} item terjual</div>
+          <div class="report-cat-bar">
+            <div class="report-cat-bar-fill" style="width:${Math.round((data.revenue / maxRev) * 100)}%"></div>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    }
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+window.renderReport = renderReport;
+
+/* Render bar chart */
+function renderReportChart(dailyStats, period, bucketBy, bucketCount) {
+  const chartEl = document.getElementById('report-chart');
+  if (!chartEl) return;
+
+  const now = new Date();
+  const buckets = [];
+
+  if (bucketBy === 'hour') {
+    // 24 jam dari hari ini
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    for (let h = 0; h < 24; h++) {
+      const t = new Date(d); t.setHours(h);
+      const key = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')} ${String(h).padStart(2, '0')}`;
+      buckets.push({ key, label: `${String(h).padStart(2, '0')}`, fullLabel: `${String(h).padStart(2, '0')}:00`, value: dailyStats[key] || 0 });
+    }
+  } else {
+    // Per hari
+    const days = Math.min(bucketCount || 30, 60);
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    for (let i = days - 1; i >= 0; i--) {
+      const t = new Date(d); t.setDate(t.getDate() - i);
+      const key = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+      const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+      const label = days <= 7
+        ? dayNames[t.getDay()]
+        : String(t.getDate());
+      const fullLabel = `${dayNames[t.getDay()]}, ${t.getDate()}/${t.getMonth() + 1}`;
+      buckets.push({ key, label, fullLabel, value: dailyStats[key] || 0 });
+    }
+  }
+
+  const max = Math.max(...buckets.map(b => b.value), 1);
+  const hasData = buckets.some(b => b.value > 0);
+
+  if (!hasData) {
+    chartEl.innerHTML = `<div class="chart-empty">
+      <i data-lucide="bar-chart-3"></i>
+      <p>Belum ada data penjualan di periode ini</p>
+    </div>`;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  chartEl.innerHTML = `<div class="chart-bars">${buckets.map(b => {
+    const h = b.value > 0 ? Math.max(4, Math.round((b.value / max) * 100)) : 0;
+    const cls = b.value > 0 ? '' : 'empty';
+    return `<div class="chart-bar-wrap" title="${b.fullLabel}: ${formatRupiah(b.value)}">
+      <div class="chart-bar ${cls}" style="height:${h}%"></div>
+      <div class="chart-bar-label">${b.label}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+window.renderReportChart = renderReportChart;
+
 /* ==================== INIT ==================== */
 function initApp() {
   // Cegah double-init
