@@ -1341,6 +1341,8 @@
       if (!isCod && !state.proofFile) return toast('Upload bukti transfer dulu', 'error');
       if (phone && !isValidPhone(phone)) return toast('Format No. WA tidak valid', 'error');
 
+      const customerSession = window.KRCustomer?.getSession?.() || null;   // ← TAMBAH INI
+      
       const btn = $('btn-submit');
       btn.disabled = true;
 
