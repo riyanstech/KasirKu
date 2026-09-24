@@ -706,17 +706,20 @@
           delivery_fee: 0,
         };
 
-        const { data: order, error } = await sb
+        // Generate kode pesanan di client (format: ORD + timestamp + random)
+        const orderCode = 'ORD' + Date.now().toString(36).toUpperCase() + 
+                          Math.random().toString(36).slice(2, 5).toUpperCase();
+        
+        // Insert TANPA .select() → tidak butuh SELECT policy
+        const { error } = await sb
           .from('online_orders')
-          .insert(insertData)
-          .select('id')
-          .single();
-
+          .insert({ ...insertData, order_code: orderCode });
+        
         if (error) throw error;
-
+        
         hideLoading();
         closeOrderModal();
-        showSuccess(order.id);
+        showSuccess(orderCode);
       } catch (e) {
         console.error('[Submit]', e);
         hideLoading();
@@ -743,9 +746,9 @@
       return data.publicUrl;
     }
 
-    function showSuccess(orderId) {
-      const code = '#' + String(orderId).replace(/-/g, '').slice(0, 6).toUpperCase();
-      $('success-code').textContent = code;
+    function showSuccess(orderCode) {
+      // orderCode sudah dalam format ORDxxx dari client
+      $('success-code').textContent = '#' + orderCode;
       $('success-modal').classList.remove('hidden');
       icon();
     }
