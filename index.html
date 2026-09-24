@@ -711,6 +711,95 @@
 
     <div id="toasts"></div>
 
+    <!-- ==================== PWA INSTALL BANNER ==================== -->
+    <div id="pwa-banner" class="pwa-banner hidden">
+        <div class="pwa-banner-inner">
+            <button class="pwa-banner-close" onclick="KR.pwa.markDismissed(); KR.pwa.hideBanner();">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="pwa-banner-icon">
+                <i data-lucide="smartphone"></i>
+            </div>
+            <div class="pwa-banner-body">
+                <div class="pwa-banner-title">Install KasirKu</div>
+                <div class="pwa-banner-desc">Akses lebih cepat + notifikasi order langsung di HP kamu</div>
+                <div id="pwa-banner-status" class="pwa-banner-status"></div>
+            </div>
+            <button class="pwa-banner-btn" onclick="KR.pwa.triggerInstall()">
+                <i data-lucide="download"></i> Install
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PWA iOS MODAL ==================== -->
+    <div id="pwa-ios-modal" class="modal">
+        <div class="modal-backdrop" onclick="KR.pwa.closeInstructions()"></div>
+        <div class="modal-card modal-card-sm">
+            <div class="modal-head">
+                <h3><i data-lucide="smartphone"></i> Install di iPhone / iPad</h3>
+                <button class="icon-btn" onclick="KR.pwa.closeInstructions()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:.85rem;color:var(--text-2);margin:0 0 16px;line-height:1.6;">
+                    Safari iOS belum support install otomatis. Ikuti langkah ini:
+                </p>
+                <ol class="pwa-steps">
+                    <li>
+                        <div class="pwa-step-num">1</div>
+                        <div>
+                            Tap ikon <strong>Share</strong> <i data-lucide="share" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i> di bawah Safari
+                        </div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">2</div>
+                        <div>Scroll & pilih <strong>"Add to Home Screen"</strong></div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">3</div>
+                        <div>Tap <strong>"Add"</strong> di kanan atas</div>
+                    </li>
+                </ol>
+                <div class="gh-status ok" style="margin-top:16px;">
+                    <i data-lucide="check-circle"></i>
+                    <span>Setelah itu, icon KasirKu muncul di homescreen kamu</span>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-primary" onclick="KR.pwa.closeInstructions()">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PWA ANDROID MODAL ==================== -->
+    <div id="pwa-android-modal" class="modal">
+        <div class="modal-backdrop" onclick="KR.pwa.closeInstructions()"></div>
+        <div class="modal-card modal-card-sm">
+            <div class="modal-head">
+                <h3><i data-lucide="smartphone"></i> Install di Android</h3>
+                <button class="icon-btn" onclick="KR.pwa.closeInstructions()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <ol class="pwa-steps">
+                    <li>
+                        <div class="pwa-step-num">1</div>
+                        <div>Tap menu <strong>⋮</strong> (3 titik) di kanan atas browser</div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">2</div>
+                        <div>Pilih <strong>"Install app"</strong> atau <strong>"Add to Home screen"</strong></div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">3</div>
+                        <div>Tap <strong>"Install"</strong></div>
+                    </li>
+                </ol>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-primary" onclick="KR.pwa.closeInstructions()">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     (function () {
       var scripts = [
