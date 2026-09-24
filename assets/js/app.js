@@ -1394,35 +1394,7 @@ function initApp() {
 
   if (window.lucide) lucide.createIcons();
   console.log('%c[KasirKu] Ready', 'color:#10b981;font-weight:800;');
-
-  // Hide splash screen — kasih delay minimum biar animasi keliatan
-  hideSplash();
 }
-
-/* ==================== SPLASH SCREEN ==================== */
-function hideSplash() {
-  const el = document.getElementById('splash-screen');
-  if (!el) return;
-
-  // Cek kapan splash pertama muncul (biar minimum tampil 1.5 detik)
-  const shownAt = Number(sessionStorage.getItem('kasir:splash_shown_at') || 0);
-  const minShowMs = 1500;
-  const elapsed = shownAt ? Date.now() - shownAt : 0;
-  const remaining = Math.max(0, minShowMs - elapsed);
-
-  setTimeout(() => {
-    el.classList.add('hide');
-    // Hapus dari DOM setelah animasi selesai biar gak ganggu
-    setTimeout(() => el.remove(), 600);
-  }, remaining);
-}
-
-// Catat waktu splash pertama muncul
-if (!sessionStorage.getItem('kasir:splash_shown_at')) {
-  sessionStorage.setItem('kasir:splash_shown_at', String(Date.now()));
-}
-
-window.hideSplash = hideSplash;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
