@@ -2993,4 +2993,237 @@ body {
   flex: 1;
   overflow: visible;
 }
+
+/* ============================================================
+   SPLASH SCREEN — Loading awal yang profesional
+   ============================================================ */
+
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(1000px 500px at 20% 20%, rgba(16,185,129,.20), transparent 60%),
+    radial-gradient(800px 400px at 80% 80%, rgba(99,102,241,.18), transparent 60%),
+    linear-gradient(135deg, #0f172a 0%, #1a2332 50%, #0f172a 100%);
+  overflow: hidden;
+  transition: opacity .5s ease, visibility .5s ease;
+  padding: 24px;
+}
+
+#splash-screen.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Decorative circles */
+.splash-bg-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.splash-bg-deco::before,
+.splash-bg-deco::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+.splash-bg-deco::before {
+  width: 300px; height: 300px;
+  top: -100px; right: -100px;
+  background: rgba(16,185,129,.25);
+  animation: splashFloat 8s ease-in-out infinite;
+}
+.splash-bg-deco::after {
+  width: 250px; height: 250px;
+  bottom: -80px; left: -80px;
+  background: rgba(99,102,241,.20);
+  animation: splashFloat 10s ease-in-out infinite reverse;
+}
+@keyframes splashFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -20px) scale(1.1); }
+}
+
+/* Content */
+.splash-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: splashContentIn .8s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes splashContentIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Logo with rings */
+.splash-logo {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  margin-bottom: 28px;
+  display: grid;
+  place-items: center;
+}
+
+.splash-logo-inner {
+  position: relative;
+  z-index: 2;
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%);
+  color: #fff;
+  box-shadow:
+    0 20px 50px -10px rgba(16,185,129,.6),
+    0 8px 16px -4px rgba(16,185,129,.4),
+    inset 0 2px 0 rgba(255,255,255,.25);
+  animation: splashLogoPulse 2.5s ease-in-out infinite;
+}
+.splash-logo-inner svg {
+  width: 46px !important;
+  height: 46px !important;
+  stroke: #fff !important;
+  stroke-width: 2.2 !important;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.2));
+}
+@keyframes splashLogoPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.splash-logo-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(16,185,129,.35);
+  animation: splashRingExpand 2.5s ease-out infinite;
+}
+.splash-ring-2 {
+  border-color: rgba(16,185,129,.2);
+  animation-delay: 1.25s;
+}
+@keyframes splashRingExpand {
+  0% { transform: scale(.7); opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+/* Title */
+.splash-title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -.03em;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, #ffffff 0%, #a7f3d0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: splashTextIn .8s .2s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+.splash-sub {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .28em;
+  color: rgba(255,255,255,.5);
+  margin: 0 0 20px;
+  animation: splashTextIn .8s .3s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+.splash-tagline {
+  font-size: .8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.65);
+  margin: 0 0 32px;
+  max-width: 260px;
+  line-height: 1.5;
+  animation: splashTextIn .8s .45s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+@keyframes splashTextIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Loading bar */
+.splash-loader {
+  width: 160px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,.1);
+  overflow: hidden;
+  position: relative;
+  animation: splashTextIn .8s .6s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+.splash-loader-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  width: 40%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #10b981, #34d399, #10b981, transparent);
+  animation: splashLoad 1.4s cubic-bezier(.4,0,.2,1) infinite;
+}
+@keyframes splashLoad {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+/* Footer */
+.splash-footer {
+  position: absolute;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: .7rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.4);
+  letter-spacing: .05em;
+  animation: splashTextIn .8s .8s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+.splash-footer svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: rgba(16,185,129,.7) !important;
+}
+
+/* Small screens */
+@media (max-width: 400px) {
+  .splash-logo { width: 110px; height: 110px; margin-bottom: 24px; }
+  .splash-logo-inner { width: 82px; height: 82px; border-radius: 24px; }
+  .splash-logo-inner svg { width: 40px !important; height: 40px !important; }
+  .splash-title { font-size: 1.75rem; }
+  .splash-tagline { font-size: .75rem; }
+}
+
+/* Light mode variant (kalau kamu switch ke light) */
+html:not(.dark) #splash-screen {
+  background:
+    radial-gradient(1000px 500px at 20% 20%, rgba(16,185,129,.15), transparent 60%),
+    radial-gradient(800px 400px at 80% 80%, rgba(99,102,241,.12), transparent 60%),
+    linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdf4 100%);
+}
+html:not(.dark) .splash-title {
+  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html:not(.dark) .splash-sub { color: rgba(4,120,87,.5); }
+html:not(.dark) .splash-tagline { color: rgba(4,120,87,.7); }
+html:not(.dark) .splash-footer { color: rgba(4,120,87,.5); }
+html:not(.dark) .splash-loader { background: rgba(16,185,129,.15); }
 /* ==================== END OF FILE ==================== */
