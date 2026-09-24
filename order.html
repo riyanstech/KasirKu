@@ -39,7 +39,40 @@
     @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
     .anim-up { animation: slideUp .3s cubic-bezier(.32,.72,0,1); }
     .anim-fade { animation: fadeIn .25s ease; }
-    input, textarea, button { font-family: inherit; }
+    input, textarea, button, select { font-family: inherit; }
+
+    /* Radio method cards */
+    .method-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .method-card:hover { border-color: #a7f3d0; background: #f0fdf4; }
+    .method-card.active {
+      border-color: #10b981;
+      background: #ecfdf5;
+      box-shadow: 0 4px 12px -4px rgba(16,185,129,.3);
+    }
+    .method-card input { display: none; }
+    .method-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: grid; place-items: center; flex-shrink: 0;
+      background: #f1f5f9; color: #64748b;
+    }
+    .method-card.active .method-icon {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+    }
+    .method-label { font-weight: 700; font-size: .85rem; line-height: 1.2; }
+    .method-desc { font-size: .68rem; color: #64748b; margin-top: 1px; line-height: 1.3; }
+    .method-card.active .method-desc { color: #047857; }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900 antialiased">
@@ -77,7 +110,6 @@
 
     <!-- Main -->
     <div id="main-screen" class="hidden anim-fade">
-      <!-- Banner cara order -->
       <div class="mt-4 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white p-4 shadow-lg shadow-primary-500/20">
         <div class="flex items-start gap-3">
           <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
@@ -85,26 +117,22 @@
             <div class="font-bold mb-1">Cara Order</div>
             <ol class="text-white/90 text-xs leading-relaxed list-decimal list-inside space-y-0.5">
               <li>Pilih produk yang mau dibeli</li>
-              <li>Isi nomor tujuan & upload bukti transfer</li>
+              <li>Isi data pesanan & upload bukti (kalau bukan COD)</li>
               <li>Kirim pesanan, kasir akan proses</li>
             </ol>
           </div>
         </div>
       </div>
 
-      <!-- Search -->
       <div class="mt-4 relative">
         <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10"></i>
         <input id="search-input" type="search" placeholder="Cari produk..." class="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 bg-white focus:border-primary-500 outline-none text-sm transition">
       </div>
 
-      <!-- Category chips -->
       <div id="category-chips" class="mt-3 flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1"></div>
 
-      <!-- Product grid -->
       <div id="product-grid" class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
 
-      <!-- Empty -->
       <div id="empty-products" class="hidden py-16 text-center">
         <i data-lucide="package-open" class="w-14 h-14 text-slate-300 mx-auto"></i>
         <p class="text-slate-500 text-sm mt-3 font-medium">Belum ada produk untuk dijual online</p>
@@ -118,7 +146,6 @@
     <div class="relative h-full flex items-end sm:items-center justify-center sm:p-4">
       <div class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[94dvh] flex flex-col anim-up shadow-2xl">
 
-        <!-- Header -->
         <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 flex-shrink-0">
           <h3 class="font-extrabold text-base">Detail Pesanan</h3>
           <button onclick="closeOrderModal()" class="w-9 h-9 rounded-lg hover:bg-slate-100 grid place-items-center transition">
@@ -126,13 +153,45 @@
           </button>
         </div>
 
-        <!-- Body -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
           <!-- Product summary -->
           <div id="modal-product" class="flex items-center gap-3 p-3 rounded-xl bg-primary-50 border border-primary-100"></div>
 
-          <!-- Target number -->
-          <div>
+          <!-- ===== METODE (hanya muncul kalau needs_address) ===== -->
+          <div id="method-section" class="hidden">
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">
+              Metode <span class="text-red-500">*</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <label class="method-card" data-method="delivery">
+                <input type="radio" name="delivery-method" value="delivery">
+                <div class="method-icon"><i data-lucide="truck" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="method-label">Dikirim</div>
+                  <div class="method-desc">Transfer dulu</div>
+                </div>
+              </label>
+              <label class="method-card" data-method="pickup">
+                <input type="radio" name="delivery-method" value="pickup">
+                <div class="method-icon"><i data-lucide="store" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="method-label">Ambil</div>
+                  <div class="method-desc">Di warung</div>
+                </div>
+              </label>
+              <label class="method-card" data-method="cod">
+                <input type="radio" name="delivery-method" value="cod">
+                <div class="method-icon"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="method-label">COD</div>
+                  <div class="method-desc">Bayar di tempat</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- ===== NOMOR TUJUAN (untuk produk digital) ===== -->
+          <div id="target-section">
             <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
               Nomor Tujuan <span class="text-red-500">*</span>
             </label>
@@ -141,12 +200,25 @@
             <p id="err-target" class="text-red-500 text-xs mt-1 hidden">Format nomor tidak valid</p>
           </div>
 
-          <!-- Name + Phone -->
+          <!-- ===== ALAMAT (untuk delivery/cod) ===== -->
+          <div id="address-section" class="hidden">
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+              Alamat Pengiriman <span class="text-red-500">*</span>
+            </label>
+            <textarea id="inp-address" rows="3" placeholder="Nama jalan, RT/RW, kelurahan, kecamatan, patokan..."
+              class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm resize-none transition"></textarea>
+            <p id="err-address" class="text-red-500 text-xs mt-1 hidden">Alamat wajib diisi</p>
+          </div>
+
+          <!-- ===== Nama + Phone ===== -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Nama</label>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+                Nama <span class="text-red-500">*</span>
+              </label>
               <input id="inp-name" type="text" placeholder="Nama kamu"
                 class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm transition">
+              <p id="err-name" class="text-red-500 text-xs mt-1 hidden">Nama wajib diisi</p>
             </div>
             <div>
               <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">No. WA</label>
@@ -155,25 +227,25 @@
             </div>
           </div>
 
-          <!-- Notes -->
+          <!-- ===== Notes ===== -->
           <div>
             <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Catatan</label>
-            <textarea id="inp-notes" rows="2" placeholder="Opsional — contoh: tolong diproses cepat"
+            <textarea id="inp-notes" rows="2" placeholder="Opsional — contoh: pedas, tanpa bawang, dll"
               class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm resize-none transition"></textarea>
           </div>
 
-          <!-- Payment info -->
-          <div class="rounded-xl bg-amber-50 border-2 border-amber-200 p-3.5">
+          <!-- ===== INFO PEMBAYARAN ===== -->
+          <div id="payment-section" class="rounded-xl bg-amber-50 border-2 border-amber-200 p-3.5">
             <div class="flex items-center gap-2 mb-2">
               <i data-lucide="wallet" class="w-4 h-4 text-amber-600"></i>
               <div class="font-extrabold text-sm text-amber-900">Info Pembayaran</div>
             </div>
             <div id="payment-info" class="text-sm text-amber-900 whitespace-pre-line font-mono leading-relaxed"></div>
-            <p class="text-[11px] text-amber-700 mt-2 italic">Transfer sesuai nominal, lalu upload bukti di bawah 👇</p>
+            <p id="payment-hint" class="text-[11px] text-amber-700 mt-2 italic">Transfer sesuai nominal, lalu upload bukti di bawah 👇</p>
           </div>
 
-          <!-- Proof upload -->
-          <div>
+          <!-- ===== UPLOAD BUKTI ===== -->
+          <div id="proof-section">
             <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
               Bukti Transfer <span class="text-red-500">*</span>
             </label>
@@ -182,7 +254,6 @@
           </div>
         </div>
 
-        <!-- Footer -->
         <div class="px-4 py-3.5 border-t border-slate-100 bg-slate-50 flex gap-2 flex-shrink-0 rounded-b-3xl sm:rounded-b-2xl">
           <button onclick="orderViaWA()" title="Order via WhatsApp"
             class="flex-shrink-0 px-3.5 py-3 rounded-xl bg-white border-2 border-green-500 text-green-600 font-bold text-sm flex items-center gap-1.5 hover:bg-green-50 transition active:scale-95">
@@ -208,7 +279,7 @@
         </div>
         <h3 class="font-extrabold text-xl text-slate-900">Pesanan Terkirim!</h3>
         <p class="text-sm text-slate-500 mt-2 mb-4 leading-relaxed">
-          Kasir akan segera memverifikasi bukti transfer kamu. Mohon tunggu ya 🙏
+          Kasir akan segera memproses pesanan kamu. Mohon tunggu ya 🙏
         </p>
         <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 mb-5">
           <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-0.5">Kode Pesanan</div>
@@ -236,30 +307,27 @@
   <!-- ============ TOASTS ============ -->
   <div id="toasts" class="fixed top-4 left-4 right-4 z-[200] flex flex-col items-center gap-2 pointer-events-none"></div>
 
-  <!-- ============ SCRIPT ============ -->
   <script>
   (function () {
     'use strict';
 
-    // ============== KONFIG ==============
     const SUPABASE_URL = 'https://tfgemkitmnuqiiclepqw.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_eO-jDODnzgSKvujTRT5nZw_BJy36AA0';
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ============== STATE ==============
     const state = {
       seller: null,
       products: [],
       selectedProduct: null,
+      deliveryMethod: 'digital',
       proofFile: null,
       proofPreview: null,
       categoryFilter: '',
       searchQuery: '',
     };
 
-    // ============== UTILITIES ==============
     const $ = (id) => document.getElementById(id);
     const fmt = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -312,17 +380,15 @@
 
         if (error) throw error;
         if (!profile) return showError('Toko tidak ditemukan', `Username "${username}" tidak terdaftar.`);
-
         if (!profile.online_order_enabled) {
           return showError('Toko sedang tutup', 'Pemesanan online sedang tidak aktif. Silakan coba lagi nanti.');
         }
 
         state.seller = profile;
 
-        // Fetch produk online milik seller
         const { data: products } = await sb
           .from('products')
-          .select('id, name, sku, price, online_price, stock, category, image_url, is_online')
+          .select('id, name, sku, price, online_price, stock, category, image_url, is_online, needs_address')
           .eq('user_id', profile.id)
           .eq('is_online', true)
           .order('category', { ascending: true, nullsFirst: false })
@@ -330,7 +396,6 @@
 
         state.products = products || [];
 
-        // Update UI
         const storeName = profile.store_name || 'Toko Online';
         document.title = 'Order — ' + storeName;
         $('store-name').textContent = storeName;
@@ -347,14 +412,10 @@
     }
 
     async function autoDetectSeller() {
-      const { data } = await sb
-        .from('profiles')
-        .select('username')
-        .eq('online_order_enabled', true)
-        .limit(2);
+      const { data } = await sb.from('profiles').select('username').eq('online_order_enabled', true).limit(2);
       if (!data || data.length === 0) return null;
       if (data.length === 1) return data[0].username;
-      return null; // multiple → wajib pakai ?seller=
+      return null;
     }
 
     // ============== RENDER ==============
@@ -377,8 +438,11 @@
       const c = $('category-chips');
       if (!cats.length) { c.innerHTML = ''; return; }
       c.innerHTML =
-        `<button data-cat="" class="cat-chip ${!state.categoryFilter ? 'active' : ''}">Semua</button>` +
-        cats.map(cat => `<button data-cat="${esc(cat)}" class="cat-chip ${state.categoryFilter === cat ? 'active' : ''}">${esc(cat)}</button>`).join('');
+        `<button data-cat="" class="cat-chip ${!state.categoryFilter ? 'active' : ''} px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${!state.categoryFilter ? 'bg-primary-500 text-white' : 'bg-white text-slate-600 border border-slate-200'}">Semua</button>` +
+        cats.map(cat => {
+          const active = state.categoryFilter === cat;
+          return `<button data-cat="${esc(cat)}" class="cat-chip px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${active ? 'bg-primary-500 text-white' : 'bg-white text-slate-600 border border-slate-200'}">${esc(cat)}</button>`;
+        }).join('');
       c.querySelectorAll('.cat-chip').forEach(btn => {
         btn.onclick = () => { state.categoryFilter = btn.dataset.cat; renderCategoryChips(); renderProducts(); };
       });
@@ -412,11 +476,15 @@
             : p.stock <= 5
               ? `<div class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">SISA ${p.stock}</div>`
               : '';
+        const tag = p.needs_address
+          ? `<span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-blue-500 text-white text-[9px] font-extrabold">KIRIM</span>`
+          : '';
         return `
           <button data-pid="${esc(p.id)}" class="product-card text-left bg-white rounded-2xl border border-slate-200 overflow-hidden transition active:scale-[.97] hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/10 ${out ? 'opacity-50 pointer-events-none' : ''}">
             <div class="relative w-full aspect-square bg-white flex items-center justify-center overflow-hidden">
               ${img}
               ${stockBadge}
+              ${tag}
             </div>
             <div class="p-2.5 border-t border-slate-100">
               ${p.category ? `<div class="text-[9px] font-extrabold uppercase tracking-wider text-primary-600 mb-0.5 truncate">${esc(p.category)}</div>` : ''}
@@ -440,6 +508,9 @@
       state.proofFile = null;
       state.proofPreview = null;
 
+      const needsAddress = !!p.needs_address;
+      state.deliveryMethod = needsAddress ? 'delivery' : 'digital';
+
       const price = Number(p.online_price || p.price || 0);
       const img = p.image_url
         ? `<img src="${esc(p.image_url)}" alt="" class="w-14 h-14 rounded-lg object-contain bg-white border border-primary-100 flex-shrink-0">`
@@ -455,18 +526,55 @@
 
       $('payment-info').textContent = state.seller.payment_info || 'Hubungi kasir via WA untuk info pembayaran.';
 
+      // Toggle sections
+      $('method-section').classList.toggle('hidden', !needsAddress);
+      $('target-section').classList.toggle('hidden', needsAddress);
+      $('address-section').classList.toggle('hidden', !needsAddress || state.deliveryMethod === 'pickup');
+
       // Reset form
       $('inp-target').value = '';
+      $('inp-address').value = '';
       $('inp-name').value = '';
       $('inp-phone').value = '';
       $('inp-notes').value = '';
       $('inp-proof').value = '';
-      $('err-target').classList.add('hidden');
+      ['err-target', 'err-address', 'err-name'].forEach(id => $(id).classList.add('hidden'));
       renderProofArea();
+
+      // Bind method radios (sekali saja per-open)
+      document.querySelectorAll('.method-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.method === state.deliveryMethod);
+        card.onclick = () => selectMethod(card.dataset.method);
+      });
 
       $('order-modal').classList.remove('hidden');
       icon();
-      setTimeout(() => $('inp-target')?.focus(), 250);
+      setTimeout(() => (needsAddress ? null : $('inp-target'))?.focus(), 250);
+    }
+
+    function selectMethod(method) {
+      state.deliveryMethod = method;
+      document.querySelectorAll('.method-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.method === method);
+      });
+
+      // Address visible untuk delivery & cod, hidden untuk pickup
+      $('address-section').classList.toggle('hidden', method === 'pickup');
+
+      // Kalau COD → sembunyikan upload bukti & info pembayaran
+      const isCod = method === 'cod';
+      $('proof-section').classList.toggle('hidden', isCod);
+      $('payment-section').classList.toggle('hidden', isCod);
+      $('payment-hint').classList.toggle('hidden', isCod);
+
+      // Update label
+      if (isCod) {
+        // Clear file kalau ada
+        state.proofFile = null;
+        state.proofPreview = null;
+        renderProofArea();
+      }
+      icon();
     }
 
     function closeOrderModal() {
@@ -527,7 +635,6 @@
     function normalizePhone(s) {
       return String(s || '').replace(/[^\d+]/g, '');
     }
-
     function isValidPhone(s) {
       const n = normalizePhone(s);
       return /^(\+?62|0)8[1-9][0-9]{6,11}$/.test(n);
@@ -536,43 +643,72 @@
     async function submitOrder() {
       if (!state.selectedProduct || !state.seller) return;
 
+      const p = state.selectedProduct;
+      const needsAddress = !!p.needs_address;
+      const method = state.deliveryMethod;
+      const isCod = method === 'cod';
+      const needAddressField = needsAddress && (method === 'delivery' || method === 'cod');
+
       const target = $('inp-target').value.trim();
+      const address = $('inp-address').value.trim();
       const name = $('inp-name').value.trim();
       const phone = $('inp-phone').value.trim();
       const notes = $('inp-notes').value.trim();
 
-      if (!target) { $('err-target').textContent = 'Nomor tujuan wajib diisi'; $('err-target').classList.remove('hidden'); return; }
-      if (!isValidPhone(target)) { $('err-target').textContent = 'Format nomor tidak valid (contoh: 08123456789)'; $('err-target').classList.remove('hidden'); return; }
-      $('err-target').classList.add('hidden');
+      // Validasi
+      if (!needsAddress) {
+        if (!target) { $('err-target').textContent = 'Nomor tujuan wajib diisi'; $('err-target').classList.remove('hidden'); return; }
+        if (!isValidPhone(target)) { $('err-target').textContent = 'Format nomor tidak valid (contoh: 08123456789)'; $('err-target').classList.remove('hidden'); return; }
+        $('err-target').classList.add('hidden');
+      }
 
-      if (!state.proofFile) return toast('Upload bukti transfer dulu ya', 'error');
+      if (needAddressField) {
+        if (!address) { $('err-address').textContent = 'Alamat wajib diisi'; $('err-address').classList.remove('hidden'); return; }
+        if (address.length < 10) { $('err-address').textContent = 'Alamat terlalu pendek, mohon lengkapi'; $('err-address').classList.remove('hidden'); return; }
+        $('err-address').classList.add('hidden');
+      }
+
+      if (needsAddress && !name) {
+        $('err-name').textContent = 'Nama wajib diisi';
+        $('err-name').classList.remove('hidden');
+        return;
+      }
+      $('err-name').classList.add('hidden');
+
+      if (!isCod && !state.proofFile) return toast('Upload bukti transfer dulu ya', 'error');
       if (phone && !isValidPhone(phone)) return toast('Format No. WA tidak valid', 'error');
 
       const btn = $('btn-submit');
       btn.disabled = true;
 
       try {
-        // 1. Upload bukti
-        showLoading('Mengunggah bukti...');
-        const proofUrl = await uploadProof(state.proofFile);
+        let proofUrl = null;
+        if (!isCod) {
+          showLoading('Mengunggah bukti...');
+          proofUrl = await uploadProof(state.proofFile);
+        }
 
-        // 2. Insert order
         showLoading('Mengirim pesanan...');
-        const price = Number(state.selectedProduct.online_price || state.selectedProduct.price || 0);
+        const price = Number(p.online_price || p.price || 0);
+        const insertData = {
+          seller_id: state.seller.id,
+          product_id: p.id,
+          product_name: p.name,
+          product_price: price,
+          target_number: needsAddress ? (address || '-') : normalizePhone(target),
+          customer_name: name || null,
+          customer_phone: phone ? normalizePhone(phone) : null,
+          notes: notes || null,
+          payment_proof_url: proofUrl,
+          status: 'pending',
+          delivery_method: method,
+          delivery_address: needAddressField ? address : null,
+          delivery_fee: 0,
+        };
+
         const { data: order, error } = await sb
           .from('online_orders')
-          .insert({
-            seller_id: state.seller.id,
-            product_id: state.selectedProduct.id,
-            product_name: state.selectedProduct.name,
-            product_price: price,
-            target_number: normalizePhone(target),
-            customer_name: name || null,
-            customer_phone: phone ? normalizePhone(phone) : null,
-            notes: notes || null,
-            payment_proof_url: proofUrl,
-            status: 'pending',
-          })
+          .insert(insertData)
           .select('id')
           .single();
 
@@ -628,21 +764,27 @@
       if (!wa) return toast('Nomor WA toko belum diset', 'error');
 
       const p = state.selectedProduct;
+      const needsAddress = !!p.needs_address;
       const price = Number(p.online_price || p.price || 0);
+      const method = state.deliveryMethod;
       const target = $('inp-target')?.value.trim() || '';
+      const address = $('inp-address')?.value.trim() || '';
       const name = $('inp-name')?.value.trim() || '';
       const notes = $('inp-notes')?.value.trim() || '';
 
+      const methodLabels = { delivery: 'Dikirim', pickup: 'Ambil di warung', cod: 'COD (bayar di tempat)', digital: '' };
       const lines = [
         'Halo, saya mau order:',
         '',
         `*${p.name}*`,
         `Harga: ${fmt(price)}`,
-        target ? `Nomor tujuan: ${target}` : 'Nomor tujuan: (akan saya isi)',
+        needsAddress && methodLabels[method] ? `Metode: ${methodLabels[method]}` : '',
+        !needsAddress && target ? `Nomor tujuan: ${target}` : '',
+        address ? `Alamat: ${address}` : '',
         name ? `Nama: ${name}` : '',
         notes ? `Catatan: ${notes}` : '',
         '',
-        'Mohon info pembayarannya. Terima kasih 🙏',
+        'Mohon info selanjutnya. Terima kasih 🙏',
       ].filter(Boolean);
 
       const url = `https://wa.me/${wa.replace(/[^\d]/g, '')}?text=${encodeURIComponent(lines.join('\n'))}`;
@@ -657,8 +799,9 @@
       });
       $('inp-proof').addEventListener('change', handleProofChange);
       $('inp-target').addEventListener('input', () => $('err-target').classList.add('hidden'));
+      $('inp-address').addEventListener('input', () => $('err-address').classList.add('hidden'));
+      $('inp-name').addEventListener('input', () => $('err-name').classList.add('hidden'));
 
-      // Close modal on ESC
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           if (!$('order-modal').classList.contains('hidden')) closeOrderModal();
@@ -672,6 +815,7 @@
     window.closeOrderModal = closeOrderModal;
     window.submitOrder = submitOrder;
     window.orderViaWA = orderViaWA;
+    window.selectMethod = selectMethod;
   })();
   </script>
 </body>
