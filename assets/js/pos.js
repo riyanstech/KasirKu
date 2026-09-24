@@ -126,9 +126,42 @@ function renderCart() {
   if (discEl) discEl.textContent = formatRupiah(t.discount);
   if (totalEl) totalEl.textContent = formatRupiah(t.total);
   if (checkoutBtn) checkoutBtn.disabled = cart.length === 0;
+   // Update Floating Cart Button (FAB)
+  updateCartFab(t);
 
   if (window.lucide) lucide.createIcons();
 }
+
+/* ==================== FLOATING CART FAB ==================== */
+function updateCartFab(totals) {
+  const fab = document.getElementById('cart-fab');
+  const badge = document.getElementById('cart-fab-badge');
+  const totalEl = document.getElementById('cart-fab-total');
+  if (!fab) return;
+
+  const hasItems = totals.count > 0;
+  fab.classList.toggle('hidden', !hasItems);
+
+  if (badge) badge.textContent = totals.count;
+  if (totalEl) totalEl.textContent = formatRupiah(totals.total);
+}
+
+function scrollToCart() {
+  const cart = document.querySelector('.pos-cart');
+  if (!cart) return;
+
+  cart.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Highlight animasi biar user tahu
+  cart.classList.remove('highlight');
+  // Force reflow biar animasi restart
+  void cart.offsetWidth;
+  cart.classList.add('highlight');
+
+  setTimeout(() => cart.classList.remove('highlight'), 1000);
+}
+window.scrollToCart = scrollToCart;
+window.updateCartFab = updateCartFab;
 
 /* ==================== POS PRODUCT GRID ==================== */
 function renderPosGrid() {
