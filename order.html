@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
   <meta name="theme-color" content="#10b981">
+  <meta name="description" content="Order online — cepat, mudah, dan aman">
   <title>Order Online</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -19,9 +20,20 @@
           },
           colors: {
             primary: {
-              50: '#ecfdf5', 100: '#d1fae5', 400: '#34d399',
-              500: '#10b981', 600: '#059669', 700: '#047857',
+              50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7',
+              400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857',
+              800: '#065f46', 900: '#064e3b',
             }
+          },
+          animation: {
+            'fade-in': 'fadeIn .3s ease',
+            'slide-up': 'slideUp .35s cubic-bezier(.32,.72,0,1)',
+            'float': 'float 3s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
+            slideUp: { from: { transform: 'translateY(20px)', opacity: '0' }, to: { transform: 'none', opacity: '1' } },
+            float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-4px)' } },
           }
         }
       }
@@ -30,137 +42,352 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
   <style>
-    html { -webkit-text-size-adjust: 100%; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
     body { -webkit-font-smoothing: antialiased; }
+
+    /* Scrollbar rapi */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: none; opacity: 1 } }
-    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-    .anim-up { animation: slideUp .3s cubic-bezier(.32,.72,0,1); }
-    .anim-fade { animation: fadeIn .25s ease; }
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
     input, textarea, button, select { font-family: inherit; }
 
-    /* Radio method cards */
+    /* Skeleton */
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background-size: 1000px 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Product card hover effect */
+    .product-card { transition: all .25s cubic-bezier(.34,1.56,.64,1); }
+    @media (hover: hover) {
+      .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px -12px rgba(16,185,129,.35), 0 8px 16px rgba(0,0,0,.06);
+      }
+      .product-card:hover .product-card-cta { background: #059669; }
+    }
+    .product-card:active { transform: scale(.97); }
+
+    /* Method card */
     .method-card {
       position: relative;
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 12px;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 2px solid #e2e8f0;
       background: #fff;
       cursor: pointer;
-      transition: all .15s;
+      transition: all .2s;
     }
     .method-card:hover { border-color: #a7f3d0; background: #f0fdf4; }
     .method-card.active {
       border-color: #10b981;
-      background: #ecfdf5;
-      box-shadow: 0 4px 12px -4px rgba(16,185,129,.3);
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      box-shadow: 0 6px 16px -6px rgba(16,185,129,.4);
     }
     .method-card input { display: none; }
     .method-icon {
-      width: 36px; height: 36px; border-radius: 10px;
+      width: 38px; height: 38px; border-radius: 11px;
       display: grid; place-items: center; flex-shrink: 0;
       background: #f1f5f9; color: #64748b;
+      transition: all .2s;
     }
     .method-card.active .method-icon {
       background: linear-gradient(135deg, #10b981, #059669);
       color: #fff;
+      box-shadow: 0 4px 10px -2px rgba(16,185,129,.5);
     }
-    .method-label { font-weight: 700; font-size: .85rem; line-height: 1.2; }
+    .method-label { font-weight: 800; font-size: .85rem; line-height: 1.2; color: #0f172a; }
     .method-desc { font-size: .68rem; color: #64748b; margin-top: 1px; line-height: 1.3; }
     .method-card.active .method-desc { color: #047857; }
+
+    /* Glow effect for CTA */
+    .btn-glow {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-glow::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+      transition: left .5s;
+    }
+    .btn-glow:hover::before { left: 100%; }
+
+    /* Step indicator */
+    .step-dot {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: .7rem; font-weight: 800;
+      background: #e2e8f0; color: #94a3b8;
+      transition: all .3s;
+    }
+    .step-dot.active { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 4px 10px -2px rgba(16,185,129,.5); }
+    .step-dot.done { background: #10b981; color: #fff; }
+    .step-line { flex: 1; height: 2px; background: #e2e8f0; border-radius: 1px; transition: background .3s; }
+    .step-line.done { background: #10b981; }
+
+    /* Pulse animation for status */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .6; transform: scale(1.15); }
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    /* Grid pattern background */
+    .bg-grid {
+      background-image:
+        linear-gradient(rgba(16,185,129,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,185,129,.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900 antialiased">
 
   <!-- ============ HEADER ============ -->
-  <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-200">
-    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white flex-shrink-0 shadow-md shadow-primary-500/30">
-        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/70 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center gap-3">
+      <div id="store-avatar" class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white flex-shrink-0 shadow-lg shadow-primary-500/30 ring-2 ring-white">
+        <i data-lucide="store" class="w-5 h-5"></i>
       </div>
       <div class="min-w-0 flex-1">
-        <div id="store-name" class="font-extrabold text-sm truncate">Memuat...</div>
-        <div id="store-status" class="text-[11px] text-slate-500 truncate">—</div>
+        <div class="flex items-center gap-2">
+          <div id="store-name" class="font-extrabold text-[15px] truncate">Memuat...</div>
+        </div>
+        <div id="store-status" class="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
+          <span class="status-dot"></span>
+          <span>—</span>
+        </div>
       </div>
+      <button onclick="scrollToFooter()" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition" title="Info">
+        <i data-lucide="info" class="w-5 h-5 text-slate-500"></i>
+      </button>
     </div>
   </header>
 
   <!-- ============ MAIN ============ -->
-  <main class="max-w-3xl mx-auto px-4 pb-32">
+  <main class="max-w-4xl mx-auto pb-32">
 
-    <!-- Loading -->
-    <div id="loading-screen" class="py-24 text-center">
-      <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
-      <p class="mt-4 text-slate-500 text-sm font-medium">Memuat toko...</p>
+    <!-- Loading Skeleton -->
+    <div id="loading-screen">
+      <div class="px-4 pt-4">
+        <div class="h-32 rounded-3xl skeleton mb-4"></div>
+      </div>
+      <div class="px-4">
+        <div class="h-12 rounded-xl skeleton mb-3"></div>
+        <div class="flex gap-2 mb-4 overflow-hidden">
+          <div class="h-9 w-20 rounded-full skeleton flex-shrink-0"></div>
+          <div class="h-9 w-24 rounded-full skeleton flex-shrink-0"></div>
+          <div class="h-9 w-20 rounded-full skeleton flex-shrink-0"></div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="aspect-[3/4] rounded-2xl skeleton"></div>
+          <div class="aspect-[3/4] rounded-2xl skeleton"></div>
+          <div class="aspect-[3/4] rounded-2xl skeleton"></div>
+          <div class="aspect-[3/4] rounded-2xl skeleton"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Error -->
-    <div id="error-screen" class="hidden py-20 text-center anim-fade">
-      <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 text-red-500 grid place-items-center mb-4">
-        <i data-lucide="store" class="w-8 h-8"></i>
+    <div id="error-screen" class="hidden py-24 px-6 text-center animate-fade-in">
+      <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-red-100 to-red-50 text-red-500 grid place-items-center mb-5 shadow-lg shadow-red-100">
+        <i data-lucide="store" class="w-10 h-10"></i>
       </div>
-      <h2 id="err-title" class="font-extrabold text-lg text-slate-900">Toko tidak ditemukan</h2>
-      <p id="err-msg" class="text-slate-500 text-sm mt-2 max-w-xs mx-auto"></p>
+      <h2 id="err-title" class="font-extrabold text-xl text-slate-900">Toko tidak ditemukan</h2>
+      <p id="err-msg" class="text-slate-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed"></p>
     </div>
 
     <!-- Main -->
-    <div id="main-screen" class="hidden anim-fade">
-      <div class="mt-4 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white p-4 shadow-lg shadow-primary-500/20">
-        <div class="flex items-start gap-3">
-          <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
-          <div class="text-sm">
-            <div class="font-bold mb-1">Cara Order</div>
-            <ol class="text-white/90 text-xs leading-relaxed list-decimal list-inside space-y-0.5">
-              <li>Pilih produk yang mau dibeli</li>
-              <li>Isi data pesanan & upload bukti (kalau bukan COD)</li>
-              <li>Kirim pesanan, kasir akan proses</li>
-            </ol>
+    <div id="main-screen" class="hidden">
+
+      <!-- HERO BANNER -->
+      <div class="px-4 pt-4">
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-500 via-primary-600 to-emerald-700 text-white p-5 shadow-xl shadow-primary-500/25">
+          <!-- Decorations -->
+          <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+          <div class="absolute -bottom-12 -left-8 w-40 h-40 rounded-full bg-white/5 blur-3xl"></div>
+          <div class="absolute top-4 right-4 opacity-20">
+            <i data-lucide="shopping-bag" class="w-20 h-20"></i>
+          </div>
+
+          <div class="relative">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-[11px] font-extrabold uppercase tracking-wider mb-3">
+              <i data-lucide="sparkles" class="w-3 h-3"></i>
+              Order Online
+            </div>
+            <h1 class="text-2xl font-black leading-tight mb-1.5">
+              Pesan Mudah,<br>Bayar Fleksibel
+            </h1>
+            <p class="text-white/85 text-[13px] leading-relaxed mb-4 max-w-xs">
+              Pilih produk, isi data, dan pesanan langsung masuk ke kasir.
+            </p>
+
+            <!-- Trust badges -->
+            <div class="flex flex-wrap gap-2">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur text-[11px] font-bold">
+                <i data-lucide="shield-check" class="w-3 h-3"></i>
+                Aman
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur text-[11px] font-bold">
+                <i data-lucide="zap" class="w-3 h-3"></i>
+                Cepat
+              </div>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur text-[11px] font-bold">
+                <i data-lucide="banknote" class="w-3 h-3"></i>
+                COD Tersedia
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="mt-4 relative">
-        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10"></i>
-        <input id="search-input" type="search" placeholder="Cari produk..." class="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 bg-white focus:border-primary-500 outline-none text-sm transition">
+      <!-- SEARCH (sticky) -->
+      <div class="sticky top-16 z-30 bg-slate-50/95 backdrop-blur-md pt-3 pb-2 px-4 -mb-px">
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10"></i>
+          <input id="search-input" type="search" placeholder="Cari produk..."
+            class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 bg-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm font-medium transition-all shadow-sm">
+        </div>
       </div>
 
-      <div id="category-chips" class="mt-3 flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1"></div>
-
-      <div id="product-grid" class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
-
-      <div id="empty-products" class="hidden py-16 text-center">
-        <i data-lucide="package-open" class="w-14 h-14 text-slate-300 mx-auto"></i>
-        <p class="text-slate-500 text-sm mt-3 font-medium">Belum ada produk untuk dijual online</p>
+      <!-- CATEGORY CHIPS -->
+      <div class="px-4 pt-2">
+        <div id="category-chips" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4"></div>
       </div>
+
+      <!-- SECTION TITLE -->
+      <div class="px-4 pt-4 pb-2 flex items-center justify-between">
+        <h2 class="font-extrabold text-[15px] text-slate-800">Produk Tersedia</h2>
+        <span id="product-count" class="text-[11px] font-bold text-slate-500"></span>
+      </div>
+
+      <!-- PRODUCT GRID -->
+      <div id="product-grid" class="px-4 grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+
+      <!-- EMPTY -->
+      <div id="empty-products" class="hidden py-20 px-6 text-center">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-slate-100 grid place-items-center mb-4">
+          <i data-lucide="package-open" class="w-10 h-10 text-slate-400"></i>
+        </div>
+        <h3 class="font-extrabold text-slate-800 mb-1.5">Belum ada produk</h3>
+        <p class="text-slate-500 text-sm max-w-xs mx-auto">Produk akan muncul di sini saat toko menambahkan barang.</p>
+      </div>
+
+      <!-- FOOTER -->
+      <footer id="page-footer" class="mt-8 px-4 pb-6">
+        <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
+          <div class="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white shadow-lg shadow-primary-500/30">
+              <i data-lucide="headphones" class="w-6 h-6"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-extrabold text-slate-800">Butuh Bantuan?</div>
+              <div class="text-xs text-slate-500 mt-0.5">Tim kami siap membantu pesanan kamu</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="text-center p-2">
+              <div class="w-9 h-9 mx-auto rounded-xl bg-emerald-50 text-emerald-600 grid place-items-center mb-1.5">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div class="text-[10px] font-bold text-slate-600">Aman</div>
+            </div>
+            <div class="text-center p-2">
+              <div class="w-9 h-9 mx-auto rounded-xl bg-blue-50 text-blue-600 grid place-items-center mb-1.5">
+                <i data-lucide="clock" class="w-4 h-4"></i>
+              </div>
+              <div class="text-[10px] font-bold text-slate-600">Cepat</div>
+            </div>
+            <div class="text-center p-2">
+              <div class="w-9 h-9 mx-auto rounded-xl bg-amber-50 text-amber-600 grid place-items-center mb-1.5">
+                <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+              </div>
+              <div class="text-[10px] font-bold text-slate-600">Terpercaya</div>
+            </div>
+          </div>
+
+          <button onclick="openFooterWA()" class="w-full py-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 hover:brightness-110 transition active:scale-[.98]">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            Hubungi via WhatsApp
+          </button>
+
+          <p class="text-[10px] text-slate-400 text-center mt-4 leading-relaxed">
+            Powered by <span class="font-bold text-slate-600">KasirKu</span><br>
+            &copy; 2026
+          </p>
+        </div>
+      </footer>
     </div>
   </main>
+
+  <!-- ============ FLOATING WA ============ -->
+  <button id="fab-wa" onclick="openFooterWA()"
+    class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 text-white grid place-items-center shadow-2xl shadow-green-500/40 hover:scale-110 active:scale-95 transition-transform hidden"
+    title="Chat WhatsApp">
+    <i data-lucide="message-circle" class="w-6 h-6"></i>
+  </button>
 
   <!-- ============ MODAL ORDER ============ -->
   <div id="order-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeOrderModal()"></div>
     <div class="relative h-full flex items-end sm:items-center justify-center sm:p-4">
-      <div class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[94dvh] flex flex-col anim-up shadow-2xl">
+      <div class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[94dvh] flex flex-col shadow-2xl animate-slide-up">
 
-        <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 flex-shrink-0">
-          <h3 class="font-extrabold text-base">Detail Pesanan</h3>
-          <button onclick="closeOrderModal()" class="w-9 h-9 rounded-lg hover:bg-slate-100 grid place-items-center transition">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
+          <div>
+            <h3 class="font-extrabold text-base">Buat Pesanan</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">Lengkapi data di bawah</p>
+          </div>
+          <button onclick="closeOrderModal()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center transition">
             <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4 space-y-4">
-          <!-- Product summary -->
-          <div id="modal-product" class="flex items-center gap-3 p-3 rounded-xl bg-primary-50 border border-primary-100"></div>
+        <!-- Step indicator -->
+        <div class="px-5 py-3 bg-slate-50/70 border-b border-slate-100 flex items-center gap-2 flex-shrink-0">
+          <div id="step-dot-1" class="step-dot active">1</div>
+          <div id="step-line-1" class="step-line"></div>
+          <div id="step-dot-2" class="step-dot">2</div>
+          <div id="step-line-2" class="step-line"></div>
+          <div id="step-dot-3" class="step-dot">3</div>
+          <div class="text-[11px] font-bold text-slate-500 ml-2" id="step-label">Data Pesanan</div>
+        </div>
 
-          <!-- ===== METODE (hanya muncul kalau needs_address) ===== -->
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+          <!-- Product summary -->
+          <div id="modal-product" class="flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-primary-50 to-emerald-50 border border-primary-100"></div>
+
+          <!-- METODE -->
           <div id="method-section" class="hidden">
-            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">
-              Metode <span class="text-red-500">*</span>
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2.5">
+              Pilih Metode <span class="text-red-500">*</span>
             </label>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <label class="method-card" data-method="delivery">
@@ -190,63 +417,76 @@
             </div>
           </div>
 
-          <!-- ===== NOMOR TUJUAN (untuk produk digital) ===== -->
+          <!-- NOMOR TUJUAN -->
           <div id="target-section">
-            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">
               Nomor Tujuan <span class="text-red-500">*</span>
             </label>
-            <input id="inp-target" type="tel" inputmode="numeric" placeholder="08123456789"
-              class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none font-mono text-base transition">
-            <p id="err-target" class="text-red-500 text-xs mt-1 hidden">Format nomor tidak valid</p>
+            <div class="relative">
+              <i data-lucide="hash" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+              <input id="inp-target" type="tel" inputmode="numeric" placeholder="08123456789"
+                class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none font-mono text-base transition-all">
+            </div>
+            <p id="err-target" class="text-red-500 text-xs mt-1.5 hidden">Format nomor tidak valid</p>
           </div>
 
-          <!-- ===== ALAMAT (untuk delivery/cod) ===== -->
+          <!-- ALAMAT -->
           <div id="address-section" class="hidden">
-            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">
               Alamat Pengiriman <span class="text-red-500">*</span>
             </label>
             <textarea id="inp-address" rows="3" placeholder="Nama jalan, RT/RW, kelurahan, kecamatan, patokan..."
-              class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm resize-none transition"></textarea>
-            <p id="err-address" class="text-red-500 text-xs mt-1 hidden">Alamat wajib diisi</p>
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm resize-none transition-all"></textarea>
+            <p id="err-address" class="text-red-500 text-xs mt-1.5 hidden">Alamat wajib diisi</p>
           </div>
 
-          <!-- ===== Nama + Phone ===== -->
+          <!-- NAMA + PHONE -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">
                 Nama <span class="text-red-500">*</span>
               </label>
               <input id="inp-name" type="text" placeholder="Nama kamu"
-                class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm transition">
-              <p id="err-name" class="text-red-500 text-xs mt-1 hidden">Nama wajib diisi</p>
+                class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm transition-all">
+              <p id="err-name" class="text-red-500 text-xs mt-1.5 hidden">Wajib diisi</p>
             </div>
             <div>
-              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">No. WA</label>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">No. WA</label>
               <input id="inp-phone" type="tel" placeholder="62812..."
-                class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm font-mono transition">
+                class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm font-mono transition-all">
             </div>
           </div>
 
-          <!-- ===== Notes ===== -->
+          <!-- NOTES -->
           <div>
-            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Catatan</label>
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">Catatan</label>
             <textarea id="inp-notes" rows="2" placeholder="Opsional — contoh: pedas, tanpa bawang, dll"
-              class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm resize-none transition"></textarea>
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm resize-none transition-all"></textarea>
           </div>
 
-          <!-- ===== INFO PEMBAYARAN ===== -->
-          <div id="payment-section" class="rounded-xl bg-amber-50 border-2 border-amber-200 p-3.5">
-            <div class="flex items-center gap-2 mb-2">
-              <i data-lucide="wallet" class="w-4 h-4 text-amber-600"></i>
-              <div class="font-extrabold text-sm text-amber-900">Info Pembayaran</div>
+          <!-- INFO PEMBAYARAN -->
+          <div id="payment-section" class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-amber-500 text-white grid place-items-center shadow-md shadow-amber-500/30">
+                  <i data-lucide="wallet" class="w-4 h-4"></i>
+                </div>
+                <div class="font-extrabold text-sm text-amber-900">Info Pembayaran</div>
+              </div>
+              <button onclick="copyPaymentInfo()" class="text-[11px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-100 transition">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copy
+              </button>
             </div>
-            <div id="payment-info" class="text-sm text-amber-900 whitespace-pre-line font-mono leading-relaxed"></div>
-            <p id="payment-hint" class="text-[11px] text-amber-700 mt-2 italic">Transfer sesuai nominal, lalu upload bukti di bawah 👇</p>
+            <div id="payment-info" class="text-sm text-amber-900 whitespace-pre-line font-mono leading-relaxed bg-white/60 rounded-xl p-3 border border-amber-200/60"></div>
+            <p id="payment-hint" class="text-[11px] text-amber-700 mt-2.5 italic flex items-start gap-1.5">
+              <i data-lucide="info" class="w-3 h-3 flex-shrink-0 mt-0.5"></i>
+              <span>Transfer sesuai nominal, lalu upload bukti di bawah</span>
+            </p>
           </div>
 
-          <!-- ===== UPLOAD BUKTI ===== -->
+          <!-- UPLOAD BUKTI -->
           <div id="proof-section">
-            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-2">
               Bukti Transfer <span class="text-red-500">*</span>
             </label>
             <input id="inp-proof" type="file" accept="image/*" class="hidden">
@@ -254,14 +494,14 @@
           </div>
         </div>
 
-        <div class="px-4 py-3.5 border-t border-slate-100 bg-slate-50 flex gap-2 flex-shrink-0 rounded-b-3xl sm:rounded-b-2xl">
+        <!-- Footer -->
+        <div class="px-5 py-4 border-t border-slate-100 bg-slate-50/70 flex gap-2 flex-shrink-0 rounded-b-3xl sm:rounded-b-3xl">
           <button onclick="orderViaWA()" title="Order via WhatsApp"
-            class="flex-shrink-0 px-3.5 py-3 rounded-xl bg-white border-2 border-green-500 text-green-600 font-bold text-sm flex items-center gap-1.5 hover:bg-green-50 transition active:scale-95">
-            <i data-lucide="message-circle" class="w-4 h-4"></i>
-            <span class="hidden sm:inline">WA</span>
+            class="flex-shrink-0 w-12 h-12 rounded-2xl bg-white border-2 border-green-500 text-green-600 grid place-items-center hover:bg-green-50 transition active:scale-95">
+            <i data-lucide="message-circle" class="w-5 h-5"></i>
           </button>
           <button id="btn-submit" onclick="submitOrder()"
-            class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 hover:brightness-110 transition active:scale-[.98]">
+            class="btn-glow flex-1 px-4 py-3.5 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 hover:brightness-110 transition active:scale-[.98]">
             <i data-lucide="send" class="w-4 h-4"></i> Kirim Pesanan
           </button>
         </div>
@@ -273,21 +513,29 @@
   <div id="success-modal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
     <div class="relative h-full flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center anim-up shadow-2xl">
-        <div class="w-20 h-20 mx-auto rounded-full bg-green-100 grid place-items-center mb-4">
-          <i data-lucide="check-circle" class="w-12 h-12 text-green-500"></i>
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl animate-slide-up">
+        <div class="relative w-24 h-24 mx-auto mb-4">
+          <div class="absolute inset-0 rounded-full bg-green-100 animate-ping opacity-30"></div>
+          <div class="relative w-full h-full rounded-full bg-gradient-to-br from-green-100 to-emerald-100 grid place-items-center shadow-inner">
+            <i data-lucide="check-circle" class="w-14 h-14 text-green-500"></i>
+          </div>
         </div>
-        <h3 class="font-extrabold text-xl text-slate-900">Pesanan Terkirim!</h3>
-        <p class="text-sm text-slate-500 mt-2 mb-4 leading-relaxed">
-          Kasir akan segera memproses pesanan kamu. Mohon tunggu ya 🙏
+        <h3 class="font-black text-2xl text-slate-900 mb-1.5">Pesanan Terkirim!</h3>
+        <p class="text-sm text-slate-500 mb-5 leading-relaxed">
+          Kasir akan segera memverifikasi pesanan kamu. Mohon tunggu ya 🙏
         </p>
-        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 mb-5">
-          <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-0.5">Kode Pesanan</div>
-          <div id="success-code" class="font-mono font-extrabold text-lg text-primary-600">—</div>
+
+        <div class="rounded-2xl bg-gradient-to-br from-slate-50 to-emerald-50 border-2 border-dashed border-emerald-200 p-4 mb-5">
+          <div class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 mb-1">Kode Pesanan</div>
+          <div id="success-code" class="font-mono font-black text-xl text-emerald-700 tracking-wider">—</div>
+          <button onclick="copySuccessCode()" class="text-[11px] font-bold text-slate-500 hover:text-emerald-600 flex items-center gap-1 mx-auto mt-2 transition">
+            <i data-lucide="copy" class="w-3 h-3"></i> Copy kode
+          </button>
         </div>
+
         <button onclick="orderAgain()"
-          class="w-full py-3.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold shadow-lg shadow-primary-500/30 hover:brightness-110 transition active:scale-[.98]">
-          Order Lagi
+          class="w-full py-4 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold shadow-lg shadow-primary-500/30 hover:brightness-110 transition active:scale-[.98]">
+          <i data-lucide="plus" class="w-4 h-4 inline-block mr-1"></i> Order Lagi
         </button>
       </div>
     </div>
@@ -298,8 +546,8 @@
     <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
     <div class="relative h-full grid place-items-center">
       <div class="bg-white rounded-2xl p-6 text-center shadow-2xl min-w-[200px]">
-        <div class="inline-block w-8 h-8 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
-        <p id="loading-text" class="mt-3 text-sm font-bold text-slate-700">Memproses...</p>
+        <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+        <p id="loading-text" class="mt-4 text-sm font-bold text-slate-700">Memproses...</p>
       </div>
     </div>
   </div>
@@ -307,6 +555,7 @@
   <!-- ============ TOASTS ============ -->
   <div id="toasts" class="fixed top-4 left-4 right-4 z-[200] flex flex-col items-center gap-2 pointer-events-none"></div>
 
+  <!-- ============ SCRIPT ============ -->
   <script>
   (function () {
     'use strict';
@@ -326,6 +575,7 @@
       proofPreview: null,
       categoryFilter: '',
       searchQuery: '',
+      lastSuccessCode: '',
     };
 
     const $ = (id) => document.getElementById(id);
@@ -336,11 +586,15 @@
     function toast(msg, type = 'info') {
       const c = $('toasts');
       const d = document.createElement('div');
-      const border = type === 'error' ? 'border-red-500' : type === 'success' ? 'border-green-500' : 'border-blue-500';
-      d.className = `pointer-events-auto bg-white px-4 py-3 rounded-xl shadow-2xl text-sm font-bold border-l-4 ${border} anim-up max-w-sm`;
+      const colors = {
+        error: 'border-red-500 bg-red-50 text-red-900',
+        success: 'border-green-500 bg-green-50 text-green-900',
+        info: 'border-blue-500 bg-blue-50 text-blue-900',
+      };
+      d.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-sm font-bold border-l-4 ${colors[type] || colors.info} animate-slide-up max-w-sm`;
       d.textContent = msg;
       c.appendChild(d);
-      setTimeout(() => { d.style.transition = 'opacity .3s'; d.style.opacity = '0'; setTimeout(() => d.remove(), 300); }, 3200);
+      setTimeout(() => { d.style.transition = 'all .3s'; d.style.opacity = '0'; d.style.transform = 'translateY(-10px)'; setTimeout(() => d.remove(), 300); }, 3200);
     }
 
     function showLoading(text = 'Memproses...') {
@@ -353,6 +607,7 @@
       $('loading-screen').classList.toggle('hidden', which !== 'loading');
       $('error-screen').classList.toggle('hidden', which !== 'error');
       $('main-screen').classList.toggle('hidden', which !== 'main');
+      $('fab-wa').classList.toggle('hidden', which !== 'main');
     }
 
     function showError(title, msg) {
@@ -399,7 +654,12 @@
         const storeName = profile.store_name || 'Toko Online';
         document.title = 'Order — ' + storeName;
         $('store-name').textContent = storeName;
-        $('store-status').textContent = profile.store_address || 'Order online';
+
+        // Status line
+        const statusParts = [];
+        if (profile.store_address) statusParts.push(profile.store_address);
+        else statusParts.push('Order online');
+        $('store-status').innerHTML = `<span class="status-dot"></span><span>${esc(statusParts[0])}</span>`;
 
         renderCategoryChips();
         renderProducts();
@@ -436,14 +696,24 @@
     function renderCategoryChips() {
       const cats = [...new Set(state.products.map(p => p.category).filter(Boolean))].sort();
       const c = $('category-chips');
-      if (!cats.length) { c.innerHTML = ''; return; }
-      c.innerHTML =
-        `<button data-cat="" class="cat-chip ${!state.categoryFilter ? 'active' : ''} px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${!state.categoryFilter ? 'bg-primary-500 text-white' : 'bg-white text-slate-600 border border-slate-200'}">Semua</button>` +
-        cats.map(cat => {
-          const active = state.categoryFilter === cat;
-          return `<button data-cat="${esc(cat)}" class="cat-chip px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition ${active ? 'bg-primary-500 text-white' : 'bg-white text-slate-600 border border-slate-200'}">${esc(cat)}</button>`;
-        }).join('');
+      const totalCount = state.products.length;
+
+      let html = `<button data-cat="" class="cat-chip ${!state.categoryFilter ? 'active' : ''}">Semua <span class="ml-1 text-[10px] opacity-70">${totalCount}</span></button>`;
+      html += cats.map(cat => {
+        const count = state.products.filter(p => p.category === cat).length;
+        const active = state.categoryFilter === cat;
+        return `<button data-cat="${esc(cat)}" class="cat-chip ${active ? 'active' : ''}">${esc(cat)} <span class="ml-1 text-[10px] opacity-70">${count}</span></button>`;
+      }).join('');
+
+      // Define chip styles via classList manipulation using inline approach
+      c.innerHTML = html;
       c.querySelectorAll('.cat-chip').forEach(btn => {
+        const isActive = btn.classList.contains('active');
+        btn.className = `cat-chip flex-shrink-0 px-4 py-2.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all ${
+          isActive
+            ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30'
+            : 'bg-white text-slate-600 border-2 border-slate-200 hover:border-primary-300 hover:text-primary-600'
+        }`;
         btn.onclick = () => { state.categoryFilter = btn.dataset.cat; renderCategoryChips(); renderProducts(); };
       });
     }
@@ -452,6 +722,9 @@
       const list = getFilteredProducts();
       const grid = $('product-grid');
       const empty = $('empty-products');
+      const countEl = $('product-count');
+
+      if (countEl) countEl.textContent = list.length + ' produk';
 
       if (!list.length) {
         grid.innerHTML = '';
@@ -467,29 +740,39 @@
         const out = p.stock !== null && p.stock !== undefined && p.stock <= 0;
         const price = Number(p.online_price || p.price || 0);
         const img = p.image_url
-          ? `<img src="${esc(p.image_url)}" alt="" class="w-full h-full object-contain p-1.5">`
-          : `<i data-lucide="package" class="w-10 h-10 text-slate-300"></i>`;
+          ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" class="w-full h-full object-contain p-2">`
+          : `<div class="w-full h-full grid place-items-center bg-slate-50"><i data-lucide="package" class="w-10 h-10 text-slate-300"></i></div>`;
+
         const stockBadge = p.stock === null || p.stock === undefined
           ? ''
           : out
-            ? `<div class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-extrabold">HABIS</div>`
+            ? `<div class="absolute top-2 right-2 px-2 py-1 rounded-lg bg-red-500 text-white text-[10px] font-black shadow-lg">HABIS</div>`
             : p.stock <= 5
-              ? `<div class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">SISA ${p.stock}</div>`
+              ? `<div class="absolute top-2 right-2 px-2 py-1 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white text-[10px] font-black shadow-lg">SISA ${p.stock}</div>`
               : '';
+
         const tag = p.needs_address
-          ? `<span class="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-blue-500 text-white text-[9px] font-extrabold">KIRIM</span>`
+          ? `<div class="absolute top-2 left-2 px-2 py-1 rounded-lg bg-blue-500 text-white text-[9px] font-black shadow-lg flex items-center gap-1">
+              <i data-lucide="truck" class="w-2.5 h-2.5"></i>KIRIM
+             </div>`
           : '';
+
         return `
-          <button data-pid="${esc(p.id)}" class="product-card text-left bg-white rounded-2xl border border-slate-200 overflow-hidden transition active:scale-[.97] hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/10 ${out ? 'opacity-50 pointer-events-none' : ''}">
-            <div class="relative w-full aspect-square bg-white flex items-center justify-center overflow-hidden">
+          <button data-pid="${esc(p.id)}" class="product-card group text-left bg-white rounded-2xl border border-slate-200/80 overflow-hidden flex flex-col ${out ? 'opacity-50 pointer-events-none' : ''}">
+            <div class="relative w-full aspect-square bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center overflow-hidden">
               ${img}
               ${stockBadge}
               ${tag}
             </div>
-            <div class="p-2.5 border-t border-slate-100">
-              ${p.category ? `<div class="text-[9px] font-extrabold uppercase tracking-wider text-primary-600 mb-0.5 truncate">${esc(p.category)}</div>` : ''}
-              <div class="text-xs font-bold text-slate-800 line-clamp-2 min-h-[2.2em] leading-snug">${esc(p.name)}</div>
-              <div class="mt-1.5 font-mono font-extrabold text-sm text-primary-600">${fmt(price)}</div>
+            <div class="p-3 border-t border-slate-100 flex flex-col flex-1">
+              ${p.category ? `<div class="text-[9px] font-black uppercase tracking-wider text-primary-600 mb-1 truncate">${esc(p.category)}</div>` : ''}
+              <div class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug mb-2 flex-1">${esc(p.name)}</div>
+              <div class="flex items-end justify-between gap-2 mt-auto">
+                <div class="font-mono font-black text-sm text-primary-600 leading-none">${fmt(price)}</div>
+                <div class="product-card-cta w-7 h-7 rounded-lg bg-primary-500 text-white grid place-items-center transition flex-shrink-0 shadow-sm">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                </div>
+              </div>
             </div>
           </button>`;
       }).join('');
@@ -498,6 +781,26 @@
         btn.onclick = () => openOrderModal(btn.dataset.pid);
       });
       icon();
+    }
+
+    // ============== STEP INDICATOR ==============
+    function updateSteps(step) {
+      // step 1 = data, 2 = pembayaran, 3 = selesai
+      for (let i = 1; i <= 3; i++) {
+        const dot = $('step-dot-' + i);
+        if (!dot) continue;
+        dot.classList.remove('active', 'done');
+        if (i < step) dot.classList.add('done');
+        else if (i === step) dot.classList.add('active');
+      }
+      for (let i = 1; i <= 2; i++) {
+        const line = $('step-line-' + i);
+        if (!line) continue;
+        line.classList.toggle('done', i < step);
+      }
+      const labels = ['Data Pesanan', 'Pembayaran', 'Selesai'];
+      const labelEl = $('step-label');
+      if (labelEl) labelEl.textContent = labels[step - 1] || '';
     }
 
     // ============== MODAL ORDER ==============
@@ -513,25 +816,23 @@
 
       const price = Number(p.online_price || p.price || 0);
       const img = p.image_url
-        ? `<img src="${esc(p.image_url)}" alt="" class="w-14 h-14 rounded-lg object-contain bg-white border border-primary-100 flex-shrink-0">`
-        : `<div class="w-14 h-14 rounded-lg bg-white border border-primary-100 grid place-items-center flex-shrink-0"><i data-lucide="package" class="w-6 h-6 text-slate-400"></i></div>`;
+        ? `<img src="${esc(p.image_url)}" alt="" class="w-16 h-16 rounded-xl object-contain bg-white border border-primary-100 flex-shrink-0 p-1">`
+        : `<div class="w-16 h-16 rounded-xl bg-white border border-primary-100 grid place-items-center flex-shrink-0"><i data-lucide="package" class="w-7 h-7 text-slate-400"></i></div>`;
 
       $('modal-product').innerHTML = `
         ${img}
         <div class="flex-1 min-w-0">
-          <div class="text-[10px] font-extrabold uppercase tracking-wide text-primary-700 mb-0.5">${esc(p.category || 'Produk')}</div>
+          <div class="text-[10px] font-black uppercase tracking-wide text-primary-700 mb-0.5">${esc(p.category || 'Produk')}</div>
           <div class="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">${esc(p.name)}</div>
-          <div class="font-mono font-extrabold text-primary-600 mt-0.5">${fmt(price)}</div>
+          <div class="font-mono font-black text-primary-600 mt-1 text-base">${fmt(price)}</div>
         </div>`;
 
       $('payment-info').textContent = state.seller.payment_info || 'Hubungi kasir via WA untuk info pembayaran.';
 
-      // Toggle sections
       $('method-section').classList.toggle('hidden', !needsAddress);
       $('target-section').classList.toggle('hidden', needsAddress);
       $('address-section').classList.toggle('hidden', !needsAddress || state.deliveryMethod === 'pickup');
 
-      // Reset form
       $('inp-target').value = '';
       $('inp-address').value = '';
       $('inp-name').value = '';
@@ -541,15 +842,15 @@
       ['err-target', 'err-address', 'err-name'].forEach(id => $(id).classList.add('hidden'));
       renderProofArea();
 
-      // Bind method radios (sekali saja per-open)
       document.querySelectorAll('.method-card').forEach(card => {
         card.classList.toggle('active', card.dataset.method === state.deliveryMethod);
         card.onclick = () => selectMethod(card.dataset.method);
       });
 
+      updateSteps(1);
       $('order-modal').classList.remove('hidden');
       icon();
-      setTimeout(() => (needsAddress ? null : $('inp-target'))?.focus(), 250);
+      setTimeout(() => (needsAddress ? null : $('inp-target'))?.focus(), 300);
     }
 
     function selectMethod(method) {
@@ -558,18 +859,13 @@
         card.classList.toggle('active', card.dataset.method === method);
       });
 
-      // Address visible untuk delivery & cod, hidden untuk pickup
       $('address-section').classList.toggle('hidden', method === 'pickup');
 
-      // Kalau COD → sembunyikan upload bukti & info pembayaran
       const isCod = method === 'cod';
       $('proof-section').classList.toggle('hidden', isCod);
       $('payment-section').classList.toggle('hidden', isCod);
-      $('payment-hint').classList.toggle('hidden', isCod);
 
-      // Update label
       if (isCod) {
-        // Clear file kalau ada
         state.proofFile = null;
         state.proofPreview = null;
         renderProofArea();
@@ -588,22 +884,26 @@
       const area = $('proof-area');
       if (state.proofPreview) {
         area.innerHTML = `
-          <div class="relative rounded-xl overflow-hidden border-2 border-primary-200 bg-primary-50">
+          <div class="relative rounded-2xl overflow-hidden border-2 border-primary-200 bg-gradient-to-br from-primary-50 to-emerald-50">
             <img src="${state.proofPreview}" alt="" class="w-full max-h-64 object-contain bg-white">
-            <button onclick="removeProof()" class="absolute top-2 right-2 w-9 h-9 rounded-lg bg-slate-900/80 text-white grid place-items-center backdrop-blur hover:bg-red-500 transition">
+            <button onclick="removeProof()" class="absolute top-2 right-2 w-9 h-9 rounded-xl bg-slate-900/80 text-white grid place-items-center backdrop-blur hover:bg-red-500 transition active:scale-95">
               <i data-lucide="x" class="w-4 h-4"></i>
             </button>
-            <div class="absolute bottom-0 left-0 right-0 bg-primary-600 text-white text-xs font-bold px-3 py-1.5 flex items-center gap-1.5">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Bukti siap dikirim
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-primary-600 to-emerald-600 text-white text-xs font-extrabold px-4 py-2.5 flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4"></i> Bukti siap dikirim
             </div>
           </div>`;
       } else {
         area.innerHTML = `
           <button onclick="document.getElementById('inp-proof').click()"
-            class="w-full py-6 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-primary-500 hover:bg-primary-50 hover:text-primary-600 transition flex flex-col items-center gap-2">
-            <i data-lucide="image-plus" class="w-7 h-7"></i>
-            <span class="text-sm font-bold">Upload Bukti Transfer</span>
-            <span class="text-[11px]">JPG / PNG, max 5MB</span>
+            class="w-full py-8 rounded-2xl border-2 border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-white text-slate-500 hover:border-primary-500 hover:bg-primary-50/40 hover:text-primary-600 transition-all flex flex-col items-center gap-2.5 group">
+            <div class="w-14 h-14 rounded-2xl bg-white border-2 border-slate-200 grid place-items-center group-hover:border-primary-300 group-hover:scale-105 transition-all">
+              <i data-lucide="image-plus" class="w-7 h-7"></i>
+            </div>
+            <div class="text-center">
+              <div class="text-sm font-extrabold">Upload Bukti Transfer</div>
+              <div class="text-[11px] mt-0.5">JPG / PNG, max 5MB</div>
+            </div>
           </button>`;
       }
       icon();
@@ -627,9 +927,26 @@
       reader.onload = (ev) => {
         state.proofPreview = ev.target.result;
         renderProofArea();
+        updateSteps(2);
       };
       reader.readAsDataURL(file);
     }
+
+    // ============== COPY HELPERS ==============
+    window.copyPaymentInfo = function () {
+      const text = state.seller?.payment_info || '';
+      if (!text) return toast('Tidak ada info pembayaran', 'error');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => toast('Info pembayaran disalin', 'success')).catch(() => toast('Gagal copy', 'error'));
+      }
+    };
+
+    window.copySuccessCode = function () {
+      if (!state.lastSuccessCode) return;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(state.lastSuccessCode).then(() => toast('Kode disalin', 'success')).catch(() => {});
+      }
+    };
 
     // ============== SUBMIT ==============
     function normalizePhone(s) {
@@ -655,7 +972,6 @@
       const phone = $('inp-phone').value.trim();
       const notes = $('inp-notes').value.trim();
 
-      // Validasi
       if (!needsAddress) {
         if (!target) { $('err-target').textContent = 'Nomor tujuan wajib diisi'; $('err-target').classList.remove('hidden'); return; }
         if (!isValidPhone(target)) { $('err-target').textContent = 'Format nomor tidak valid (contoh: 08123456789)'; $('err-target').classList.remove('hidden'); return; }
@@ -706,17 +1022,15 @@
           delivery_fee: 0,
         };
 
-        // Generate kode pesanan di client (format: ORD + timestamp + random)
-        const orderCode = 'ORD' + Date.now().toString(36).toUpperCase() + 
+        const orderCode = 'ORD' + Date.now().toString(36).toUpperCase() +
                           Math.random().toString(36).slice(2, 5).toUpperCase();
-        
-        // Insert TANPA .select() → tidak butuh SELECT policy
+
         const { error } = await sb
           .from('online_orders')
           .insert({ ...insertData, order_code: orderCode });
-        
+
         if (error) throw error;
-        
+
         hideLoading();
         closeOrderModal();
         showSuccess(orderCode);
@@ -747,8 +1061,9 @@
     }
 
     function showSuccess(orderCode) {
-      // orderCode sudah dalam format ORDxxx dari client
+      state.lastSuccessCode = orderCode;
       $('success-code').textContent = '#' + orderCode;
+      updateSteps(3);
       $('success-modal').classList.remove('hidden');
       icon();
     }
@@ -758,23 +1073,15 @@
       state.proofFile = null;
       state.proofPreview = null;
       state.selectedProduct = null;
+      updateSteps(1);
     };
 
-    // ============== WA ORDER ==============
-    function orderViaWA() {
-      if (!state.selectedProduct || !state.seller) return;
+    // ============== WA HELPERS ==============
+    function buildWAUrl(p, price, method, target, address, name, notes) {
       const wa = state.seller.whatsapp_number;
-      if (!wa) return toast('Nomor WA toko belum diset', 'error');
+      if (!wa) return null;
 
-      const p = state.selectedProduct;
       const needsAddress = !!p.needs_address;
-      const price = Number(p.online_price || p.price || 0);
-      const method = state.deliveryMethod;
-      const target = $('inp-target')?.value.trim() || '';
-      const address = $('inp-address')?.value.trim() || '';
-      const name = $('inp-name')?.value.trim() || '';
-      const notes = $('inp-notes')?.value.trim() || '';
-
       const methodLabels = { delivery: 'Dikirim', pickup: 'Ambil di warung', cod: 'COD (bayar di tempat)', digital: '' };
       const lines = [
         'Halo, saya mau order:',
@@ -790,9 +1097,34 @@
         'Mohon info selanjutnya. Terima kasih 🙏',
       ].filter(Boolean);
 
-      const url = `https://wa.me/${wa.replace(/[^\d]/g, '')}?text=${encodeURIComponent(lines.join('\n'))}`;
+      return `https://wa.me/${wa.replace(/[^\d]/g, '')}?text=${encodeURIComponent(lines.join('\n'))}`;
+    }
+
+    function orderViaWA() {
+      if (!state.selectedProduct || !state.seller) return;
+      const p = state.selectedProduct;
+      const price = Number(p.online_price || p.price || 0);
+      const url = buildWAUrl(
+        p, price, state.deliveryMethod,
+        $('inp-target')?.value.trim() || '',
+        $('inp-address')?.value.trim() || '',
+        $('inp-name')?.value.trim() || '',
+        $('inp-notes')?.value.trim() || ''
+      );
+      if (!url) return toast('Nomor WA toko belum diset', 'error');
       window.open(url, '_blank');
     }
+
+    window.openFooterWA = function () {
+      const wa = state.seller?.whatsapp_number;
+      if (!wa) return toast('Nomor WA toko belum tersedia', 'error');
+      const text = encodeURIComponent('Halo, saya mau tanya tentang produk di toko Anda 🙏');
+      window.open(`https://wa.me/${wa.replace(/[^\d]/g, '')}?text=${text}`, '_blank');
+    };
+
+    window.scrollToFooter = function () {
+      document.getElementById('page-footer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
 
     // ============== BINDINGS ==============
     document.addEventListener('DOMContentLoaded', () => {
