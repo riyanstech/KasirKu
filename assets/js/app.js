@@ -910,6 +910,431 @@ function renderReportChart(dailyStats, period, bucketBy, bucketCount) {
 }
 window.renderReportChart = renderReportChart;
 
+/* ==================== EXPORT LAPORAN ==================== */
+
+/**
+ * Ambil data laporan dalam bentuk "flat" untuk export
+ * @returns {object} { period, ringkasan, produk, kategori, transaksi }
+ */
+function getReportExportData() {
+  const period = document.getElementById('report-period')?.value || '30d';
+  const trxList = KR.store.getTransactions();
+  const products = KR.store.getProducts();
+
+  // Tentukan rentang waktu (sama seperti renderReport)
+  const now = Date.now();
+  let since = 0;
+  const periodLabel = {
+    today: 'Hari Ini',
+    '7d': '7 Hari Terakhir',
+    '30d': '30 Hari Terakhir',
+    month: 'Bulan Ini',
+    all: 'Semua Waktu',
+  }[period] || 'Periode';
+
+  if (period === 'today') {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    since = d.getTime();
+  } else if (period === '7d') {
+    since = now - 7 * 24 * 3600 * 1000;
+  } else if (period === '30d') {
+    since = now - 30 * 24 * 3600 * 1000;
+  } else if (period === 'month') {
+    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0);
+    since = d.getTime();
+  } else {
+    if (trxList.length) since = Math.min(...trxList.map(t => t.at));
+  }
+
+  const filtered = trxList.filter(t => t.at >= since);
+
+  // -------- Ringkasan KPI --------
+  let revenue = 0, cost = 0, itemsSold = 0;
+  const productStats = {}, catStats = {};
+
+  filtered.forEach(t => {
+    revenue += t.total;
+    (t.items || []).forEach(it => {
+      itemsSold += it.qty;
+      const p = products.find(x => x.id === it.productId);
+      const itemCost = (p && p.cost) || 0;
+      cost += itemCost * it.qty;
+
+      if (!productStats[it.productId]) {
+        productStats[it.productId] = { name: it.name, qty: 0, revenue: 0, profit: 0 };
+      }
+      productStats[it.productId].qty += it.qty;
+      productStats[it.productId].revenue += it.price * it.qty;
+      productStats[it.productId].profit += (it.price - itemCost) * it.qty;
+
+      const cat = (p && p.category) || 'Tanpa Kategori';
+      if (!catStats[cat]) catStats[cat] = { qty: 0, revenue: 0 };
+      catStats[cat].qty += it.qty;
+      catStats[cat].revenue += it.price * it.qty;
+    });
+  });
+
+  const profit = revenue - cost;
+  const settings = KR.store.getSettings();
+
+  // -------- Produk Terlaris --------
+  const topProducts = Object.values(productStats)
+    .sort((a, b) => b.qty - a.qty);
+
+  // -------- Kategori --------
+  const categories = Object.entries(catStats)
+    .map(([name, data]) => ({ name, qty: data.qty, revenue: data.revenue }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  // -------- Transaksi Detail --------
+  const transactions = filtered.map(t => ({
+    id: t.id,
+    date: formatDate(t.at),
+    method: t.method,
+    itemCount: t.itemCount,
+    subtotal: t.subtotal,
+    discount: t.discount || 0,
+    total: t.total,
+    paid: t.paid,
+    change: t.change,
+  }));
+
+  return {
+    period,
+    periodLabel,
+    storeName: settings.storeName || 'KasirKu',
+    storeAddress: settings.storeAddress || '',
+    storePhone: settings.storePhone || '',
+    exportedAt: formatDate(Date.now()),
+    ringkasan: {
+      revenue,
+      cost,
+      profit,
+      transactions: filtered.length,
+      itemsSold,
+    },
+    topProducts,
+    categories,
+    transactions,
+  };
+}
+
+/* ---------- EXPORT EXCEL (.xlsx) ---------- */
+function exportReportExcel() {
+  if (typeof XLSX === 'undefined') {
+    KR.toast.error('Library Excel belum dimuat, coba refresh halaman');
+    return;
+  }
+  try {
+    const d = getReportExportData();
+    const wb = XLSX.utils.book_new();
+
+    // -------- Sheet 1: Ringkasan --------
+    const ws1Data = [
+      [d.storeName],
+      [d.storeAddress],
+      d.storePhone ? ['Telp: ' + d.storePhone] : [],
+      [],
+      ['LAPORAN PENJUALAN'],
+      ['Periode', d.periodLabel],
+      ['Diekspor', d.exportedAt],
+      [],
+      ['RINGKASAN'],
+      ['Pendapatan (Rp)', d.ringkasan.revenue],
+      ['Modal/HPP (Rp)', d.ringkasan.cost],
+      ['Laba Kotor (Rp)', d.ringkasan.profit],
+      ['Jumlah Transaksi', d.ringkasan.transactions],
+      ['Produk Terjual', d.ringkasan.itemsSold],
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+    ws1['!cols'] = [{ wch: 24 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Ringkasan');
+
+    // -------- Sheet 2: Produk Terlaris --------
+    const ws2Data = [
+      ['No', 'Nama Produk', 'Qty Terjual', 'Pendapatan (Rp)', 'Laba (Rp)'],
+      ...d.topProducts.map((p, i) => [i + 1, p.name, p.qty, p.revenue, p.profit]),
+    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+    ws2['!cols'] = [{ wch: 5 }, { wch: 32 }, { wch: 12 }, { wch: 16 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Produk Terlaris');
+
+    // -------- Sheet 3: Per Kategori --------
+    const ws3Data = [
+      ['No', 'Kategori', 'Qty', 'Pendapatan (Rp)'],
+      ...d.categories.map((c, i) => [i + 1, c.name, c.qty, c.revenue]),
+    ];
+    const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+    ws3['!cols'] = [{ wch: 5 }, { wch: 24 }, { wch: 10 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Per Kategori');
+
+    // -------- Sheet 4: Detail Transaksi --------
+    const ws4Data = [
+      ['No', 'No. Transaksi', 'Tanggal', 'Metode', 'Jml Item', 'Subtotal (Rp)', 'Diskon (Rp)', 'Total (Rp)', 'Bayar (Rp)', 'Kembali (Rp)'],
+      ...d.transactions.map((t, i) => [
+        i + 1, t.id, t.date, t.method, t.itemCount,
+        t.subtotal, t.discount, t.total, t.paid, t.change,
+      ]),
+    ];
+    const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+    ws4['!cols'] = [
+      { wch: 5 }, { wch: 20 }, { wch: 18 }, { wch: 10 },
+      { wch: 9 }, { wch: 14 }, { wch: 12 }, { wch: 14 },
+      { wch: 14 }, { wch: 14 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws4, 'Detail Transaksi');
+
+    // -------- Save --------
+    const filename = `Laporan_${d.periodLabel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
+    KR.toast.success('Excel berhasil diunduh!');
+  } catch (e) {
+    console.error('[ExportExcel]', e);
+    KR.toast.error('Gagal export Excel: ' + e.message);
+  }
+}
+window.exportReportExcel = exportReportExcel;
+
+/* ---------- EXPORT CSV ---------- */
+function exportReportCSV() {
+  try {
+    const d = getReportExportData();
+
+    // Escape helper
+    const esc = (v) => {
+      const s = String(v ?? '');
+      if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+
+    const lines = [];
+    // Header info
+    lines.push(['Laporan Penjualan', d.storeName].map(esc).join(','));
+    lines.push(['Periode', d.periodLabel].map(esc).join(','));
+    lines.push(['Diekspor', d.exportedAt].map(esc).join(','));
+    lines.push('');
+
+    // Ringkasan
+    lines.push('RINGKASAN');
+    lines.push(['Pendapatan', d.ringkasan.revenue].map(esc).join(','));
+    lines.push(['Modal/HPP', d.ringkasan.cost].map(esc).join(','));
+    lines.push(['Laba Kotor', d.ringkasan.profit].map(esc).join(','));
+    lines.push(['Jumlah Transaksi', d.ringkasan.transactions].map(esc).join(','));
+    lines.push(['Produk Terjual', d.ringkasan.itemsSold].map(esc).join(','));
+    lines.push('');
+
+    // Produk terlaris
+    lines.push('PRODUK TERLARIS');
+    lines.push(['No', 'Nama Produk', 'Qty', 'Pendapatan', 'Laba'].map(esc).join(','));
+    d.topProducts.forEach((p, i) => {
+      lines.push([i + 1, p.name, p.qty, p.revenue, p.profit].map(esc).join(','));
+    });
+    lines.push('');
+
+    // Per kategori
+    lines.push('PER KATEGORI');
+    lines.push(['No', 'Kategori', 'Qty', 'Pendapatan'].map(esc).join(','));
+    d.categories.forEach((c, i) => {
+      lines.push([i + 1, c.name, c.qty, c.revenue].map(esc).join(','));
+    });
+    lines.push('');
+
+    // Detail transaksi
+    lines.push('DETAIL TRANSAKSI');
+    lines.push(['No', 'No. Transaksi', 'Tanggal', 'Metode', 'Jml Item', 'Subtotal', 'Diskon', 'Total', 'Bayar', 'Kembali'].map(esc).join(','));
+    d.transactions.forEach((t, i) => {
+      lines.push([
+        i + 1, t.id, t.date, t.method, t.itemCount,
+        t.subtotal, t.discount, t.total, t.paid, t.change,
+      ].map(esc).join(','));
+    });
+
+    const csv = '\uFEFF' + lines.join('\n'); // BOM untuk Excel
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Laporan_${d.periodLabel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    KR.toast.success('CSV berhasil diunduh!');
+  } catch (e) {
+    console.error('[ExportCSV]', e);
+    KR.toast.error('Gagal export CSV: ' + e.message);
+  }
+}
+window.exportReportCSV = exportReportCSV;
+
+/* ---------- EXPORT PDF ---------- */
+function exportReportPDF() {
+  try {
+    const jspdfNS = window.jspdf || window.jsPDF;
+    if (!jspdfNS || !jspdfNS.jsPDF) {
+      KR.toast.error('Library PDF belum dimuat, coba refresh halaman');
+      return;
+    }
+    const { jsPDF } = jspdfNS;
+    const d = getReportExportData();
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
+    /* ---------- HEADER ---------- */
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text(d.storeName || 'KasirKu', margin, 18);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    let y = 24;
+    if (d.storeAddress) { doc.text(d.storeAddress, margin, y); y += 5; }
+    if (d.storePhone) { doc.text('Telp: ' + d.storePhone, margin, y); y += 5; }
+
+    doc.setDrawColor(200);
+    doc.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('LAPORAN PENJUALAN', margin, y);
+    y += 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Periode: ' + d.periodLabel, margin, y);
+    doc.text('Diekspor: ' + d.exportedAt, pageW - margin, y, { align: 'right' });
+    y += 8;
+
+    /* ---------- RINGKASAN ---------- */
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Ringkasan', margin, y);
+    y += 2;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Metrik', 'Nilai']],
+      body: [
+        ['Pendapatan', formatRupiah(d.ringkasan.revenue)],
+        ['Modal/HPP', formatRupiah(d.ringkasan.cost)],
+        ['Laba Kotor', formatRupiah(d.ringkasan.profit)],
+        ['Jumlah Transaksi', String(d.ringkasan.transactions)],
+        ['Produk Terjual', d.ringkasan.itemsSold + ' item'],
+      ],
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 2.5 },
+      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { halign: 'right' },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    /* ---------- PRODUK TERLARIS ---------- */
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Produk Terlaris', margin, y);
+    y += 2;
+
+    doc.autoTable({
+      startY: y,
+      head: [['#', 'Nama Produk', 'Qty', 'Pendapatan', 'Laba']],
+      body: d.topProducts.slice(0, 20).map((p, i) => [
+        i + 1, p.name, p.qty, formatRupiah(p.revenue), formatRupiah(p.profit),
+      ]),
+      theme: 'striped',
+      styles: { fontSize: 8.5, cellPadding: 2 },
+      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 16, halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+      },
+      margin: { left: margin, right: margin },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    /* ---------- PER KATEGORI ---------- */
+    if (d.categories.length) {
+      if (y > 240) { doc.addPage(); y = 20; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Per Kategori', margin, y);
+      y += 2;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Kategori', 'Qty', 'Pendapatan']],
+        body: d.categories.map(c => [c.name, c.qty, formatRupiah(c.revenue)]),
+        theme: 'striped',
+        styles: { fontSize: 8.5, cellPadding: 2 },
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 80 },
+          1: { cellWidth: 25, halign: 'right' },
+          2: { halign: 'right' },
+        },
+        margin: { left: margin, right: margin },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    }
+
+    /* ---------- DETAIL TRANSAKSI ---------- */
+    if (d.transactions.length) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Detail Transaksi', margin, y);
+      y += 2;
+
+      doc.autoTable({
+        startY: y,
+        head: [['No. Transaksi', 'Tanggal', 'Metode', 'Item', 'Total']],
+        body: d.transactions.map(t => [
+          t.id, t.date, t.method, t.itemCount, formatRupiah(t.total),
+        ]),
+        theme: 'striped',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 45 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 15, halign: 'right' },
+          4: { halign: 'right' },
+        },
+        margin: { left: margin, right: margin },
+      });
+    }
+
+    /* ---------- FOOTER semua halaman ---------- */
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      doc.text(
+        `Halaman ${i} dari ${pageCount} • KasirKu POS`,
+        pageW / 2, doc.internal.pageSize.getHeight() - 8,
+        { align: 'center' }
+      );
+    }
+
+    const filename = `Laporan_${d.periodLabel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(filename);
+    KR.toast.success('PDF berhasil diunduh!');
+  } catch (e) {
+    console.error('[ExportPDF]', e);
+    KR.toast.error('Gagal export PDF: ' + e.message);
+  }
+}
+window.exportReportPDF = exportReportPDF;
+
 /* ==================== CLEANUP ==================== */
 async function cleanupOrphanPhotos() {
   KR.toast.info('Fitur cleanup belum tersedia untuk cloud storage');
