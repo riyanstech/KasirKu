@@ -1377,6 +1377,7 @@ function initApp() {
 
   initTheme();
   if (KR.auth) KR.auth.init();
+  if (KR.pwa) KR.pwa.init();
 
   renderPosGrid();
   renderCategoryChips();
