@@ -9,8 +9,14 @@ window.KR = window.KR || {};
 
   // ============== STATE ==============
   let orders = [];
-  let filterStatus = 'active'; // active | pending | done | archived | all
+  let filterStatus = 'active';
   let refreshTimer = null;
+  let lastPendingCount = null;  // untuk deteksi order baru
+  let audioUnlocked = false;
+  let audioCtx = null;
+  let notificationPermission = 'default';
+  let originalTitle = document.title;
+  let titleFlashTimer = null;
 
   // ============== HELPERS ==============
   const $ = (id) => document.getElementById(id);
@@ -43,15 +49,207 @@ window.KR = window.KR || {};
     return formatDate(ts);
   }
 
+   // ============== NOTIFIKASI ==============
+  
+  // Unlock audio context setelah user interaksi (browser policy)
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      audioCtx = new AudioCtx();
+      // Play silent sound untuk unlock
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.0001;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.01);
+      audioUnlocked = true;
+      console.log('[Notification] Audio unlocked');
+    } catch (e) {
+      console.warn('[Notification] Unlock failed', e);
+    }
+  }
+  
+  // Bunyi notifikasi order baru (2-tone beep)
+  function playNewOrderSound() {
+    if (!audioCtx || !audioUnlocked) {
+      console.warn('[Notification] Audio belum unlocked — klik halaman dulu');
+      return;
+    }
+    try {
+      // Resume kalau suspended
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      const now = audioCtx.currentTime;
+      const beeps = [
+        { freq: 880, start: 0,    duration: 0.15 },
+        { freq: 1320, start: 0.18, duration: 0.20 },
+        { freq: 880,  start: 0.42, duration: 0.15 },
+      ];
+      
+      beeps.forEach(b => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = b.freq;
+        const t = now + b.start;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.25, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + b.duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + b.duration + 0.05);
+      });
+    } catch (e) {
+      console.warn('[Notification] Sound failed', e);
+    }
+  }
+  
+  // Flash title browser biar user lihat ada order baru
+  function startTitleFlash(count) {
+    if (titleFlashTimer) return;
+    let toggle = false;
+    titleFlashTimer = setInterval(() => {
+      document.title = toggle
+        ? `🔔 (${count}) Order Baru! — KasirKu`
+        : originalTitle;
+      toggle = !toggle;
+    }, 1200);
+  }
+  
+  function stopTitleFlash() {
+    if (titleFlashTimer) {
+      clearInterval(titleFlashTimer);
+      titleFlashTimer = null;
+    }
+    document.title = originalTitle;
+  }
+  
+  // Browser notification (kalau diizinkan)
+  function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      notificationPermission = 'granted';
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      notificationPermission = 'denied';
+      return;
+    }
+    // Minta izin (baik saat user klik pertama)
+    Notification.requestPermission().then(perm => {
+      notificationPermission = perm;
+      if (perm === 'granted') {
+        KR.toast.success('Notifikasi browser diaktifkan 🔔');
+      }
+    });
+  }
+  
+  function showBrowserNotification(count, orderPreview) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    
+    try {
+      const title = count === 1 
+        ? '🔔 Order Baru Masuk!' 
+        : `🔔 ${count} Order Baru!`;
+      const body = orderPreview 
+        ? `${orderPreview.product_name} — ${fmt(orderPreview.product_price)}\n${orderPreview.customer_name || 'Customer'}`
+        : 'Cek dashboard untuk detail';
+      
+      const notif = new Notification(title, {
+        body: body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'kasirku-new-order',  // auto-replace notif lama
+        requireInteraction: false,
+      });
+      
+      // Klik notif → fokus ke tab & buka tab Pesanan
+      notif.onclick = () => {
+        window.focus();
+        if (typeof showTab === 'function') showTab('pesanan');
+        notif.close();
+      };
+      
+      setTimeout(() => notif.close(), 10000);
+    } catch (e) {
+      console.warn('[Notification] Browser notif failed', e);
+    }
+  }
+  
+  // Handler utama: dipanggil saat jumlah pending order bertambah
+  function onNewOrderDetected(newCount, diff, latestOrder) {
+    // 1. Bunyi
+    playNewOrderSound();
+    
+    // 2. Toast
+    KR.toast.success(
+      diff === 1 
+        ? `Order baru masuk! (${latestOrder?.product_name || 'Produk'})` 
+        : `${diff} order baru masuk!`,
+      5000
+    );
+    
+    // 3. Flash title
+    startTitleFlash(newCount);
+    
+    // 4. Browser notification (kalau diizinkan)
+    showBrowserNotification(diff, latestOrder);
+    
+    // 5. Vibrate (kalau di HP)
+    if (navigator.vibrate) {
+      try { navigator.vibrate([200, 100, 200, 100, 200]); } catch (e) {}
+    }
+  }
+  
+  // Setup listener untuk unlock audio & minta izin notifikasi
+  function setupNotificationListeners() {
+    const unlockHandler = () => {
+      unlockAudio();
+      requestNotificationPermission();
+      document.removeEventListener('click', unlockHandler);
+      document.removeEventListener('touchstart', unlockHandler);
+      document.removeEventListener('keydown', unlockHandler);
+    };
+    document.addEventListener('click', unlockHandler, { once: false });
+    document.addEventListener('touchstart', unlockHandler, { once: false });
+    document.addEventListener('keydown', unlockHandler, { once: false });
+  }
+
   // ============== FETCH ==============
+
   async function loadOrders() {
     if (!KR.auth.isLoggedIn()) return;
 
     try {
       const data = await KR.sb.fetchOnlineOrders();
+      const prevOrders = orders;
       orders = data || [];
+      
+      // Deteksi order baru (hanya kalau bukan load pertama)
+      const newPendingCount = orders.filter(o => o.status === 'pending' && !o.archived).length;
+      
+      if (lastPendingCount !== null && newPendingCount > lastPendingCount) {
+        const diff = newPendingCount - lastPendingCount;
+        // Cari order terbaru
+        const latestOrder = orders
+          .filter(o => !prevOrders.find(p => p.id === o.id))
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+        onNewOrderDetected(newPendingCount, diff, latestOrder);
+      }
+      
+      lastPendingCount = newPendingCount;
+      
       renderOrders();
       updateNavBadge();
+      
+      // Kalau tidak ada pending, stop flash title
+      if (newPendingCount === 0) stopTitleFlash();
     } catch (e) {
       console.error('[Orders] Load failed', e);
     }
@@ -462,8 +660,15 @@ window.KR = window.KR || {};
   window.updateOrdersBadge = updateNavBadge;
 
   window.addEventListener('kasirku:ready', () => {
+    setupNotificationListeners();
     if (KR.auth.isLoggedIn()) {
-      loadOrders();
+      // Set lastPendingCount ke state saat ini biar tidak bunyi saat first load
+      KR.sb.fetchOnlineOrders().then(data => {
+        orders = data || [];
+        lastPendingCount = orders.filter(o => o.status === 'pending' && !o.archived).length;
+        renderOrders();
+        updateNavBadge();
+      }).catch(() => {});
       startAutoRefresh();
     }
   });
