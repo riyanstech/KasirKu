@@ -1641,6 +1641,101 @@ button.nav-tab.active svg * {
 }
 .empty-state p { font-size: .85rem; margin: 0; }
 
+/* ==================== FLOATING CART BUTTON (FAB) ==================== */
+.cart-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(20px + var(--safe-bottom));
+  z-index: 50;
+  min-width: 60px;
+  height: 60px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow:
+    0 12px 28px -6px rgba(16,185,129,.55),
+    0 4px 10px -2px rgba(16,185,129,.4),
+    inset 0 1px 0 rgba(255,255,255,.2);
+  transition: all 200ms cubic-bezier(.34,1.56,.64,1);
+  font-weight: 800;
+  animation: fabIn .35s cubic-bezier(.34,1.56,.64,1);
+}
+.cart-fab:hover {
+  transform: translateY(-3px) scale(1.03);
+  filter: brightness(1.08);
+  box-shadow:
+    0 16px 32px -6px rgba(16,185,129,.65),
+    0 6px 12px -2px rgba(16,185,129,.45);
+}
+.cart-fab:active { transform: scale(.95); }
+.cart-fab.hidden { display: none; }
+.cart-fab svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.cart-fab-total {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .85rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.cart-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 6px rgba(239,68,68,.4);
+}
+@keyframes fabIn {
+  from { opacity: 0; transform: translateY(20px) scale(.8); }
+  to { opacity: 1; transform: none; }
+}
+
+/* FAB hanya muncul di HP/tablet — sembunyikan di desktop (≥1024px) */
+@media (min-width: 1024px) {
+  .cart-fab { display: none !important; }
+}
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .cart-fab {
+    right: 12px;
+    bottom: calc(16px + var(--safe-bottom));
+    height: 56px;
+    min-width: 56px;
+    padding: 0 14px;
+  }
+  .cart-fab svg { width: 22px; height: 22px; }
+  .cart-fab-total { font-size: .78rem; }
+  .cart-fab-badge { min-width: 20px; height: 20px; font-size: .66rem; }
+}
+
+/* Highlight animation saat scroll ke cart */
+.pos-cart.highlight {
+  animation: cartPulse .8s ease;
+}
+@keyframes cartPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16,185,129,.6); }
+  50% { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+
 /* ==================== LOGIN SCREEN ==================== */
 .login-screen {
   position: fixed;
