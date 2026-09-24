@@ -169,7 +169,7 @@
               <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto p-5">
+          <div class="flex-1 overflow-y-auto p-5 pt-3">
             <div class="flex items-center gap-4 mb-5 pb-5 border-b border-slate-100">
               <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.5rem;flex-shrink:0;">
                 ${esc((s.name || '?')[0].toUpperCase())}
@@ -253,14 +253,17 @@
     $('auth-modal')?.classList.add('hidden');
   }
 
-  function switchAuthTab(tab) {
-    document.querySelectorAll('[data-auth-tab]').forEach(t => {
-      t.classList.toggle('active', t.dataset.authTab === tab);
-    });
-    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-    const panel = $('auth-panel-' + tab);
-    if (panel) panel.classList.add('active');
-  }
+function switchAuthTab(tab) {
+  // Highlight tab aktif
+  document.querySelectorAll('[data-auth-tab]').forEach(t => {
+    t.classList.toggle('active', t.dataset.authTab === tab);
+  });
+  // Hide/show panel pakai Tailwind 'hidden'
+  ['login', 'register', 'guest'].forEach(name => {
+    const panel = $('auth-panel-' + name);
+    if (panel) panel.classList.toggle('hidden', name !== tab);
+  });
+}
 
   async function handleLogin() {
     const u = $('ca-login-username')?.value.trim();
