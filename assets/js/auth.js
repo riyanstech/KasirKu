@@ -1,153 +1,41 @@
 /* ==========================================
-   KasirKu — Auth Module
-   Login Username + Password (PBKDF2 hash)
-   Data user tersimpan di GitHub (kasir-users.json)
+   KasirKu — Auth Module (Supabase)
+   Login pakai Email + Password
    ========================================== */
 window.KR = window.KR || {};
 
 KR.auth = (function () {
   'use strict';
 
-  const AUTH_KEY = 'auth';
-  const USERS_FILE = 'kasir-users.json';
-  const PBKDF2_ITERATIONS = 100000;
-  const SALT_LENGTH = 16;
-
-  /* ---------- STORAGE ---------- */
-  function getAuth() {
-    return KR.store.get(AUTH_KEY, null);
+  /* ---------- USER CACHE (localStorage) ---------- */
+  function getUserCache() {
+    return KR.store.get('authCache', null);
   }
-  function setAuth(data) {
-    KR.store.set(AUTH_KEY, data);
+  function setUserCache(data) {
+    KR.store.set('authCache', data);
   }
-  function clearAuth() {
-    KR.store.remove(AUTH_KEY);
+  function clearUserCache() {
+    KR.store.remove('authCache');
   }
 
   function isLoggedIn() {
-    const a = getAuth();
-    return !!(a && a.loggedIn);
+    const c = getUserCache();
+    return !!(c && c.loggedIn);
   }
-  function isGitHubUser() {
-    return KR.github.isConfigured();
-  }
-  function getUser() {
-    return getAuth();
-  }
+  // Compat: kode lama masih panggil isGitHubUser → alias ke isLoggedIn
+  function isGitHubUser() { return isLoggedIn(); }
 
-  /* ---------- CRYPTO (PBKDF2) ---------- */
-  function randomSalt() {
-    const bytes = new Uint8Array(SALT_LENGTH);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  async function hashPassword(password, salt) {
-    const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(password),
-      { name: 'PBKDF2' },
-      false,
-      ['deriveBits']
-    );
-    const bits = await crypto.subtle.deriveBits(
-      {
-        name: 'PBKDF2',
-        salt: encoder.encode(salt),
-        iterations: PBKDF2_ITERATIONS,
-        hash: 'SHA-256',
-      },
-      keyMaterial,
-      256
-    );
-    return Array.from(new Uint8Array(bits))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-  }
-
-  async function verifyPassword(password, salt, expectedHash) {
-    const hash = await hashPassword(password, salt);
-    if (hash.length !== expectedHash.length) return false;
-    let diff = 0;
-    for (let i = 0; i < hash.length; i++) {
-      diff |= hash.charCodeAt(i) ^ expectedHash.charCodeAt(i);
-    }
-    return diff === 0;
-  }
-
-  /* ---------- USERS FILE (GitHub) ---------- */
-  async function loadUsers() {
-    try {
-      const content = await KR.github.getFileContent(USERS_FILE);
-      if (!content) return { users: [] };
-      const data = JSON.parse(content);
-      if (!data.users || !Array.isArray(data.users)) return { users: [] };
-      return data;
-    } catch (e) {
-      console.warn('[Auth] loadUsers failed', e);
-      return { users: [] };
-    }
-  }
-
-  async function saveUsers(data) {
-    await KR.github.uploadFile(
-      USERS_FILE,
-      JSON.stringify(data, null, 2),
-      'chore: update users'
-    );
-  }
+  function getUser() { return getUserCache(); }
 
   /* ---------- UI ---------- */
   function showLoginScreen() {
     const el = document.getElementById('login-screen');
     if (el) el.classList.remove('hidden');
-    updateUIBasedOnSetup();
     if (window.lucide) lucide.createIcons();
   }
-
   function hideLoginScreen() {
     const el = document.getElementById('login-screen');
     if (el) el.classList.add('hidden');
-  }
-
-  function updateUIBasedOnSetup() {
-    const configured = KR.github.isConfigured();
-    const stepSetup = document.getElementById('login-step-setup');
-    const stepAuth = document.getElementById('login-step-auth');
-    if (!stepSetup || !stepAuth) return;
-
-    if (configured) {
-      stepSetup.classList.add('hidden');
-      stepAuth.classList.remove('hidden');
-
-      const c = KR.store.getGitHubConfig();
-      const info = document.getElementById('github-info');
-      if (info && c) {
-        info.innerHTML = `🔗 Terhubung: <strong>${escapeHtml(c.owner)}/${escapeHtml(c.repo)}</strong>`;
-      }
-    } else {
-      stepSetup.classList.remove('hidden');
-      stepAuth.classList.add('hidden');
-
-      const c = KR.store.getGitHubConfig();
-      if (c) {
-        const o = document.getElementById('setup-gh-owner');
-        const r = document.getElementById('setup-gh-repo');
-        const b = document.getElementById('setup-gh-branch');
-        const t = document.getElementById('setup-gh-token');
-        if (o) o.value = c.owner || '';
-        if (r) r.value = c.repo || '';
-        if (b) b.value = c.branch || 'main';
-        if (t) t.value = c.token || '';
-      }
-    }
-    if (window.lucide) lucide.createIcons();
-  }
-
-  function changeGithubSetup() {
-    KR.store.clearGitHubConfig();
-    updateUIBasedOnSetup();
   }
 
   function switchAuthTab(tab) {
@@ -171,81 +59,65 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
-  function setSetupStatus(type, msg) {
-    const el = document.getElementById('setup-status');
-    if (!el) return;
-    const icons = { ok: 'check-circle', warn: 'alert-triangle', error: 'x-circle' };
-    el.className = 'gh-status ' + type;
-    el.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${escapeHtml(msg)}</span>`;
-    if (window.lucide) lucide.createIcons();
+  /* ---------- MAPPERS (DB → local) ---------- */
+  function mapProductFromDb(p) {
+    return {
+      id: p.id,
+      name: p.name,
+      sku: p.sku || '',
+      cost: Number(p.cost) || 0,
+      price: Number(p.price) || 0,
+      stock: Number(p.stock) || 0,
+      category: p.category || '',
+      image: p.image_url || '',
+    };
+  }
+  function mapTrxFromDb(t) {
+    return {
+      id: t.trx_code || t.id,
+      dbId: t.id,
+      at: new Date(t.created_at).getTime(),
+      items: t.items || [],
+      subtotal: Number(t.subtotal) || 0,
+      discount: Number(t.discount) || 0,
+      total: Number(t.total) || 0,
+      paid: Number(t.paid) || 0,
+      change: Number(t.change_amount) || 0,
+      method: t.method || 'Cash',
+      itemCount: t.item_count || 0,
+    };
   }
 
-  /* ---------- SETUP GITHUB ---------- */
-  async function submitSetup() {
-    const ownerEl = document.getElementById('setup-gh-owner');
-    const repoEl = document.getElementById('setup-gh-repo');
-    const branchEl = document.getElementById('setup-gh-branch');
-    const tokenEl = document.getElementById('setup-gh-token');
-    if (!ownerEl || !repoEl || !tokenEl) return;
-
-    const owner = ownerEl.value.trim();
-    const repo = repoEl.value.trim();
-    const branch = (branchEl?.value || 'main').trim() || 'main';
-    const token = tokenEl.value.trim();
-
-    if (!owner || !repo || !token) {
-      setSetupStatus('error', 'Semua field wajib diisi');
-      return;
+  async function pullDataFromCloud() {
+    const products = await KR.sb.fetchProducts();
+    const transactions = await KR.sb.fetchTransactions();
+    KR.store.setProducts(products.map(mapProductFromDb));
+    KR.store.setTransactions(transactions.map(mapTrxFromDb));
+    const profile = await KR.sb.getProfile();
+    if (profile) {
+      KR.store.setSettings({
+        storeName: profile.store_name || 'KasirKu',
+        storeAddress: profile.store_address || '',
+        storePhone: profile.store_phone || '',
+        receiptFooter: profile.receipt_footer || 'Terima kasih',
+        theme: profile.theme || 'light',
+      });
     }
-
-    setSetupStatus('warn', 'Menghubungkan ke GitHub...');
-    KR.store.setGitHubConfig({ owner, repo, branch, token });
-
-    const r = await KR.github.testConnection();
-    if (!r.ok) {
-      setSetupStatus('error', r.msg);
-      KR.store.clearGitHubConfig();
-      return;
-    }
-
-    setSetupStatus('ok', 'Terhubung! Beralih ke login...');
-    KR.toast.success('GitHub terhubung!');
-
-    setTimeout(() => {
-      updateUIBasedOnSetup();
-      setTimeout(() => document.getElementById('login-username')?.focus(), 200);
-    }, 800);
-  }
-
-  function skipSetup() {
-    KR.toast.info('Mode offline — data hanya di perangkat ini');
-    setAuth({ loggedIn: true, username: 'lokal', role: 'admin', mode: 'local', loginAt: Date.now() });
-    hideLoginScreen();
-    updateBadge();
-    refreshAllViews();
   }
 
   /* ---------- REGISTER ---------- */
   async function submitRegister() {
-    if (!KR.github.isConfigured()) {
-      KR.toast.error('Setup GitHub dulu');
-      return;
-    }
-    const usernameEl = document.getElementById('reg-username');
+    const emailEl = document.getElementById('reg-email');
     const passwordEl = document.getElementById('reg-password');
     const password2El = document.getElementById('reg-password2');
-    if (!usernameEl || !passwordEl || !password2El) return;
+    if (!emailEl || !passwordEl || !password2El) return;
 
-    const username = usernameEl.value.trim().toLowerCase();
+    const email = emailEl.value.trim().toLowerCase();
     const password = passwordEl.value;
     const password2 = password2El.value;
 
-    if (username.length < 3) {
-      setStatus('register', 'error', 'Username minimal 3 karakter');
-      return;
-    }
-    if (!/^[a-z0-9_-]+$/.test(username)) {
-      setStatus('register', 'error', 'Username hanya huruf kecil, angka, _ dan -');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus('register', 'error', 'Email tidak valid');
       return;
     }
     if (password.length < 6) {
@@ -260,100 +132,72 @@ KR.auth = (function () {
     setStatus('register', 'warn', 'Membuat akun...');
 
     try {
-      const usersData = await loadUsers();
-      if (usersData.users.find(u => u.username === username)) {
-        setStatus('register', 'error', 'Username sudah dipakai');
-        return;
-      }
+      const username = email.split('@')[0];
+      await KR.sb.signUp(email, password, { username, store_name: 'Warung Saya' });
+      setStatus('register', 'ok', 'Akun dibuat! Silakan login.');
+      KR.toast.success('Akun berhasil dibuat!');
 
-      const salt = randomSalt();
-      const passwordHash = await hashPassword(password, salt);
-
-      usersData.users.push({
-        username,
-        salt,
-        passwordHash,
-        role: usersData.users.length === 0 ? 'admin' : 'kasir',
-        createdAt: Date.now(),
-      });
-
-      await saveUsers(usersData);
-
-      setStatus('register', 'ok', 'Akun berhasil dibuat! Silakan masuk.');
-      KR.toast.success('Akun ' + username + ' berhasil dibuat');
-
-      usernameEl.value = '';
+      emailEl.value = '';
       passwordEl.value = '';
       password2El.value = '';
+
       setTimeout(() => {
         switchAuthTab('login');
-        const loginUser = document.getElementById('login-username');
-        if (loginUser) loginUser.value = username;
+        const loginEmail = document.getElementById('login-email');
+        if (loginEmail) loginEmail.value = email;
         document.getElementById('login-password')?.focus();
       }, 1000);
     } catch (e) {
-      console.error(e);
-      setStatus('register', 'error', 'Gagal: ' + (e.message || 'Unknown'));
+      console.error('[Register]', e);
+      const msg = e.message || 'Unknown error';
+      if (msg.toLowerCase().includes('already')) {
+        setStatus('register', 'error', 'Email sudah terdaftar');
+      } else {
+        setStatus('register', 'error', msg);
+      }
     }
   }
 
   /* ---------- LOGIN ---------- */
   async function submitLogin() {
-    if (!KR.github.isConfigured()) {
-      KR.toast.error('Setup GitHub dulu');
-      return;
-    }
-    const usernameEl = document.getElementById('login-username');
+    const emailEl = document.getElementById('login-email');
     const passwordEl = document.getElementById('login-password');
-    if (!usernameEl || !passwordEl) return;
+    if (!emailEl || !passwordEl) return;
 
-    const username = usernameEl.value.trim().toLowerCase();
+    const email = emailEl.value.trim().toLowerCase();
     const password = passwordEl.value;
 
-    if (!username || !password) {
-      setStatus('login', 'error', 'Isi username & password');
+    if (!email || !password) {
+      setStatus('login', 'error', 'Isi email & password');
       return;
     }
 
     setStatus('login', 'warn', 'Memverifikasi...');
 
     try {
-      const usersData = await loadUsers();
-      const user = usersData.users.find(u => u.username === username);
-      if (!user) {
-        setStatus('login', 'error', 'Username tidak ditemukan');
-        return;
-      }
+      await KR.sb.signIn(email, password);
+      const user = await KR.sb.getUser();
+      const profile = await KR.sb.getProfile();
 
-      const ok = await verifyPassword(password, user.salt, user.passwordHash);
-      if (!ok) {
-        setStatus('login', 'error', 'Password salah');
-        return;
-      }
-
-      setAuth({
+      setUserCache({
         loggedIn: true,
-        username: user.username,
-        role: user.role || 'kasir',
-        mode: 'github',
+        userId: user.id,
+        email: user.email,
+        username: profile?.username || email.split('@')[0],
+        role: profile?.role || 'admin',
         loginAt: Date.now(),
       });
 
       setStatus('login', 'ok', 'Berhasil masuk!');
-      KR.toast.success('Selamat datang, ' + user.username + '!');
 
-      // Pull data dari GitHub
+      // Pull data (jangan block UI kalau gagal)
       try {
-        const content = await KR.github.getFileContent('kasir-data.json');
-        if (content) {
-          const data = JSON.parse(content);
-          if (data.products) KR.store.setProducts(data.products);
-          if (data.transactions) KR.store.setTransactions(data.transactions);
-          if (data.settings) KR.store.setSettings(data.settings);
-        }
+        await pullDataFromCloud();
       } catch (e) {
-        console.warn('[Auth] Pull data failed', e);
+        console.warn('[Login] Pull data failed', e);
       }
+
+      KR.toast.success('Selamat datang!');
 
       setTimeout(() => {
         hideLoginScreen();
@@ -361,21 +205,29 @@ KR.auth = (function () {
         refreshAllViews();
       }, 500);
     } catch (e) {
-      console.error(e);
-      setStatus('login', 'error', 'Gagal: ' + (e.message || 'Unknown'));
+      console.error('[Login]', e);
+      const msg = e.message || 'Unknown error';
+      if (msg.toLowerCase().includes('invalid')) {
+        setStatus('login', 'error', 'Email atau password salah');
+      } else {
+        setStatus('login', 'error', msg);
+      }
     }
   }
 
   /* ---------- LOGOUT ---------- */
   function logout() {
-    const a = getAuth();
+    const a = getUser();
     confirmDialog(
       'Logout?',
-      `Anda akan keluar dari akun "${a?.username || 'ini'}". Data tetap tersimpan di GitHub.`,
-      () => {
-        clearAuth();
-        updateBadge();
-        renderAccountCard();
+      `Anda akan keluar dari akun "${a?.email || 'ini'}".`,
+      async () => {
+        try {
+          await KR.sb.signOut();
+        } catch (e) {
+          console.warn(e);
+        }
+        clearUserCache();
         KR.toast.success('Logout berhasil');
         setTimeout(() => location.reload(), 500);
       }
@@ -384,13 +236,13 @@ KR.auth = (function () {
 
   /* ---------- BADGE ---------- */
   function updateBadge() {
-    const a = getAuth();
+    const a = getUser();
     const btn = document.getElementById('user-badge-btn');
     const nameEl = document.getElementById('user-badge-name');
     if (!btn || !nameEl) return;
     if (a && a.loggedIn) {
       btn.style.display = 'inline-flex';
-      nameEl.textContent = a.username || 'User';
+      nameEl.textContent = a.username || a.email || 'User';
     } else {
       btn.style.display = 'none';
     }
@@ -401,7 +253,7 @@ KR.auth = (function () {
   function renderAccountCard() {
     const el = document.getElementById('account-info');
     if (!el) return;
-    const a = getAuth();
+    const a = getUser();
     if (!a || !a.loggedIn) {
       el.innerHTML = `
         <p class="settings-desc">Belum login.</p>
@@ -409,26 +261,24 @@ KR.auth = (function () {
           <i data-lucide="log-in"></i> Login
         </button>`;
     } else {
-      const ghConfig = KR.store.getGitHubConfig();
-      const initial = (a.username || '?')[0].toUpperCase();
-      const roleLabel = a.mode === 'local' ? '👤 Lokal' : (a.role === 'admin' ? '👑 Admin' : '👤 Kasir');
+      const initial = (a.username || a.email || '?')[0].toUpperCase();
+      const roleLabel = a.role === 'admin' ? '👑 Admin' : '👤 Kasir';
       el.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-subtle);border-radius:12px;margin-bottom:12px;">
           <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:grid;place-items:center;color:#fff;flex-shrink:0;font-weight:900;font-size:1.15rem;">
             ${escapeHtml(initial)}
           </div>
           <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;line-height:1.2;">${escapeHtml(a.username)}</div>
+            <div style="font-weight:800;line-height:1.2;">${escapeHtml(a.username || a.email)}</div>
             <div style="font-size:.75rem;color:var(--text-3);margin-top:2px;">
-              ${roleLabel}
-              ${ghConfig ? ' • ' + escapeHtml(ghConfig.owner) + '/' + escapeHtml(ghConfig.repo) : ''}
+              ${roleLabel} • ${escapeHtml(a.email || '')}
             </div>
           </div>
           <span class="pa-chip primary">Online</span>
         </div>
         <div class="btn-row">
-          <button class="btn btn-secondary" onclick="pullFromGithub()">
-            <i data-lucide="cloud-download"></i> Sinkron
+          <button class="btn btn-secondary" onclick="KR.auth.reloadFromCloud()">
+            <i data-lucide="cloud-download"></i> Sync dari Cloud
           </button>
           <button class="btn btn-danger" onclick="KR.auth.logout()">
             <i data-lucide="log-out"></i> Logout
@@ -438,7 +288,22 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- REFRESH ---------- */
+  /* ---------- RELOAD FROM CLOUD ---------- */
+  async function reloadFromCloud() {
+    showLoading('Mengambil data...');
+    try {
+      await pullDataFromCloud();
+      KR.toast.success('Data berhasil disinkronkan');
+      refreshAllViews();
+    } catch (e) {
+      console.error(e);
+      KR.toast.error('Gagal: ' + e.message);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  /* ---------- REFRESH ALL ---------- */
   function refreshAllViews() {
     if (typeof renderPosGrid === 'function') renderPosGrid();
     if (typeof renderCart === 'function') renderCart();
@@ -449,34 +314,56 @@ KR.auth = (function () {
   }
 
   /* ---------- INIT ---------- */
-  function init() {
-    const a = getAuth();
-    if (a && a.loggedIn) {
-      hideLoginScreen();
-      updateBadge();
-    } else {
+  async function init() {
+    try {
+      const session = await KR.sb.getSession();
+      if (session && session.user) {
+        const user = session.user;
+        const profile = await KR.sb.getProfile();
+        setUserCache({
+          loggedIn: true,
+          userId: user.id,
+          email: user.email,
+          username: profile?.username || user.email.split('@')[0],
+          role: profile?.role || 'admin',
+          loginAt: Date.now(),
+        });
+        hideLoginScreen();
+        updateBadge();
+
+        try {
+          await pullDataFromCloud();
+        } catch (e) {
+          console.warn('[Init] Pull data failed', e);
+        }
+        refreshAllViews();
+      } else {
+        clearUserCache();
+        showLoginScreen();
+      }
+    } catch (e) {
+      console.warn('[Auth Init]', e);
       showLoginScreen();
     }
 
     // Keyboard shortcuts
-    document.getElementById('setup-gh-token')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') submitSetup();
+    document.getElementById('login-email')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('login-password')?.focus();
     });
     document.getElementById('login-password')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') submitLogin();
-    });
-    document.getElementById('login-username')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('login-password')?.focus();
     });
     document.getElementById('reg-password2')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') submitRegister();
     });
   }
 
+  /* ---------- EXPOSE ---------- */
   return {
-    init, getAuth, isLoggedIn, isGitHubUser, getUser,
-    showLoginScreen, hideLoginScreen, updateUIBasedOnSetup, changeGithubSetup,
-    switchAuthTab, submitSetup, submitRegister, submitLogin, skipSetup, logout,
-    updateBadge, renderAccountCard, refreshAllViews,
+    init,
+    isLoggedIn, isGitHubUser, getUser,
+    showLoginScreen, hideLoginScreen,
+    switchAuthTab, submitRegister, submitLogin, logout,
+    updateBadge, renderAccountCard, refreshAllViews, reloadFromCloud,
   };
 })();
