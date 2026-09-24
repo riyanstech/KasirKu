@@ -6,7 +6,7 @@ window.KR = window.KR || {};
 
 /* ==================== KONFIGURASI ==================== */
 /* ⚠️ GANTI 2 BARIS DI BAWAH DENGAN PUNYA KAMU */
-const SUPABASE_URL = 'https://tfgemkitmnuqiclepqw.supabase.co';
+const SUPABASE_URL = 'https://tfgemkitmnuqiiclepqw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_eO-jDODnzgSKvujTRT5nZw_BJy36AA0';
 
 /* Cek SDK sudah dimuat */
