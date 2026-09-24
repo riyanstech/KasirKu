@@ -66,6 +66,7 @@ function showTab(tabId, btn) {
   if (tabId === 'transaksi') renderTransactionList();
   if (tabId === 'pesanan' && typeof loadOrders === 'function') loadOrders();
   if (tabId === 'laporan') renderReport();
+  if (tabId === 'customer' && typeof loadCustomers === 'function') loadCustomers();
   if (tabId === 'pengaturan') loadSettings();
 
   if (window.lucide) {
