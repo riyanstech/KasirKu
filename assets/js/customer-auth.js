@@ -352,11 +352,42 @@
   }
 
   /* ---------- INIT ---------- */
-  function init(sellerId, supabaseClient) {
-    state.sellerId = sellerId;
-    state.sb = supabaseClient;
-    state.session = loadSession();
-    renderHeaderUI();
+function init(sellerId, supabaseClient) {
+  state.sellerId = sellerId;
+  state.sb = supabaseClient;
+  state.session = loadSession();
+  renderHeaderUI();
+
+  // Hook ke proceedToCheckout untuk autofill
+  if (typeof window.proceedToCheckout === 'function' && !window.proceedToCheckout._hooked) {
+    const orig = window.proceedToCheckout;
+    window.proceedToCheckout = function () {
+      orig.apply(this, arguments);
+      setTimeout(autofillCheckout, 60);
+    };
+    window.proceedToCheckout._hooked = true;
+  }
+
+  // ✅ AUTO-SHOW modal login kalau belum login
+  if (!state.session) {
+    setTimeout(() => openAuthModal('login'), 600);
+  }
+
+  window.CustomerAuth = {
+    state,
+    openAuthModal,
+    closeAuthModal,
+    switchAuthTab,
+    handleLogin,
+    handleRegister,
+    handleGuest,
+    handleLogout,
+    saveProfileSheet,
+    autofillCheckout,
+    getSession: () => state.session,
+    updateProfile,
+  };
+}
 
     // Hook ke proceedToCheckout untuk autofill
     if (typeof window.proceedToCheckout === 'function' && !window.proceedToCheckout._hooked) {
