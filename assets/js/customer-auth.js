@@ -149,7 +149,7 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- PROFILE SHEET (khusus order.html) ---------- */
+  /* ---------- PROFILE SHEET ---------- */
   function openProfileSheet() {
     const s = state.session;
     if (!s) return;
@@ -169,7 +169,7 @@
               <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto p-5 pt-3">
+          <div class="flex-1 overflow-y-auto p-5">
             <div class="flex items-center gap-4 mb-5 pb-5 border-b border-slate-100">
               <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.5rem;flex-shrink:0;">
                 ${esc((s.name || '?')[0].toUpperCase())}
@@ -253,17 +253,15 @@
     $('auth-modal')?.classList.add('hidden');
   }
 
-function switchAuthTab(tab) {
-  // Highlight tab aktif
-  document.querySelectorAll('[data-auth-tab]').forEach(t => {
-    t.classList.toggle('active', t.dataset.authTab === tab);
-  });
-  // Hide/show panel pakai Tailwind 'hidden'
-  ['login', 'register', 'guest'].forEach(name => {
-    const panel = $('auth-panel-' + name);
-    if (panel) panel.classList.toggle('hidden', name !== tab);
-  });
-}
+  function switchAuthTab(tab) {
+    document.querySelectorAll('[data-auth-tab]').forEach(t => {
+      t.classList.toggle('active', t.dataset.authTab === tab);
+    });
+    ['login', 'register', 'guest'].forEach(name => {
+      const panel = $('auth-panel-' + name);
+      if (panel) panel.classList.toggle('hidden', name !== tab);
+    });
+  }
 
   async function handleLogin() {
     const u = $('ca-login-username')?.value.trim();
@@ -355,44 +353,12 @@ function switchAuthTab(tab) {
   }
 
   /* ---------- INIT ---------- */
-   function init(sellerId, supabaseClient) {
-      state.sellerId = sellerId;
-      state.sb = supabaseClient;
-      state.session = loadSession();
-      renderHeaderUI();
+  function init(sellerId, supabaseClient) {
+    state.sellerId = sellerId;
+    state.sb = supabaseClient;
+    state.session = loadSession();
+    renderHeaderUI();
 
-  // Hook ke proceedToCheckout untuk autofill
-   if (typeof window.proceedToCheckout === 'function' && !window.proceedToCheckout._hooked) {
-      const orig = window.proceedToCheckout;
-      window.proceedToCheckout = function () {
-         orig.apply(this, arguments);
-         setTimeout(autofillCheckout, 60);
-      };
-      window.proceedToCheckout._hooked = true;
-  }
-
-   // ✅ AUTO-SHOW modal login kalau belum login
-   if (!state.session) {
-      setTimeout(() => openAuthModal('login'), 600);
-   }
-      
-   window.CustomerAuth = {
-      state,
-      openAuthModal,
-      closeAuthModal,
-      switchAuthTab,
-      handleLogin,
-      handleRegister,
-      handleGuest,
-      handleLogout,
-      saveProfileSheet,
-      autofillCheckout,
-      getSession: () => state.session,
-      updateProfile,
-   };
-}
-
-    // Hook ke proceedToCheckout untuk autofill
     if (typeof window.proceedToCheckout === 'function' && !window.proceedToCheckout._hooked) {
       const orig = window.proceedToCheckout;
       window.proceedToCheckout = function () {
@@ -400,6 +366,10 @@ function switchAuthTab(tab) {
         setTimeout(autofillCheckout, 60);
       };
       window.proceedToCheckout._hooked = true;
+    }
+
+    if (!state.session) {
+      setTimeout(() => openAuthModal('login'), 600);
     }
 
     window.CustomerAuth = {
