@@ -352,6 +352,213 @@
     if (addrEl && !addrEl.value) addrEl.value = state.session.address || '';
   }
 
+     /* ---------- MY ORDERS ---------- */
+  async function loadMyOrders() {
+    if (!state.session) return { orders: [], stats: null };
+    try {
+      const [ordersRes, statsRes] = await Promise.all([
+        rpc('customer_my_orders', { p_customer_id: state.session.id }),
+        rpc('customer_my_stats', { p_customer_id: state.session.id }),
+      ]);
+      const parse = (d) => typeof d === 'string' ? JSON.parse(d) : d;
+      return {
+        orders: (ordersRes || []).map(parse).filter(Boolean),
+        stats: parse(statsRes) || {},
+      };
+    } catch (e) {
+      console.error('[MyOrders]', e);
+      return { orders: [], stats: null, error: e.message };
+    }
+  }
+
+  async function openMyOrders() {
+    if (!state.session) return openAuthModal('login');
+    const existing = $('my-orders-sheet');
+    if (existing) existing.remove();
+
+    const sheet = document.createElement('div');
+    sheet.id = 'my-orders-sheet';
+    sheet.className = 'fixed inset-0 z-50';
+    sheet.innerHTML = `
+      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="document.getElementById('my-orders-sheet').remove()"></div>
+      <div class="relative h-full flex items-end sm:items-center justify-center sm:p-4">
+        <div class="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl max-h-[94dvh] flex flex-col shadow-2xl anim-up">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white shadow-lg shadow-primary-500/30">
+                <i data-lucide="package" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-base">Pesanan Saya</h3>
+                <p class="text-[11px] text-slate-500">Riwayat & status pesanan kamu</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('my-orders-sheet').remove()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center transition">
+              <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+            </button>
+          </div>
+          <div id="my-orders-content" class="flex-1 overflow-y-auto p-5">
+            <div class="py-12 text-center">
+              <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+              <p class="mt-4 text-sm font-bold text-slate-600">Memuat pesanan...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(sheet);
+    if (window.lucide) lucide.createIcons();
+
+    const { orders, stats, error } = await loadMyOrders();
+    const content = $('my-orders-content');
+    if (!content) return;
+
+    if (error) {
+      content.innerHTML = `<div class="py-12 text-center">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-red-50 text-red-500 grid place-items-center mb-3">
+          <i data-lucide="alert-circle" class="w-8 h-8"></i>
+        </div>
+        <div class="font-extrabold text-slate-800 mb-1">Gagal memuat</div>
+        <p class="text-sm text-slate-500">${esc(error)}</p>
+      </div>`;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    if (!orders.length) {
+      content.innerHTML = `<div class="py-16 text-center">
+        <div class="w-20 h-20 mx-auto rounded-3xl bg-slate-100 grid place-items-center mb-4">
+          <i data-lucide="package-open" class="w-10 h-10 text-slate-400"></i>
+        </div>
+        <h3 class="font-extrabold text-slate-800 mb-1.5">Belum ada pesanan</h3>
+        <p class="text-slate-500 text-sm max-w-xs mx-auto">Yuk mulai belanja, pesanan kamu akan muncul di sini</p>
+        <button onclick="document.getElementById('my-orders-sheet').remove()" class="mt-5 px-6 py-3 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold text-sm shadow-lg shadow-primary-500/30">
+          Mulai Belanja
+        </button>
+      </div>`;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    // Stats mini
+    const statHtml = stats ? `
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Total</div>
+          <div class="font-mono font-black text-lg text-emerald-600">${stats.total_orders || 0}</div>
+        </div>
+        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 mb-1">Proses</div>
+          <div class="font-mono font-black text-lg text-amber-600">${(stats.pending || 0) + (stats.verified || 0)}</div>
+        </div>
+        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+          <div class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 mb-1">Selesai</div>
+          <div class="font-mono font-black text-lg text-emerald-600">${stats.done || 0}</div>
+        </div>
+      </div>` : '';
+
+    const orderCardsHtml = orders.map(o => renderOrderCardCustomer(o)).join('');
+    content.innerHTML = statHtml + '<div class="space-y-3">' + orderCardsHtml + '</div>';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderOrderCardCustomer(o) {
+    const statusMap = {
+      pending:   { label: 'Menunggu Verifikasi', color: 'amber',   icon: 'clock' },
+      verified:  { label: 'Sedang Diproses',     color: 'blue',    icon: 'loader' },
+      done:      { label: 'Selesai',             color: 'emerald', icon: 'check-circle' },
+      cancelled: { label: 'Dibatalkan',          color: 'red',     icon: 'x-circle' },
+    };
+    const s = statusMap[o.status] || statusMap.pending;
+    const methodMap = {
+      digital: 'Digital', delivery: 'Dikirim', pickup: 'Ambil', cod: 'COD'
+    };
+    const method = methodMap[o.delivery_method] || 'Digital';
+    const code = o.order_code ? '#' + o.order_code : '#' + String(o.id).slice(0, 6).toUpperCase();
+    const created = formatDateID(o.created_at);
+    const items = Array.isArray(o.items) && o.items.length ? o.items : [];
+    const itemCount = items.length || 1;
+
+    const itemPreview = items.slice(0, 2).map(it =>
+      `<div class="flex items-center justify-between gap-2 text-xs">
+        <span class="text-slate-600 flex-1 min-w-0 truncate">${it.qty}× ${esc(it.name)}</span>
+        <span class="font-mono font-bold text-slate-800 whitespace-nowrap">${fmt((it.price || 0) * (it.qty || 1))}</span>
+      </div>`
+    ).join('');
+    const moreItems = itemCount > 2 ? `<div class="text-[11px] text-slate-500 italic mt-1">+${itemCount - 2} item lainnya</div>` : '';
+
+    const colorMap = {
+      amber:   { bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700',   icon: 'bg-amber-500' },
+      blue:    { bg: 'bg-blue-50',    border: 'border-blue-200',    text: 'text-blue-700',    icon: 'bg-blue-500' },
+      emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: 'bg-emerald-500' },
+      red:     { bg: 'bg-red-50',     border: 'border-red-200',     text: 'text-red-700',     icon: 'bg-red-500' },
+    }[s.color] || { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', icon: 'bg-slate-500' };
+
+    return `
+      <div class="rounded-2xl border-2 ${colorMap.border} ${colorMap.bg} overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl ${colorMap.icon} text-white grid place-items-center flex-shrink-0 shadow-md">
+                <i data-lucide="${s.icon}" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[10px] font-extrabold uppercase tracking-widest ${colorMap.text}">${s.label}</div>
+                <div class="font-mono text-xs text-slate-600 mt-0.5">${code}</div>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="font-mono font-black text-base text-slate-800">${fmt(o.product_price)}</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">${itemCount} item</div>
+            </div>
+          </div>
+          <div class="space-y-1.5 p-3 rounded-xl bg-white/60 border border-white">
+            ${itemPreview}
+            ${moreItems}
+          </div>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-dashed ${colorMap.border}">
+            <div class="flex items-center gap-3 text-[11px] text-slate-600">
+              <span class="inline-flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3 h-3"></i>${created}
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <i data-lucide="truck" class="w-3 h-3"></i>${method}
+              </span>
+            </div>
+          </div>
+          ${o.notes ? `<div class="mt-2 p-2 rounded-lg bg-white/60 border border-white text-[11px] text-slate-600">
+            <i data-lucide="message-square" class="w-3 h-3 inline mr-1"></i>${esc(o.notes)}
+          </div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function formatDateID(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    return `${pad(d.getDate())} ${months[d.getMonth()]} ${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function fmt(n) {
+    return 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+  }
+
+   function renderMyOrdersButton() {
+     const btn = $('my-orders-header-btn');
+     if (!btn) return;
+     // Tombol hanya muncul kalau login (member atau guest — biar guest yang order pakai akun guest juga bisa lihat)
+     if (state.session) {
+       btn.classList.remove('hidden');
+       btn.onclick = openMyOrders;
+     } else {
+       btn.classList.add('hidden');
+     }
+     if (window.lucide) lucide.createIcons();
+   }
+
   /* ---------- INIT ---------- */
   function init(sellerId, supabaseClient) {
     state.sellerId = sellerId;
