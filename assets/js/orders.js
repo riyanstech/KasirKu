@@ -651,19 +651,43 @@ window.KR = window.KR || {};
       const setVal = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
       setVal('set-payment-info', profile.payment_info);
       setVal('set-whatsapp-number', profile.whatsapp_number);
+      setVal('set-store-slug', profile.store_slug || profile.username || '');
       const toggle = $('set-online-enabled');
       if (toggle) toggle.checked = profile.online_order_enabled !== false;
 
-      // Preview link
-      const linkEl = $('online-order-link');
-      if (linkEl) {
-        const base = location.origin + location.pathname.replace(/\/[^/]*$/, '/order.html');
-        const url = `${base}?seller=${encodeURIComponent(profile.username || '')}`;
-        linkEl.textContent = url;
-        linkEl.dataset.url = url;
+      updateSlugPreview(profile.store_slug || '');
+
+      // Bind live preview di input slug
+      const slugEl = $('set-store-slug');
+      if (slugEl && !slugEl._bound) {
+        slugEl._bound = true;
+        slugEl.addEventListener('input', () => {
+          const s = slugEl.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+          slugEl.value = s;
+          updateSlugPreview(s);
+        });
       }
     } catch (e) {
       console.warn('[OnlineSettings]', e);
+    }
+  }
+
+  function updateSlugPreview(slug) {
+    const linkEl = $('online-order-link');
+    if (!linkEl) return;
+    const base = location.origin;
+    const validSlug = slug && /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(slug);
+    if (validSlug) {
+      const url = `${base}/toko/${slug}`;
+      linkEl.textContent = url;
+      linkEl.dataset.url = url;
+    } else {
+      // Fallback ke username
+      const profile = KR.auth.getUser();
+      const uname = profile?.username || '';
+      const url = `${base}/order.html?seller=${encodeURIComponent(uname)}`;
+      linkEl.textContent = url;
+      linkEl.dataset.url = url;
     }
   }
   window.loadOnlineSettings = loadOnlineSettings;
@@ -673,9 +697,15 @@ window.KR = window.KR || {};
     const paymentInfo = $('set-payment-info')?.value.trim() || '';
     const waNumber = $('set-whatsapp-number')?.value.trim() || '';
     const enabled = $('set-online-enabled')?.checked ?? true;
+    const storeSlug = ($('set-store-slug')?.value || '').trim().toLowerCase();
 
     if (waNumber && !/^62\d{8,14}$/.test(waNumber.replace(/[^\d]/g, ''))) {
       KR.toast.warn('Format WA harus diawali 62 (contoh: 6285888082252)');
+      return;
+    }
+
+    if (storeSlug && !/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(storeSlug)) {
+      KR.toast.warn('Slug tidak valid. Huruf kecil, angka, dan dash (-). Min 3, max 30 karakter.');
       return;
     }
 
@@ -685,11 +715,20 @@ window.KR = window.KR || {};
         payment_info: paymentInfo,
         whatsapp_number: waNumber,
         online_order_enabled: enabled,
+        store_slug: storeSlug || null,
       });
       KR.toast.success('Pengaturan pesanan online disimpan');
+      // Update cache user
+      const a = KR.auth.getUser();
+      if (a) { a.store_slug = storeSlug; KR.store.set('authCache', a); }
     } catch (e) {
       console.error(e);
-      KR.toast.error('Gagal: ' + (e.message || 'Unknown'));
+      const msg = e.message || '';
+      if (msg.includes('duplicate') || msg.includes('unique')) {
+        KR.toast.error('Slug sudah dipakai toko lain. Coba yang berbeda.');
+      } else {
+        KR.toast.error('Gagal: ' + (msg || 'Unknown'));
+      }
     } finally {
       hideLoading();
     }
