@@ -233,19 +233,33 @@
             </section>
 
             <section id="tab-customer" class="tab-content">
-                <div class="page-header">
-                    <div>
-                        <h2>Data Customer</h2>
-                        <p id="customers-count-label">0 customer</p>
-                    </div>
-                    <div class="page-header-actions">
-                        <button class="btn btn-secondary" onclick="loadCustomers()">
-                            <i data-lucide="refresh-cw"></i> Refresh
-                        </button>
-                    </div>
+              <div class="page-header">
+                <div>
+                  <h2>Data Customer</h2>
+                  <p id="customers-count-label">0 customer</p>
                 </div>
-                <div id="customers-stats" class="orders-stats"></div>
-                <div id="customers-list" class="orders-list"></div>
+                <div class="page-header-actions">
+                  <button class="btn btn-ghost" onclick="clearGuests()" title="Hapus semua tamu">
+                    <i data-lucide="user-x"></i> Clear Tamu
+                  </button>
+                  <button class="btn btn-ghost" onclick="clearInactive(90)" title="Hapus customer tidak aktif 90 hari">
+                    <i data-lucide="user-minus"></i> Clear Tidak Aktif
+                  </button>
+                  <button class="btn btn-secondary" onclick="loadCustomers()">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                </div>
+              </div>
+            
+              <div class="toolbar">
+                <div class="search-box">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="cust-search" placeholder="Cari nama, username, atau nomor HP..." oninput="setCustomerSearch(this.value)">
+                </div>
+              </div>
+            
+              <div id="customers-stats" class="orders-stats"></div>
+              <div id="customers-list" class="orders-list"></div>
             </section>
 
             <section id="tab-pengaturan" class="tab-content">
