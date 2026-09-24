@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+  <meta name="theme-color" content="#10b981">
+  <title>Order Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            primary: {
+              50: '#ecfdf5', 100: '#d1fae5', 400: '#34d399',
+              500: '#10b981', 600: '#059669', 700: '#047857',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+  <style>
+    html { -webkit-text-size-adjust: 100%; }
+    body { -webkit-font-smoothing: antialiased; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    .anim-up { animation: slideUp .3s cubic-bezier(.32,.72,0,1); }
+    .anim-fade { animation: fadeIn .25s ease; }
+    input, textarea, button { font-family: inherit; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900 antialiased">
+
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white flex-shrink-0 shadow-md shadow-primary-500/30">
+        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div id="store-name" class="font-extrabold text-sm truncate">Memuat...</div>
+        <div id="store-status" class="text-[11px] text-slate-500 truncate">—</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MAIN ============ -->
+  <main class="max-w-3xl mx-auto px-4 pb-32">
+
+    <!-- Loading -->
+    <div id="loading-screen" class="py-24 text-center">
+      <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+      <p class="mt-4 text-slate-500 text-sm font-medium">Memuat toko...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error-screen" class="hidden py-20 text-center anim-fade">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-red-100 text-red-500 grid place-items-center mb-4">
+        <i data-lucide="store" class="w-8 h-8"></i>
+      </div>
+      <h2 id="err-title" class="font-extrabold text-lg text-slate-900">Toko tidak ditemukan</h2>
+      <p id="err-msg" class="text-slate-500 text-sm mt-2 max-w-xs mx-auto"></p>
+    </div>
+
+    <!-- Main -->
+    <div id="main-screen" class="hidden anim-fade">
+      <!-- Banner cara order -->
+      <div class="mt-4 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white p-4 shadow-lg shadow-primary-500/20">
+        <div class="flex items-start gap-3">
+          <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+          <div class="text-sm">
+            <div class="font-bold mb-1">Cara Order</div>
+            <ol class="text-white/90 text-xs leading-relaxed list-decimal list-inside space-y-0.5">
+              <li>Pilih produk yang mau dibeli</li>
+              <li>Isi nomor tujuan & upload bukti transfer</li>
+              <li>Kirim pesanan, kasir akan proses</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="mt-4 relative">
+        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10"></i>
+        <input id="search-input" type="search" placeholder="Cari produk..." class="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 bg-white focus:border-primary-500 outline-none text-sm transition">
+      </div>
+
+      <!-- Category chips -->
+      <div id="category-chips" class="mt-3 flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1"></div>
+
+      <!-- Product grid -->
+      <div id="product-grid" class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+
+      <!-- Empty -->
+      <div id="empty-products" class="hidden py-16 text-center">
+        <i data-lucide="package-open" class="w-14 h-14 text-slate-300 mx-auto"></i>
+        <p class="text-slate-500 text-sm mt-3 font-medium">Belum ada produk untuk dijual online</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ MODAL ORDER ============ -->
+  <div id="order-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeOrderModal()"></div>
+    <div class="relative h-full flex items-end sm:items-center justify-center sm:p-4">
+      <div class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl max-h-[94dvh] flex flex-col anim-up shadow-2xl">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 flex-shrink-0">
+          <h3 class="font-extrabold text-base">Detail Pesanan</h3>
+          <button onclick="closeOrderModal()" class="w-9 h-9 rounded-lg hover:bg-slate-100 grid place-items-center transition">
+            <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          <!-- Product summary -->
+          <div id="modal-product" class="flex items-center gap-3 p-3 rounded-xl bg-primary-50 border border-primary-100"></div>
+
+          <!-- Target number -->
+          <div>
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+              Nomor Tujuan <span class="text-red-500">*</span>
+            </label>
+            <input id="inp-target" type="tel" inputmode="numeric" placeholder="08123456789"
+              class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none font-mono text-base transition">
+            <p id="err-target" class="text-red-500 text-xs mt-1 hidden">Format nomor tidak valid</p>
+          </div>
+
+          <!-- Name + Phone -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Nama</label>
+              <input id="inp-name" type="text" placeholder="Nama kamu"
+                class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm transition">
+            </div>
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">No. WA</label>
+              <input id="inp-phone" type="tel" placeholder="62812..."
+                class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm font-mono transition">
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Catatan</label>
+            <textarea id="inp-notes" rows="2" placeholder="Opsional — contoh: tolong diproses cepat"
+              class="w-full px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 outline-none text-sm resize-none transition"></textarea>
+          </div>
+
+          <!-- Payment info -->
+          <div class="rounded-xl bg-amber-50 border-2 border-amber-200 p-3.5">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="wallet" class="w-4 h-4 text-amber-600"></i>
+              <div class="font-extrabold text-sm text-amber-900">Info Pembayaran</div>
+            </div>
+            <div id="payment-info" class="text-sm text-amber-900 whitespace-pre-line font-mono leading-relaxed"></div>
+            <p class="text-[11px] text-amber-700 mt-2 italic">Transfer sesuai nominal, lalu upload bukti di bawah 👇</p>
+          </div>
+
+          <!-- Proof upload -->
+          <div>
+            <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+              Bukti Transfer <span class="text-red-500">*</span>
+            </label>
+            <input id="inp-proof" type="file" accept="image/*" class="hidden">
+            <div id="proof-area"></div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-4 py-3.5 border-t border-slate-100 bg-slate-50 flex gap-2 flex-shrink-0 rounded-b-3xl sm:rounded-b-2xl">
+          <button onclick="orderViaWA()" title="Order via WhatsApp"
+            class="flex-shrink-0 px-3.5 py-3 rounded-xl bg-white border-2 border-green-500 text-green-600 font-bold text-sm flex items-center gap-1.5 hover:bg-green-50 transition active:scale-95">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">WA</span>
+          </button>
+          <button id="btn-submit" onclick="submitOrder()"
+            class="flex-1 px-4 py-3 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30 hover:brightness-110 transition active:scale-[.98]">
+            <i data-lucide="send" class="w-4 h-4"></i> Kirim Pesanan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL SUKSES ============ -->
+  <div id="success-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+    <div class="relative h-full flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-3xl p-6 text-center anim-up shadow-2xl">
+        <div class="w-20 h-20 mx-auto rounded-full bg-green-100 grid place-items-center mb-4">
+          <i data-lucide="check-circle" class="w-12 h-12 text-green-500"></i>
+        </div>
+        <h3 class="font-extrabold text-xl text-slate-900">Pesanan Terkirim!</h3>
+        <p class="text-sm text-slate-500 mt-2 mb-4 leading-relaxed">
+          Kasir akan segera memverifikasi bukti transfer kamu. Mohon tunggu ya 🙏
+        </p>
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 mb-5">
+          <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-0.5">Kode Pesanan</div>
+          <div id="success-code" class="font-mono font-extrabold text-lg text-primary-600">—</div>
+        </div>
+        <button onclick="orderAgain()"
+          class="w-full py-3.5 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold shadow-lg shadow-primary-500/30 hover:brightness-110 transition active:scale-[.98]">
+          Order Lagi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LOADING OVERLAY ============ -->
+  <div id="loading-overlay" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div class="relative h-full grid place-items-center">
+      <div class="bg-white rounded-2xl p-6 text-center shadow-2xl min-w-[200px]">
+        <div class="inline-block w-8 h-8 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+        <p id="loading-text" class="mt-3 text-sm font-bold text-slate-700">Memproses...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TOASTS ============ -->
+  <div id="toasts" class="fixed top-4 left-4 right-4 z-[200] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+  <!-- ============ SCRIPT ============ -->
+  <script>
+  (function () {
+    'use strict';
+
+    // ============== KONFIG ==============
+    const SUPABASE_URL = 'https://tfgemkitmnuqiiclepqw.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_eO-jDODnzgSKvujTRT5nZw_BJy36AA0';
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ============== STATE ==============
+    const state = {
+      seller: null,
+      products: [],
+      selectedProduct: null,
+      proofFile: null,
+      proofPreview: null,
+      categoryFilter: '',
+      searchQuery: '',
+    };
+
+    // ============== UTILITIES ==============
+    const $ = (id) => document.getElementById(id);
+    const fmt = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const icon = () => { if (window.lucide) lucide.createIcons(); };
+
+    function toast(msg, type = 'info') {
+      const c = $('toasts');
+      const d = document.createElement('div');
+      const border = type === 'error' ? 'border-red-500' : type === 'success' ? 'border-green-500' : 'border-blue-500';
+      d.className = `pointer-events-auto bg-white px-4 py-3 rounded-xl shadow-2xl text-sm font-bold border-l-4 ${border} anim-up max-w-sm`;
+      d.textContent = msg;
+      c.appendChild(d);
+      setTimeout(() => { d.style.transition = 'opacity .3s'; d.style.opacity = '0'; setTimeout(() => d.remove(), 300); }, 3200);
+    }
+
+    function showLoading(text = 'Memproses...') {
+      $('loading-text').textContent = text;
+      $('loading-overlay').classList.remove('hidden');
+    }
+    function hideLoading() { $('loading-overlay').classList.add('hidden'); }
+
+    function showScreen(which) {
+      $('loading-screen').classList.toggle('hidden', which !== 'loading');
+      $('error-screen').classList.toggle('hidden', which !== 'error');
+      $('main-screen').classList.toggle('hidden', which !== 'main');
+    }
+
+    function showError(title, msg) {
+      $('err-title').textContent = title;
+      $('err-msg').textContent = msg || '';
+      showScreen('error');
+      icon();
+    }
+
+    // ============== INIT ==============
+    async function init() {
+      icon();
+      const params = new URLSearchParams(location.search);
+      let username = params.get('seller');
+
+      try {
+        if (!username) username = await autoDetectSeller();
+        if (!username) return showError('Toko tidak ditemukan', 'Link order tidak valid atau toko belum aktif.');
+
+        const { data: profile, error } = await sb
+          .from('profiles')
+          .select('id, username, store_name, store_address, store_phone, payment_info, whatsapp_number, online_order_enabled')
+          .eq('username', username)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!profile) return showError('Toko tidak ditemukan', `Username "${username}" tidak terdaftar.`);
+
+        if (!profile.online_order_enabled) {
+          return showError('Toko sedang tutup', 'Pemesanan online sedang tidak aktif. Silakan coba lagi nanti.');
+        }
+
+        state.seller = profile;
+
+        // Fetch produk online milik seller
+        const { data: products } = await sb
+          .from('products')
+          .select('id, name, sku, price, online_price, stock, category, image_url, is_online')
+          .eq('user_id', profile.id)
+          .eq('is_online', true)
+          .order('category', { ascending: true, nullsFirst: false })
+          .order('name', { ascending: true });
+
+        state.products = products || [];
+
+        // Update UI
+        const storeName = profile.store_name || 'Toko Online';
+        document.title = 'Order — ' + storeName;
+        $('store-name').textContent = storeName;
+        $('store-status').textContent = profile.store_address || 'Order online';
+
+        renderCategoryChips();
+        renderProducts();
+        showScreen('main');
+        icon();
+      } catch (e) {
+        console.error('[Init]', e);
+        showError('Gagal memuat', e.message || 'Terjadi kesalahan');
+      }
+    }
+
+    async function autoDetectSeller() {
+      const { data } = await sb
+        .from('profiles')
+        .select('username')
+        .eq('online_order_enabled', true)
+        .limit(2);
+      if (!data || data.length === 0) return null;
+      if (data.length === 1) return data[0].username;
+      return null; // multiple → wajib pakai ?seller=
+    }
+
+    // ============== RENDER ==============
+    function getFilteredProducts() {
+      let list = state.products;
+      if (state.categoryFilter) list = list.filter(p => p.category === state.categoryFilter);
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        list = list.filter(p =>
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.sku || '').toLowerCase().includes(q) ||
+          (p.category || '').toLowerCase().includes(q)
+        );
+      }
+      return list;
+    }
+
+    function renderCategoryChips() {
+      const cats = [...new Set(state.products.map(p => p.category).filter(Boolean))].sort();
+      const c = $('category-chips');
+      if (!cats.length) { c.innerHTML = ''; return; }
+      c.innerHTML =
+        `<button data-cat="" class="cat-chip ${!state.categoryFilter ? 'active' : ''}">Semua</button>` +
+        cats.map(cat => `<button data-cat="${esc(cat)}" class="cat-chip ${state.categoryFilter === cat ? 'active' : ''}">${esc(cat)}</button>`).join('');
+      c.querySelectorAll('.cat-chip').forEach(btn => {
+        btn.onclick = () => { state.categoryFilter = btn.dataset.cat; renderCategoryChips(); renderProducts(); };
+      });
+    }
+
+    function renderProducts() {
+      const list = getFilteredProducts();
+      const grid = $('product-grid');
+      const empty = $('empty-products');
+
+      if (!list.length) {
+        grid.innerHTML = '';
+        grid.classList.add('hidden');
+        empty.classList.remove('hidden');
+        icon();
+        return;
+      }
+      grid.classList.remove('hidden');
+      empty.classList.add('hidden');
+
+      grid.innerHTML = list.map(p => {
+        const out = p.stock !== null && p.stock !== undefined && p.stock <= 0;
+        const price = Number(p.online_price || p.price || 0);
+        const img = p.image_url
+          ? `<img src="${esc(p.image_url)}" alt="" class="w-full h-full object-contain p-1.5">`
+          : `<i data-lucide="package" class="w-10 h-10 text-slate-300"></i>`;
+        const stockBadge = p.stock === null || p.stock === undefined
+          ? ''
+          : out
+            ? `<div class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-extrabold">HABIS</div>`
+            : p.stock <= 5
+              ? `<div class="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">SISA ${p.stock}</div>`
+              : '';
+        return `
+          <button data-pid="${esc(p.id)}" class="product-card text-left bg-white rounded-2xl border border-slate-200 overflow-hidden transition active:scale-[.97] hover:border-primary-500 hover:shadow-lg hover:shadow-primary-500/10 ${out ? 'opacity-50 pointer-events-none' : ''}">
+            <div class="relative w-full aspect-square bg-white flex items-center justify-center overflow-hidden">
+              ${img}
+              ${stockBadge}
+            </div>
+            <div class="p-2.5 border-t border-slate-100">
+              ${p.category ? `<div class="text-[9px] font-extrabold uppercase tracking-wider text-primary-600 mb-0.5 truncate">${esc(p.category)}</div>` : ''}
+              <div class="text-xs font-bold text-slate-800 line-clamp-2 min-h-[2.2em] leading-snug">${esc(p.name)}</div>
+              <div class="mt-1.5 font-mono font-extrabold text-sm text-primary-600">${fmt(price)}</div>
+            </div>
+          </button>`;
+      }).join('');
+
+      grid.querySelectorAll('.product-card').forEach(btn => {
+        btn.onclick = () => openOrderModal(btn.dataset.pid);
+      });
+      icon();
+    }
+
+    // ============== MODAL ORDER ==============
+    function openOrderModal(productId) {
+      const p = state.products.find(x => x.id === productId);
+      if (!p) return;
+      state.selectedProduct = p;
+      state.proofFile = null;
+      state.proofPreview = null;
+
+      const price = Number(p.online_price || p.price || 0);
+      const img = p.image_url
+        ? `<img src="${esc(p.image_url)}" alt="" class="w-14 h-14 rounded-lg object-contain bg-white border border-primary-100 flex-shrink-0">`
+        : `<div class="w-14 h-14 rounded-lg bg-white border border-primary-100 grid place-items-center flex-shrink-0"><i data-lucide="package" class="w-6 h-6 text-slate-400"></i></div>`;
+
+      $('modal-product').innerHTML = `
+        ${img}
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] font-extrabold uppercase tracking-wide text-primary-700 mb-0.5">${esc(p.category || 'Produk')}</div>
+          <div class="text-sm font-bold text-slate-900 line-clamp-2 leading-snug">${esc(p.name)}</div>
+          <div class="font-mono font-extrabold text-primary-600 mt-0.5">${fmt(price)}</div>
+        </div>`;
+
+      $('payment-info').textContent = state.seller.payment_info || 'Hubungi kasir via WA untuk info pembayaran.';
+
+      // Reset form
+      $('inp-target').value = '';
+      $('inp-name').value = '';
+      $('inp-phone').value = '';
+      $('inp-notes').value = '';
+      $('inp-proof').value = '';
+      $('err-target').classList.add('hidden');
+      renderProofArea();
+
+      $('order-modal').classList.remove('hidden');
+      icon();
+      setTimeout(() => $('inp-target')?.focus(), 250);
+    }
+
+    function closeOrderModal() {
+      $('order-modal').classList.add('hidden');
+      state.selectedProduct = null;
+      state.proofFile = null;
+      state.proofPreview = null;
+    }
+
+    function renderProofArea() {
+      const area = $('proof-area');
+      if (state.proofPreview) {
+        area.innerHTML = `
+          <div class="relative rounded-xl overflow-hidden border-2 border-primary-200 bg-primary-50">
+            <img src="${state.proofPreview}" alt="" class="w-full max-h-64 object-contain bg-white">
+            <button onclick="removeProof()" class="absolute top-2 right-2 w-9 h-9 rounded-lg bg-slate-900/80 text-white grid place-items-center backdrop-blur hover:bg-red-500 transition">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="absolute bottom-0 left-0 right-0 bg-primary-600 text-white text-xs font-bold px-3 py-1.5 flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Bukti siap dikirim
+            </div>
+          </div>`;
+      } else {
+        area.innerHTML = `
+          <button onclick="document.getElementById('inp-proof').click()"
+            class="w-full py-6 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-primary-500 hover:bg-primary-50 hover:text-primary-600 transition flex flex-col items-center gap-2">
+            <i data-lucide="image-plus" class="w-7 h-7"></i>
+            <span class="text-sm font-bold">Upload Bukti Transfer</span>
+            <span class="text-[11px]">JPG / PNG, max 5MB</span>
+          </button>`;
+      }
+      icon();
+    }
+
+    window.removeProof = function () {
+      state.proofFile = null;
+      state.proofPreview = null;
+      renderProofArea();
+    };
+
+    function handleProofChange(e) {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) return toast('File harus berupa gambar', 'error');
+      if (file.size > MAX_FILE_SIZE) return toast('File terlalu besar (maks 5MB)', 'error');
+
+      state.proofFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        state.proofPreview = ev.target.result;
+        renderProofArea();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ============== SUBMIT ==============
+    function normalizePhone(s) {
+      return String(s || '').replace(/[^\d+]/g, '');
+    }
+
+    function isValidPhone(s) {
+      const n = normalizePhone(s);
+      return /^(\+?62|0)8[1-9][0-9]{6,11}$/.test(n);
+    }
+
+    async function submitOrder() {
+      if (!state.selectedProduct || !state.seller) return;
+
+      const target = $('inp-target').value.trim();
+      const name = $('inp-name').value.trim();
+      const phone = $('inp-phone').value.trim();
+      const notes = $('inp-notes').value.trim();
+
+      if (!target) { $('err-target').textContent = 'Nomor tujuan wajib diisi'; $('err-target').classList.remove('hidden'); return; }
+      if (!isValidPhone(target)) { $('err-target').textContent = 'Format nomor tidak valid (contoh: 08123456789)'; $('err-target').classList.remove('hidden'); return; }
+      $('err-target').classList.add('hidden');
+
+      if (!state.proofFile) return toast('Upload bukti transfer dulu ya', 'error');
+      if (phone && !isValidPhone(phone)) return toast('Format No. WA tidak valid', 'error');
+
+      const btn = $('btn-submit');
+      btn.disabled = true;
+
+      try {
+        // 1. Upload bukti
+        showLoading('Mengunggah bukti...');
+        const proofUrl = await uploadProof(state.proofFile);
+
+        // 2. Insert order
+        showLoading('Mengirim pesanan...');
+        const price = Number(state.selectedProduct.online_price || state.selectedProduct.price || 0);
+        const { data: order, error } = await sb
+          .from('online_orders')
+          .insert({
+            seller_id: state.seller.id,
+            product_id: state.selectedProduct.id,
+            product_name: state.selectedProduct.name,
+            product_price: price,
+            target_number: normalizePhone(target),
+            customer_name: name || null,
+            customer_phone: phone ? normalizePhone(phone) : null,
+            notes: notes || null,
+            payment_proof_url: proofUrl,
+            status: 'pending',
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+
+        hideLoading();
+        closeOrderModal();
+        showSuccess(order.id);
+      } catch (e) {
+        console.error('[Submit]', e);
+        hideLoading();
+        toast('Gagal: ' + (e.message || 'Unknown'), 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function uploadProof(file) {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const path = `${state.seller.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+      const { error } = await sb.storage
+        .from('payment-proofs')
+        .upload(path, file, {
+          contentType: file.type || 'image/jpeg',
+          cacheControl: '3600',
+          upsert: false,
+        });
+      if (error) throw error;
+
+      const { data } = sb.storage.from('payment-proofs').getPublicUrl(path);
+      return data.publicUrl;
+    }
+
+    function showSuccess(orderId) {
+      const code = '#' + String(orderId).replace(/-/g, '').slice(0, 6).toUpperCase();
+      $('success-code').textContent = code;
+      $('success-modal').classList.remove('hidden');
+      icon();
+    }
+
+    window.orderAgain = function () {
+      $('success-modal').classList.add('hidden');
+      state.proofFile = null;
+      state.proofPreview = null;
+      state.selectedProduct = null;
+    };
+
+    // ============== WA ORDER ==============
+    function orderViaWA() {
+      if (!state.selectedProduct || !state.seller) return;
+      const wa = state.seller.whatsapp_number;
+      if (!wa) return toast('Nomor WA toko belum diset', 'error');
+
+      const p = state.selectedProduct;
+      const price = Number(p.online_price || p.price || 0);
+      const target = $('inp-target')?.value.trim() || '';
+      const name = $('inp-name')?.value.trim() || '';
+      const notes = $('inp-notes')?.value.trim() || '';
+
+      const lines = [
+        'Halo, saya mau order:',
+        '',
+        `*${p.name}*`,
+        `Harga: ${fmt(price)}`,
+        target ? `Nomor tujuan: ${target}` : 'Nomor tujuan: (akan saya isi)',
+        name ? `Nama: ${name}` : '',
+        notes ? `Catatan: ${notes}` : '',
+        '',
+        'Mohon info pembayarannya. Terima kasih 🙏',
+      ].filter(Boolean);
+
+      const url = `https://wa.me/${wa.replace(/[^\d]/g, '')}?text=${encodeURIComponent(lines.join('\n'))}`;
+      window.open(url, '_blank');
+    }
+
+    // ============== BINDINGS ==============
+    document.addEventListener('DOMContentLoaded', () => {
+      $('search-input').addEventListener('input', (e) => {
+        state.searchQuery = e.target.value.trim();
+        renderProducts();
+      });
+      $('inp-proof').addEventListener('change', handleProofChange);
+      $('inp-target').addEventListener('input', () => $('err-target').classList.add('hidden'));
+
+      // Close modal on ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (!$('order-modal').classList.contains('hidden')) closeOrderModal();
+        }
+      });
+
+      init();
+    });
+
+    window.openOrderModal = openOrderModal;
+    window.closeOrderModal = closeOrderModal;
+    window.submitOrder = submitOrder;
+    window.orderViaWA = orderViaWA;
+  })();
+  </script>
+</body>
+</html>
