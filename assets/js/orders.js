@@ -11,7 +11,8 @@ window.KR = window.KR || {};
   let orders = [];
   let filterStatus = 'active';
   let refreshTimer = null;
-  let lastPendingCount = null;  // untuk deteksi order baru
+  let realtimeChannel = null;
+  let lastPendingCount = null;
   let audioUnlocked = false;
   let audioCtx = null;
   let notificationPermission = 'default';
@@ -223,33 +224,32 @@ window.KR = window.KR || {};
 
   // ============== FETCH ==============
 
-  async function loadOrders() {
+  async function loadOrders(silent = false) {
     if (!KR.auth.isLoggedIn()) return;
 
     try {
       const data = await KR.sb.fetchOnlineOrders();
       const prevOrders = orders;
       orders = data || [];
-      
-      // Deteksi order baru (hanya kalau bukan load pertama)
+
+      // Deteksi order baru
       const newPendingCount = orders.filter(o => o.status === 'pending' && !o.archived).length;
-      
-      if (lastPendingCount !== null && newPendingCount > lastPendingCount) {
+
+      if (lastPendingCount !== null && newPendingCount > lastPendingCount && !silent) {
         const diff = newPendingCount - lastPendingCount;
-        // Cari order terbaru
         const latestOrder = orders
           .filter(o => !prevOrders.find(p => p.id === o.id))
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-        onNewOrderDetected(newPendingCount, diff, latestOrder);
+
+        // Panggil handler notifikasi (dari patch notifikasi sebelumnya)
+        if (typeof onNewOrderDetected === 'function') {
+          onNewOrderDetected(newPendingCount, diff, latestOrder);
+        }
       }
-      
+
       lastPendingCount = newPendingCount;
-      
       renderOrders();
       updateNavBadge();
-      
-      // Kalau tidak ada pending, stop flash title
-      if (newPendingCount === 0) stopTitleFlash();
     } catch (e) {
       console.error('[Orders] Load failed', e);
     }
@@ -285,12 +285,58 @@ window.KR = window.KR || {};
     }
   }
 
+  // ============== SUPABASE REALTIME ==============
+  async function setupRealtime() {
+    if (realtimeChannel) return;
+    if (!KR.auth.isLoggedIn()) return;
+
+    try {
+      const user = await KR.sb.getUser();
+      if (!user) return;
+
+      realtimeChannel = KR.sb.client
+        .channel('online-orders-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'online_orders',
+            filter: `seller_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('[Realtime] Event:', payload.eventType);
+            loadOrders();
+          }
+        )
+        .subscribe((status) => {
+          console.log('[Realtime] Status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('[Realtime] ✅ Terhubung — order masuk instant');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('[Realtime] Gagal connect, fallback polling');
+          }
+        });
+    } catch (e) {
+      console.warn('[Realtime] Setup failed', e);
+    }
+  }
+
+  function teardownRealtime() {
+    if (realtimeChannel) {
+      try { KR.sb.client.removeChannel(realtimeChannel); } catch (e) {}
+      realtimeChannel = null;
+    }
+  }
+
   function startAutoRefresh() {
     if (refreshTimer) return;
+    // Fallback polling 60 detik — Realtime akan lebih cepat
     refreshTimer = setInterval(() => {
       if (KR.auth.isLoggedIn()) loadOrders();
-    }, 30000);
+    }, 60000);
   }
+   
   function stopAutoRefresh() {
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = null;
@@ -670,6 +716,7 @@ window.KR = window.KR || {};
         updateNavBadge();
       }).catch(() => {});
       startAutoRefresh();
+      setupRealtime();  // ← TAMBAHAN: koneksi WebSocket instant
     }
   });
 
@@ -681,7 +728,7 @@ window.KR = window.KR || {};
   }
 
   // Pantau status login — kalau berubah, sync
-  let lastLoginState = false;
+
   setInterval(() => {
     const now = KR.auth?.isLoggedIn?.() || false;
     if (now !== lastLoginState) {
@@ -689,8 +736,10 @@ window.KR = window.KR || {};
       if (now) {
         loadOrders();
         startAutoRefresh();
+        setupRealtime();
       } else {
         stopAutoRefresh();
+        teardownRealtime();
       }
     }
   }, 5000);
