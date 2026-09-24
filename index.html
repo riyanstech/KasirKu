@@ -834,6 +834,20 @@
     </script>
 
     <script>
+    // Render Lucide icons untuk splash screen secepat mungkin
+    (function() {
+      function tryRender() {
+        if (window.lucide) {
+          lucide.createIcons();
+        } else {
+          setTimeout(tryRender, 50);
+        }
+      }
+      tryRender();
+    })();
+    </script>
+
+    <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then((reg) => {
