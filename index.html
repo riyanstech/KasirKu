@@ -69,6 +69,10 @@
                         <i data-lucide="bar-chart-3"></i><span>Laporan</span>
                     </button>
 
+                    <button class="nav-tab" data-tab="customer" onclick="showTab('customer', this)">
+                      <i data-lucide="users"></i><span>Customer</span>
+                    </button>
+
                     <button class="nav-tab" data-tab="pengaturan" onclick="showTab('pengaturan', this)">
                         <i data-lucide="settings"></i><span>Pengaturan</span>
                     </button>
@@ -226,6 +230,22 @@
                         <div id="report-categories"></div>
                     </div>
                 </div>
+            </section>
+
+            <section id="tab-customer" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Data Customer</h2>
+                        <p id="customers-count-label">0 customer</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-secondary" onclick="loadCustomers()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="customers-stats" class="orders-stats"></div>
+                <div id="customers-list" class="orders-list"></div>
             </section>
 
             <section id="tab-pengaturan" class="tab-content">
