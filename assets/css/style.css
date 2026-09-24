@@ -1770,28 +1770,101 @@ button.nav-tab.active svg * {
 #login-step-setup.hidden,
 #login-step-auth.hidden { display: none !important; }
 
-/* ==================== PRINT ==================== */
+/* ==================== PRINT (v2 — Fix PDF Blank) ==================== */
 @media print {
-  body * { visibility: hidden; }
-  #modal-receipt, #modal-receipt * { visibility: visible; }
-  #modal-receipt {
-    position: absolute;
-    inset: 0;
-    padding: 0;
-    background: #fff;
-    display: block !important;
+  /* Reset viewport — cegah 100dvh jadi 0 di print context */
+  html, body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
+
+  /* Sembunyikan SEMUA direct child body, KECUALI modal receipt */
+  body > *:not(#modal-receipt) {
+    display: none !important;
+  }
+
+  /* Force modal receipt jadi static & tampil */
+  #modal-receipt {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Sembunyikan bagian yang tidak perlu dicetak */
   #modal-receipt .modal-backdrop,
   #modal-receipt .modal-head,
   #modal-receipt .modal-foot,
-  .no-print { display: none !important; }
-  #modal-receipt .modal-card {
-    box-shadow: none;
-    max-width: 100%;
-    border-radius: 0;
+  #modal-receipt .no-print {
+    display: none !important;
   }
-  #modal-receipt .modal-body { padding: 0; overflow: visible; }
-  .receipt-paper { box-shadow: none; max-width: 100%; }
+
+  /* Reset modal-card — hilangkan flex, shadow, max-height, animasi */
+  #modal-receipt .modal-card {
+    display: block !important;
+    position: static !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  /* Reset modal-body — hilangkan scroll & padding */
+  #modal-receipt .modal-body {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    flex: none !important;
+  }
+
+  /* Receipt paper — pastikan full width, no shadow */
+  #modal-receipt .receipt-paper {
+    display: block !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 20px 16px !important;
+    background: #fff !important;
+    color: #000 !important;
+    page-break-inside: auto;
+  }
+
+  /* Prevent pemotongan row struk */
+  #modal-receipt .r-row,
+  #modal-receipt .r-divider {
+    page-break-inside: avoid;
+  }
+
+  /* Paksa warna hitam-putih */
+  #modal-receipt * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #000 !important;
+  }
+
+  /* Setting halaman */
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
 }
 
 /* ============================================================
