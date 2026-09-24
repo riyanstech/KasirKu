@@ -64,6 +64,7 @@ function showTab(tabId, btn) {
   }
   if (tabId === 'produk') renderProductList();
   if (tabId === 'transaksi') renderTransactionList();
+  if (tabId === 'pesanan' && typeof loadOrders === 'function') loadOrders();
   if (tabId === 'laporan') renderReport();
   if (tabId === 'pengaturan') loadSettings();
 
@@ -119,6 +120,9 @@ function mapProductFromDb(p) {
     stock: Number(p.stock) || 0,
     category: p.category || '',
     image: p.image_url || '',
+    is_online: p.is_online === true,
+    needs_address: p.needs_address === true,
+    online_price: p.online_price != null ? Number(p.online_price) : null,
   };
 }
 
@@ -236,8 +240,17 @@ function openProductForm(preset = null, editId = null) {
   if (costEl) costEl.value = '';
   if (priceEl) priceEl.value = '';
   if (stockEl) stockEl.value = '0';
+
   if (catEl) catEl.value = '';
   if (statusEl) statusEl.innerHTML = '';
+  const onlineEl = document.getElementById('pf-online');
+  const needsAddrEl = document.getElementById('pf-needs-address');
+  const onlinePriceEl = document.getElementById('pf-online-price');
+  const onlineDetail = document.getElementById('pf-online-detail');
+  if (onlineEl) onlineEl.checked = false;
+  if (needsAddrEl) needsAddrEl.checked = false;
+  if (onlinePriceEl) onlinePriceEl.value = '';
+  if (onlineDetail) onlineDetail.classList.add('hidden');
 
   if (isEdit) {
     const p = KR.store.findProductById(editId);
@@ -248,9 +261,14 @@ function openProductForm(preset = null, editId = null) {
       if (priceEl) priceEl.value = p.price || '';
       if (stockEl) stockEl.value = (p.stock != null ? p.stock : 0);
       if (catEl) catEl.value = p.category || '';
+      if (onlineEl) onlineEl.checked = !!p.is_online;
+      if (needsAddrEl) needsAddrEl.checked = !!p.needs_address;
+      if (onlinePriceEl) onlinePriceEl.value = p.online_price != null ? p.online_price : '';
+      if (onlineDetail) onlineDetail.classList.toggle('hidden', !p.is_online);
       pfImageData = p.image || '';
     }
   } else if (preset) {
+     
     if (preset.sku && skuEl) skuEl.value = preset.sku;
     if (preset.name && nameEl) nameEl.value = preset.name;
     if (preset.category && catEl) catEl.value = preset.category;
@@ -337,6 +355,11 @@ async function saveProduct() {
   const stock = Number(stockEl?.value) || 0;
   const category = (catEl?.value || '').trim();
 
+  const isOnline = document.getElementById('pf-online')?.checked || false;
+  const needsAddress = document.getElementById('pf-needs-address')?.checked || false;
+  const onlinePriceRaw = document.getElementById('pf-online-price')?.value;
+  const onlinePrice = onlinePriceRaw ? Number(onlinePriceRaw) : null;
+
   if (!name) { KR.toast.error('Nama produk wajib diisi'); return; }
   if (!sku) { KR.toast.error('SKU wajib diisi'); return; }
   if (price <= 0) { KR.toast.error('Harga jual harus lebih dari 0'); return; }
@@ -350,7 +373,12 @@ async function saveProduct() {
   }
 
   const isEdit = !!id;
-  const data = { name, sku, cost, price, stock, category };
+  const data = {
+    name, sku, cost, price, stock, category,
+    is_online: isOnline,
+    needs_address: isOnline && needsAddress,
+    online_price: isOnline ? onlinePrice : null,
+  };
 
   showLoading(isEdit ? 'Menyimpan...' : 'Membuat produk...');
 
@@ -515,6 +543,7 @@ function loadSettings() {
   setVal('set-receipt-footer', s.receiptFooter);
   initAiSettings();
   if (KR.auth) KR.auth.renderAccountCard();
+  if (typeof loadOnlineSettings === 'function') loadOnlineSettings();
 }
 window.loadSettings = loadSettings;
 
@@ -1371,3 +1400,12 @@ if (document.readyState === 'loading') {
 } else {
   initApp();
 }
+
+/* ==================== PRODUCT FORM — ONLINE TOGGLE ==================== */
+function onPfOnlineChange() {
+  const el = document.getElementById('pf-online');
+  const detail = document.getElementById('pf-online-detail');
+  if (!el || !detail) return;
+  detail.classList.toggle('hidden', !el.checked);
+}
+window.onPfOnlineChange = onPfOnlineChange;
