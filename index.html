@@ -53,6 +53,10 @@
                     <button class="nav-tab" data-tab="transaksi" onclick="showTab('transaksi', this)">
                         <i data-lucide="receipt-text"></i><span>Transaksi</span>
                     </button>
+                    <button class="nav-tab" data-tab="pesanan" onclick="showTab('pesanan', this)">
+                        <i data-lucide="inbox"></i><span>Pesanan</span>
+                        <span id="orders-badge" class="nav-badge hidden">0</span>
+                    </button>
                     <button class="nav-tab" data-tab="laporan" onclick="showTab('laporan', this)">
                         <i data-lucide="bar-chart-3"></i><span>Laporan</span>
                     </button>
@@ -150,6 +154,23 @@
                 <div id="trx-list" class="trx-list"></div>
             </section>
 
+            <section id="tab-pesanan" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Pesanan Online</h2>
+                        <p id="orders-count-label">Memuat...</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-secondary" onclick="refreshOrders()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div id="orders-stats" class="orders-stats"></div>
+                <div id="orders-list" class="orders-list"></div>
+            </section>
+
             <section id="tab-laporan" class="tab-content">
                 <div class="page-header">
                     <div>
@@ -211,6 +232,40 @@
                     <div class="settings-card">
                         <h3><i data-lucide="user-circle"></i> Akun Saya</h3>
                         <div id="account-info"></div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i data-lucide="globe"></i> Pesanan Online</h3>
+                        <p class="settings-desc">Aktifkan halaman order publik, atur info pembayaran & WA toko.</p>
+
+                        <label class="toggle-row" style="margin-bottom:12px;">
+                            <input type="checkbox" id="set-online-enabled">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Aktifkan Halaman Order</span>
+                        </label>
+
+                        <div class="field">
+                            <label>Info Pembayaran</label>
+                            <textarea id="set-payment-info" class="textarea" rows="4" placeholder="DANA: 0858xxx (Nama)&#10;BCA: 123xxx a.n. Nama&#10;QRIS: scan QR"></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label>Nomor WhatsApp (format 62)</label>
+                            <input id="set-whatsapp-number" class="input" placeholder="6285888082252">
+                        </div>
+
+                        <div class="field">
+                            <label>Link Halaman Order</label>
+                            <div class="online-preview-link">
+                                <i data-lucide="link"></i>
+                                <span id="online-order-link" style="flex:1;min-width:0;">—</span>
+                                <button class="icon-btn" onclick="copyOrderLink()" title="Copy"><i data-lucide="copy"></i></button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveOnlineSettings()">
+                            <i data-lucide="save"></i> Simpan Pengaturan
+                        </button>
                     </div>
 
                     <div class="settings-card">
@@ -427,6 +482,26 @@
                         <input id="pf-category" class="input" placeholder="Contoh: Makanan">
                     </div>
                 </div>
+
+                <div class="pf-online-section">
+                    <h4><i data-lucide="globe"></i> Pesanan Online</h4>
+                    <label class="toggle-row">
+                        <input type="checkbox" id="pf-online" onchange="onPfOnlineChange()">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Tampilkan di halaman order</span>
+                    </label>
+                    <div id="pf-online-detail" class="hidden">
+                        <label class="toggle-row" style="margin-top:6px;">
+                            <input type="checkbox" id="pf-needs-address">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Butuh alamat pengiriman</span>
+                        </label>
+                        <div class="field" style="margin-top:10px;margin-bottom:0;">
+                            <label>Harga Online (opsional)</label>
+                            <input id="pf-online-price" type="number" class="input" placeholder="Kosongkan = pakai harga jual" min="0">
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-foot">
                 <button class="btn btn-ghost" onclick="closeModal('modal-product')">Batal</button>
@@ -628,6 +703,7 @@
         'assets/js/auth.js',
         'assets/js/vision.js',
         'assets/js/pos.js',
+        'assets/js/orders.js',
         'assets/js/app.js'
       ];
       var i = 0;
