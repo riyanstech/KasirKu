@@ -29,6 +29,16 @@
       "stock": 19,
       "category": "Alat Tulis",
       "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790183743145-6z3e.jpg"
+    },
+    {
+      "id": "p-1790210322128-miu1",
+      "name": "Kapal Api",
+      "sku": "8991002135376",
+      "cost": 1750,
+      "price": 2000,
+      "stock": 20,
+      "category": "Kopi",
+      "image": "https://raw.githubusercontent.com/riyanstech/KasirKu/main/photos/p-1790210319762.jpg"
     }
   ],
   "transactions": [],
