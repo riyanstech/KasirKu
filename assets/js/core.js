@@ -1,10 +1,11 @@
 /* ==========================================
-   KasirKu — Core Module
-   Store, Toast, GitHub, Helpers, Image Utils
+   KasirKu — Core Module (Supabase)
+   Store, Toast, Helpers, Image Utils
    ========================================== */
 window.KR = window.KR || {};
 
 /* ==================== STORE ==================== */
+/* Local cache untuk tampilan cepat; sinkronisasi ke Supabase via KR.sb */
 KR.store = (function () {
   'use strict';
 
@@ -12,8 +13,7 @@ KR.store = (function () {
     products: 'products',
     transactions: 'transactions',
     settings: 'settings',
-    github: 'github',
-    auth: 'auth',
+    authCache: 'authCache',
     aiConfig: 'aiConfig',
     visionCache: 'visionCache',
   };
@@ -116,23 +116,11 @@ KR.store = (function () {
     set(KEYS.settings, { ...getSettings(), ...s });
   }
 
-  /* ---------- GitHub config ---------- */
-  function getGitHubConfig() {
-    return get(KEYS.github, null);
-  }
-  function setGitHubConfig(cfg) {
-    set(KEYS.github, cfg);
-  }
-  function clearGitHubConfig() {
-    remove(KEYS.github);
-  }
-
   return {
     getProducts, setProducts, addProduct, updateProduct, deleteProduct,
     findProductBySku, findProductById,
     getTransactions, setTransactions, addTransaction, deleteTransaction,
     getSettings, setSettings,
-    getGitHubConfig, setGitHubConfig, clearGitHubConfig,
     get, set, remove,
   };
 })();
@@ -166,147 +154,6 @@ KR.toast = (function () {
   };
 })();
 
-/* ==================== GITHUB ==================== */
-KR.github = (function () {
-  'use strict';
-
-  const API = 'https://api.github.com';
-
-  function getConfig() {
-    return KR.store.getGitHubConfig();
-  }
-
-  function isConfigured() {
-    const c = getConfig();
-    return !!(c && c.owner && c.repo && c.token && c.branch);
-  }
-
-  function headers() {
-    const c = getConfig();
-    if (!c) return {};
-    return {
-      'Authorization': 'Bearer ' + c.token,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    };
-  }
-
-  function encodePath(path) {
-    return String(path || '')
-      .split('/')
-      .map(s => encodeURIComponent(s))
-      .join('/');
-  }
-
-  async function testConnection() {
-    if (!isConfigured()) return { ok: false, msg: 'Konfigurasi belum lengkap' };
-    try {
-      const c = getConfig();
-      const res = await fetch(`${API}/repos/${c.owner}/${c.repo}`, { headers: headers() });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        return { ok: false, msg: err.message || `HTTP ${res.status}` };
-      }
-      const data = await res.json();
-      return { ok: true, msg: `Terhubung ke ${data.full_name}`, data };
-    } catch (e) {
-      return { ok: false, msg: e.message || 'Gagal koneksi' };
-    }
-  }
-
-  async function getFileSha(path) {
-    try {
-      const c = getConfig();
-      if (!c) return null;
-      const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}?ref=${c.branch}&t=${Date.now()}`;
-      const res = await fetch(url, { headers: headers() });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.sha || null;
-    } catch {
-      return null;
-    }
-  }
-
-  async function getFileContent(path) {
-    try {
-      const c = getConfig();
-      if (!c) return null;
-      const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}?ref=${c.branch}&t=${Date.now()}`;
-      const res = await fetch(url, { headers: headers() });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!data.content) return null;
-      return decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Upload file ke GitHub
-   * @param {string} path - Path file di repo
-   * @param {string} content - Konten (text atau base64)
-   * @param {string} message - Commit message
-   * @param {object} options - { isBase64: true } jika content sudah base64
-   */
-  async function uploadFile(path, content, message, options = {}) {
-    if (!isConfigured()) throw new Error('GitHub belum dikonfigurasi');
-    const c = getConfig();
-    const sha = await getFileSha(path);
-
-    const encodedContent = options.isBase64
-      ? String(content || '')
-      : btoa(unescape(encodeURIComponent(String(content || ''))));
-
-    const body = {
-      message: message || `Update ${path}`,
-      content: encodedContent,
-      branch: c.branch,
-    };
-    if (sha) body.sha = sha;
-
-    const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}`;
-    const res = await fetch(url, {
-      method: 'PUT',
-      headers: headers(),
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
-    }
-    return await res.json();
-  }
-
-  async function deleteFile(path, message) {
-    if (!isConfigured()) throw new Error('GitHub belum dikonfigurasi');
-    const c = getConfig();
-    const sha = await getFileSha(path);
-    if (!sha) return null;
-    const url = `${API}/repos/${c.owner}/${c.repo}/contents/${encodePath(path)}`;
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: headers(),
-      body: JSON.stringify({
-        message: message || `Delete ${path}`,
-        sha,
-        branch: c.branch,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `HTTP ${res.status}`);
-    }
-    return await res.json();
-  }
-
-  return {
-    getConfig, isConfigured,
-    testConnection, getFileContent, uploadFile, getFileSha, deleteFile,
-  };
-})();
-
 /* ==================== HELPERS ==================== */
 function formatRupiah(n) {
   return 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
@@ -330,7 +177,7 @@ function escapeHtml(s) {
 }
 
 /* ==========================================
-   COMPRESS IMAGE v2 — Support HEIC, big files, fallback
+   COMPRESS IMAGE — Support HEIC, big files, fallback
    ========================================== */
 function compressImage(file, maxDim = 800, quality = 0.8) {
   return new Promise((resolve, reject) => {
@@ -454,81 +301,32 @@ function fileToDataUrl(file) {
 }
 
 /* ==========================================
-   PHOTO UPLOAD TO GITHUB
-   Simpan foto sebagai file di repo → URL permanen
-   ========================================== */
-async function uploadPhotoToGithub(base64DataUrl, filename) {
-  if (!KR.github.isConfigured()) {
-    throw new Error('Login GitHub dulu untuk simpan foto');
-  }
-  const path = `photos/${filename}`;
-  // Strip data URL prefix → ambil base64 murni
-  const base64 = String(base64DataUrl || '').replace(/^data:image\/\w+;base64,/, '');
-  if (!base64) throw new Error('Data foto kosong');
-
-  await KR.github.uploadFile(path, base64, `feat: add photo ${filename}`, { isBase64: true });
-
-  const c = KR.store.getGitHubConfig();
-  return `https://raw.githubusercontent.com/${c.owner}/${c.repo}/${c.branch}/${path}`;
-}
-
-async function deletePhotoFromGithub(filename) {
-  if (!KR.github.isConfigured()) return;
-  try {
-    await KR.github.deleteFile(`photos/${filename}`, `chore: delete ${filename}`);
-  } catch (e) {
-    console.warn('[Photo] Delete failed', e);
-  }
-}
-
-/* ==========================================
-   PHOTO CLEANUP — Bersihkan foto yatim
+   PHOTO HELPERS — Supabase Storage
    ========================================== */
 function extractPhotoFilename(url) {
   if (!url || typeof url !== 'string') return null;
-  const match = url.match(/\/photos\/([^/?#]+)/);
-  return match ? match[1] : null;
+  const match = url.match(/\/product-photos\/(.+)$/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-async function listPhotosInGithub() {
-  if (!KR.github.isConfigured()) return [];
-  const c = KR.store.getGitHubConfig();
-  const url = `https://api.github.com/repos/${c.owner}/${c.repo}/contents/photos?ref=${c.branch}&t=${Date.now()}`;
-
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'Authorization': 'Bearer ' + c.token,
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    });
-
-    // Folder photos belum ada → anggap kosong
-    if (res.status === 404) return [];
-    if (!res.ok) {
-      console.warn('[ListPhotos] HTTP', res.status);
-      return [];
-    }
-
-    const data = await res.json();
-    if (!Array.isArray(data)) return [];
-
-    return data
-      .filter(f => f && f.type === 'file')
-      .map(f => String(f.name || ''))
-      .filter(Boolean);
-  } catch (e) {
-    console.warn('[ListPhotos] Error:', e);
-    return [];
-  }
+async function uploadPhotoToCloud(base64DataUrl, productId) {
+  return await KR.sb.uploadPhoto(base64DataUrl, productId);
 }
 
-window.extractPhotoFilename = extractPhotoFilename;
-window.listPhotosInGithub = listPhotosInGithub;
+async function deletePhotoFromCloud(imageUrl) {
+  return await KR.sb.deletePhoto(imageUrl);
+}
 
+/* ==================== EXPOSE ==================== */
 window.formatRupiah = formatRupiah;
 window.formatDate = formatDate;
 window.escapeHtml = escapeHtml;
 window.compressImage = compressImage;
-window.uploadPhotoToGithub = uploadPhotoToGithub;
-window.deletePhotoFromGithub = deletePhotoFromGithub;
+window.extractPhotoFilename = extractPhotoFilename;
+window.uploadPhotoToCloud = uploadPhotoToCloud;
+window.deletePhotoFromCloud = deletePhotoFromCloud;
+
+/* Legacy aliases — supaya kode lama tidak error */
+window.uploadPhotoToGithub = uploadPhotoToCloud;
+window.deletePhotoFromGithub = deletePhotoFromCloud;
+window.listPhotosInGithub = async () => []; // no-op
