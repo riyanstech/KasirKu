@@ -1026,20 +1026,24 @@
     async function init() {
       icon();
       const params = new URLSearchParams(location.search);
-      let username = params.get('seller');
+      let slug = params.get('seller');
+
+      // Kalau tidak ada di query, coba parse dari path /toko/xxx
+      if (!slug) {
+        const m = location.pathname.match(/^\/toko\/([^\/]+)\/?$/);
+        if (m) slug = decodeURIComponent(m[1]);
+      }
 
       try {
-        if (!username) username = await autoDetectSeller();
-        if (!username) return showError('Toko tidak ditemukan', 'Link order tidak valid atau toko belum aktif.');
+        if (!slug) slug = await autoDetectSeller();
+        if (!slug) return showError('Toko tidak ditemukan', 'Link order tidak valid atau toko belum aktif.');
 
-        const { data: profile, error } = await sb
-          .from('profiles')
-          .select('id, username, store_name, store_address, store_phone, payment_info, whatsapp_number, online_order_enabled')
-          .eq('username', username)
-          .maybeSingle();
-
+        // Lookup via RPC — support store_slug & username
+        const { data: rows, error } = await sb.rpc('lookup_seller', { p_slug: slug });
         if (error) throw error;
-        if (!profile) return showError('Toko tidak ditemukan', `Username "${username}" tidak terdaftar.`);
+
+        const profile = rows && rows[0];
+        if (!profile) return showError('Toko tidak ditemukan', `Toko "${slug}" tidak terdaftar.`);
         if (!profile.online_order_enabled) return showError('Toko sedang tutup', 'Pemesanan online sedang tidak aktif.');
 
         state.seller = profile;
