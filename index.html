@@ -321,107 +321,57 @@
             </div>
             <h1 class="login-title">KasirKu</h1>
             <p class="login-sub">POINT OF SALE</p>
-
-            <!-- STEP 1: GitHub Setup -->
-            <div id="login-step-setup">
-                <div class="login-step-badge">Langkah 1 dari 2</div>
-                <p class="login-hint" style="margin-top:0;margin-bottom:18px;">
-                    Hubungkan ke GitHub dulu. Semua data, akun, dan foto produk akan tersimpan permanen di repo Anda.
-                </p>
-                <div class="field">
-                    <label>GitHub Username</label>
-                    <input id="setup-gh-owner" class="input" placeholder="username-anda" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label>Repository</label>
-                    <input id="setup-gh-repo" class="input" placeholder="kasirku" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label>Branch</label>
-                    <input id="setup-gh-branch" class="input" value="main" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label>Personal Access Token</label>
-                    <input id="setup-gh-token" type="password" class="input" placeholder="ghp_xxxxx" autocomplete="off">
-                    <a href="https://github.com/settings/tokens/new?scopes=repo&description=KasirKu" target="_blank" rel="noopener" class="settings-help">
-                        🔗 Buat token di sini (centang scope "repo")
-                    </a>
-                </div>
-                <div id="setup-status" class="gh-status warn">
-                    <i data-lucide="alert-triangle"></i><span>Belum diisi</span>
-                </div>
-                <button class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;" onclick="KR.auth.submitSetup()">
-                    <i data-lucide="plug"></i> Hubungkan GitHub
+    
+            <div class="login-tabs">
+                <button class="login-tab active" data-authtab="login" onclick="KR.auth.switchAuthTab('login')">
+                    Masuk
                 </button>
-                <div style="margin-top:16px;text-align:center;">
-                    <button class="login-link-btn" onclick="KR.auth.skipSetup()">
-                        Lewati & gunakan offline
-                    </button>
-                </div>
+                <button class="login-tab" data-authtab="register" onclick="KR.auth.switchAuthTab('register')">
+                    Buat Akun
+                </button>
             </div>
-
-            <!-- STEP 2: Login / Register -->
-            <div id="login-step-auth" class="hidden">
-                <div class="login-step-badge">Langkah 2 dari 2</div>
-
-                <div class="login-tabs">
-                    <button class="login-tab active" data-authtab="login" onclick="KR.auth.switchAuthTab('login')">
-                        Masuk
-                    </button>
-                    <button class="login-tab" data-authtab="register" onclick="KR.auth.switchAuthTab('register')">
-                        Buat Akun
-                    </button>
+    
+            <div id="auth-panel-login" class="auth-panel active">
+                <div class="field">
+                    <label>Email</label>
+                    <input id="login-email" type="email" class="input" placeholder="nama@email.com" autocomplete="email">
                 </div>
-
-                <div id="auth-panel-login" class="auth-panel active">
-                    <div class="field">
-                        <label>Username</label>
-                        <input id="login-username" class="input" placeholder="admin" autocomplete="username">
-                    </div>
-                    <div class="field">
-                        <label>Password</label>
-                        <input id="login-password" type="password" class="input" placeholder="••••••" autocomplete="current-password">
-                    </div>
-                    <div id="login-status" class="gh-status warn">
-                        <i data-lucide="alert-triangle"></i><span>Siap masuk</span>
-                    </div>
-                    <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;" onclick="KR.auth.submitLogin()">
-                        <i data-lucide="log-in"></i> Masuk
-                    </button>
+                <div class="field">
+                    <label>Password</label>
+                    <input id="login-password" type="password" class="input" placeholder="••••••" autocomplete="current-password">
                 </div>
-
-                <div id="auth-panel-register" class="auth-panel">
-                    <div class="field">
-                        <label>Username Baru</label>
-                        <input id="reg-username" class="input" placeholder="minimal 3 karakter" autocomplete="off">
-                    </div>
-                    <div class="field">
-                        <label>Password</label>
-                        <input id="reg-password" type="password" class="input" placeholder="minimal 6 karakter">
-                    </div>
-                    <div class="field">
-                        <label>Konfirmasi Password</label>
-                        <input id="reg-password2" type="password" class="input" placeholder="ulangi password">
-                    </div>
-                    <div id="register-status" class="gh-status warn">
-                        <i data-lucide="alert-triangle"></i><span>Isi data di atas</span>
-                    </div>
-                    <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;" onclick="KR.auth.submitRegister()">
-                        <i data-lucide="user-plus"></i> Buat Akun
-                    </button>
-                    <p class="login-hint" style="margin-top:12px;">
-                        Akun pertama otomatis menjadi <strong>Admin</strong>.
-                    </p>
+                <div id="login-status" class="gh-status warn">
+                    <i data-lucide="alert-triangle"></i><span>Siap masuk</span>
                 </div>
-
-                <div style="margin-top:20px;text-align:center;">
-                    <button class="login-link-btn" onclick="KR.auth.changeGithubSetup()">
-                        <i data-lucide="settings" style="width:12px;height:12px;display:inline-block;vertical-align:-2px;"></i>
-                        Ubah Konfigurasi GitHub
-                    </button>
-                </div>
-                <div id="github-info" style="margin-top:12px;padding:10px;background:var(--bg-subtle);border-radius:8px;font-size:.72rem;color:var(--text-3);text-align:center;"></div>
+                <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;" onclick="KR.auth.submitLogin()">
+                    <i data-lucide="log-in"></i> Masuk
+                </button>
             </div>
+    
+            <div id="auth-panel-register" class="auth-panel">
+                <div class="field">
+                    <label>Email</label>
+                    <input id="reg-email" type="email" class="input" placeholder="nama@email.com" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label>Password</label>
+                    <input id="reg-password" type="password" class="input" placeholder="minimal 6 karakter">
+                </div>
+                <div class="field">
+                    <label>Konfirmasi Password</label>
+                    <input id="reg-password2" type="password" class="input" placeholder="ulangi password">
+                </div>
+                <div id="register-status" class="gh-status warn">
+                    <i data-lucide="alert-triangle"></i><span>Isi data di atas</span>
+                </div>
+                <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;" onclick="KR.auth.submitRegister()">
+                    <i data-lucide="user-plus"></i> Buat Akun
+                </button>
+            </div>
+    
+            <p class="login-hint" style="margin-top:16px;">
+                Akun baru otomatis mendapat toko default <strong>Warung Saya</strong>.
+            </p>
         </div>
     </div>
 
