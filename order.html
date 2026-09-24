@@ -133,32 +133,45 @@
 <body class="bg-slate-50 min-h-screen text-slate-900 antialiased">
 
   <!-- ============ HEADER ============ -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/70 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white flex-shrink-0 shadow-lg shadow-primary-500/30 ring-2 ring-white">
-        <i data-lucide="store" class="w-5 h-5"></i>
-      </div>
-      <div class="min-w-0 flex-1">
-        <div id="store-name" class="font-extrabold text-[15px] truncate">Memuat...</div>
-        <div id="store-status" class="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
-          <span class="status-dot"></span>
-          <span>—</span>
-        </div>
-      </div>
-      <button id="my-orders-header-btn" class="hidden w-10 h-10 rounded-xl hover:bg-primary-50 text-primary-600 grid place-items-center transition" title="Pesanan Saya">
-        <i data-lucide="receipt-text" class="w-5 h-5"></i>
-      </button>
-      <button id="customer-header-btn" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition" title="Masuk">
-        <i data-lucide="user" class="w-5 h-5 text-slate-500"></i>
-      </button>
-      <button onclick="openTrackModal()" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition" title="Lacak Pesanan">
-        <i data-lucide="package-search" class="w-5 h-5 text-slate-500"></i>
-      </button>
-      <button onclick="scrollToFooter()" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition">
-        <i data-lucide="info" class="w-5 h-5 text-slate-500"></i>
-      </button>
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/70 shadow-sm">
+  <div class="max-w-4xl mx-auto px-4 h-16 flex items-center gap-3">
+    
+    <!-- Logo -->
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 grid place-items-center text-white flex-shrink-0 shadow-lg shadow-primary-500/30 ring-2 ring-white">
+      <i data-lucide="store" class="w-5 h-5"></i>
     </div>
-  </header>
+    
+    <!-- Nama & alamat toko -->
+    <div class="min-w-0 flex-1">
+      <div id="store-name" class="font-extrabold text-[15px] truncate">Memuat...</div>
+      <div id="store-status" class="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
+        <span class="status-dot"></span>
+        <span>—</span>
+      </div>
+    </div>
+
+    <!-- Tombol Pesanan Saya (muncul otomatis kalau sudah login) -->
+    <button id="my-orders-header-btn" class="hidden w-10 h-10 rounded-xl hover:bg-primary-50 text-primary-600 grid place-items-center transition" title="Pesanan Saya">
+      <i data-lucide="receipt-text" class="w-5 h-5"></i>
+    </button>
+    
+    <!-- Tombol Customer (avatar kalau login, icon user kalau belum) -->
+    <button id="customer-header-btn" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition" title="Masuk">
+      <i data-lucide="user" class="w-5 h-5 text-slate-500"></i>
+    </button>
+    
+    <!-- Tombol Lacak via Kode (opsional - untuk customer lama) -->
+    <button onclick="openTrackModal()" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition" title="Lacak Pesanan">
+      <i data-lucide="package-search" class="w-5 h-5 text-slate-500"></i>
+    </button>
+    
+    <!-- Tombol Info / scroll ke footer -->
+    <button onclick="scrollToFooter()" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition">
+      <i data-lucide="info" class="w-5 h-5 text-slate-500"></i>
+    </button>
+    
+  </div>
+</header>
 
   <!-- ============ MAIN ============ -->
   <main class="max-w-4xl mx-auto pb-40">
