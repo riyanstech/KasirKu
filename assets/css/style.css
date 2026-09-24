@@ -2993,4 +2993,140 @@ body {
   flex: 1;
   overflow: visible;
 }
+
+/* ============================================================
+   CUSTOMERS — Customer Management
+   ============================================================ */
+
+.customer-card {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: all var(--t-base);
+}
+.customer-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px -8px rgba(16,185,129,.25);
+}
+
+.customer-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 10px -2px rgba(16,185,129,.4);
+}
+.customer-avatar.guest {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  box-shadow: 0 4px 10px -2px rgba(100,116,139,.3);
+}
+
+.customer-body { flex: 1; min-width: 0; }
+
+.customer-name {
+  font-size: .95rem;
+  font-weight: 800;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.customer-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.customer-badge.member {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.customer-badge.guest {
+  background: var(--bg-subtle);
+  color: var(--text-3);
+}
+
+.customer-username {
+  font-size: .75rem;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+
+.customer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: .75rem;
+  color: var(--text-2);
+  margin-top: 6px;
+}
+.customer-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  word-break: break-word;
+}
+
+.customer-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: .78rem;
+  color: var(--text-2);
+}
+.customer-stats strong {
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.customer-timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: .68rem;
+  color: var(--text-3);
+  margin-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.customer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Modal auth customer (order.html) */
+.auth-panel { display: none; }
+.auth-panel.active { display: block; }
+
+[data-auth-tab].active {
+  background: #fff !important;
+  color: #059669 !important;
+  box-shadow: 0 2px 6px -2px rgba(15,23,42,.1);
+}
+
+@media (max-width: 640px) {
+  .customer-card { padding: 12px; gap: 10px; }
+  .customer-avatar { width: 46px; height: 46px; font-size: 1.1rem; border-radius: 12px; }
+  .customer-name { font-size: .88rem; }
+  .customer-stats { font-size: .72rem; gap: 12px; }
+  .customer-timeline { font-size: .62rem; }
+}
 /* ==================== END OF FILE ==================== */
