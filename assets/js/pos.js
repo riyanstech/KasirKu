@@ -247,7 +247,7 @@ function updateChange() {
   changeEl.classList.toggle('negative', change < 0);
 }
 
-function submitCheckout() {
+async function submitCheckout() {
   const t = getCartTotals();
   const paidEl = document.getElementById('co-paid');
   const methodEl = document.getElementById('co-method');
@@ -273,28 +273,57 @@ function submitCheckout() {
     itemCount: t.count,
   };
 
-  KR.store.addTransaction(trx);
+  showLoading('Menyimpan transaksi...');
 
-  // Reduce stock
-  const products = KR.store.getProducts();
-  cart.forEach(item => {
-    const p = products.find(x => x.id === item.productId);
-    if (p && p.stock !== undefined && p.stock !== null) {
-      p.stock = Math.max(0, p.stock - item.qty);
+  try {
+    // 1. Insert transaksi ke cloud
+    if (KR.auth.isLoggedIn()) {
+      try {
+        const dbTrx = await KR.sb.insertTransaction(trx);
+        trx.dbId = dbTrx.id;
+      } catch (e) {
+        console.error('[Checkout] Insert trx failed', e);
+        KR.toast.warn('Transaksi tersimpan lokal, gagal sync cloud');
+      }
     }
-  });
-  KR.store.setProducts(products);
 
-  cart = [];
-  renderCart();
-  renderPosGrid();
-  renderCategoryChips();
+    // 2. Update stok produk (lokal + cloud)
+    const products = KR.store.getProducts();
+    const stockUpdates = [];
+    cart.forEach(item => {
+      const p = products.find(x => x.id === item.productId);
+      if (p && p.stock !== undefined && p.stock !== null) {
+        p.stock = Math.max(0, p.stock - item.qty);
+        if (KR.auth.isLoggedIn()) {
+          stockUpdates.push(
+            KR.sb.updateProductDb(p.id, { stock: p.stock }).catch(e => {
+              console.warn('[Checkout] Stock update failed', p.id, e);
+            })
+          );
+        }
+      }
+    });
+    if (stockUpdates.length) await Promise.allSettled(stockUpdates);
+    KR.store.setProducts(products);
 
-  closeModal('modal-checkout');
-  showReceipt(trx);
+    // 3. Cache transaksi lokal (untuk tampilan)
+    KR.store.addTransaction(trx);
 
-  KR.toast.success('Transaksi berhasil!');
-  autoSync();
+    // 4. Bersihkan cart
+    cart = [];
+    renderCart();
+    renderPosGrid();
+    renderCategoryChips();
+
+    closeModal('modal-checkout');
+    showReceipt(trx);
+    KR.toast.success('Transaksi berhasil!');
+  } catch (e) {
+    console.error('[Checkout]', e);
+    KR.toast.error('Gagal: ' + (e.message || 'Unknown'));
+  } finally {
+    hideLoading();
+  }
 }
 
 /* ==================== RECEIPT ==================== */
