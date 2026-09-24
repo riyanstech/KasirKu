@@ -24,6 +24,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
     <link rel="stylesheet" href="assets/css/style.css"> 
 </head>
 <body>
@@ -670,6 +671,7 @@
     (function () {
       // ✅ Hapus cache-busting — biar SW yang handle versioning
       var scripts = [
+        'assets/js/supabase.js',
         'assets/js/core.js',
         'assets/js/auth.js',
         'assets/js/vision.js',
