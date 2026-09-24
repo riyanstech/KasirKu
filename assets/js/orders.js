@@ -470,16 +470,16 @@ window.KR = window.KR || {};
       <div class="order-card ${archived ? 'archived' : ''}">
         <div class="order-card-header">
           <div class="order-thumb">${thumb}</div>
-         <div class="order-body">
-           <div class="order-product">${esc(o.product_name)}</div>
-           <div class="order-price">${fmt(o.product_price)}</div>
-           <div class="order-code">
-             ${code} • ${timeAgo(o.created_at)}
-             ${o.items && Array.isArray(o.items) && o.items.length > 1
-               ? ` • <span style="color:var(--primary);font-weight:800;">${o.items.length} item</span>`
-               : ''}
-           </div>
-         </div>
+            <div class="order-body">
+              <div class="order-product">${esc(o.product_name)}</div>
+              <div class="order-price">${fmt(o.product_price)}</div>
+              <div class="order-code">
+                ${code} • ${timeAgo(o.created_at)}
+                ${o.items && Array.isArray(o.items) && o.items.length > 1
+                  ? ` • <span style="color:var(--primary);font-weight:800;">${o.items.length} item</span>`
+                  : ''}
+              </div>
+            </div>
 
           <span class="status-badge ${status.color}">
             <i data-lucide="${status.icon}"></i>${status.text}
