@@ -326,7 +326,3 @@ window.extractPhotoFilename = extractPhotoFilename;
 window.uploadPhotoToCloud = uploadPhotoToCloud;
 window.deletePhotoFromCloud = deletePhotoFromCloud;
 
-/* Legacy aliases — supaya kode lama tidak error */
-window.uploadPhotoToGithub = uploadPhotoToCloud;
-window.deletePhotoFromGithub = deletePhotoFromCloud;
-window.listPhotosInGithub = async () => []; // no-op
