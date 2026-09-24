@@ -1416,21 +1416,20 @@
         contentType: file.type || 'image/jpeg', cacheControl: '3600', upsert: false,
       });
       if (error) throw error;
+      // Update profil customer (supaya data terbaru tersimpan)
+      if (customerSession) {
+        try {
+          await window.KRCustomer.updateProfile({
+            name: name || customerSession.name,
+            phone: phone || customerSession.phone,
+            address: needAddressField ? address : customerSession.address,
+          });
+        } catch (e) {
+          console.warn('[Order] Update customer profile failed', e);
+        }
+      }
       const { data } = sb.storage.from('payment-proofs').getPublicUrl(path);
       return data.publicUrl;
-    }
-
-    // Update profil customer (supaya data terbaru tersimpan)
-    if (customerSession) {
-      try {
-        await window.KRCustomer.updateProfile({
-          name: name || customerSession.name,
-          phone: phone || customerSession.phone,
-          address: needAddressField ? address : customerSession.address,
-        });
-      } catch (e) {
-        console.warn('[Order] Update customer profile failed', e);
-      }
     }
 
     function showSuccess(orderCode) {
