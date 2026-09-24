@@ -250,41 +250,6 @@
                     </div>
 
                     <div class="settings-card">
-                        <h3><i data-lucide="git-branch"></i> Sinkronisasi GitHub</h3>
-                        <p class="settings-desc">Data & foto produk tersimpan permanen di repo Anda.</p>
-                        <div id="gh-status" class="gh-status warn">
-                            <i data-lucide="alert-triangle"></i><span>Belum dikonfigurasi</span>
-                        </div>
-                        <div class="field"><label>GitHub Username</label>
-                            <input id="gh-owner" class="input" placeholder="username"></div>
-                        <div class="field"><label>Repository</label>
-                            <input id="gh-repo" class="input" placeholder="repo-name"></div>
-                        <div class="field"><label>Branch</label>
-                            <input id="gh-branch" class="input" value="main"></div>
-                        <div class="field"><label>Personal Access Token</label>
-                            <input id="gh-token" type="password" class="input" placeholder="ghp_xxxxx"></div>
-                        <div class="btn-row">
-                            <button class="btn btn-primary" onclick="saveGithub()">
-                                <i data-lucide="save"></i> Simpan & Test
-                            </button>
-                            <button class="btn btn-secondary" onclick="testGithub()">
-                                <i data-lucide="plug"></i> Test
-                            </button>
-                            <button class="btn btn-danger" onclick="clearGithub()">
-                                <i data-lucide="trash-2"></i>
-                            </button>
-                        </div>
-                        <div class="btn-row" style="margin-top:12px">
-                            <button class="btn btn-success" onclick="pullFromGithub()">
-                                <i data-lucide="cloud-download"></i> Ambil dari GitHub
-                            </button>
-                            <button class="btn btn-success" onclick="pushToGithub()">
-                                <i data-lucide="cloud-upload"></i> Kirim ke GitHub
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="settings-card">
                         <h3><i data-lucide="database"></i> Backup Data</h3>
                         <p class="settings-desc">Export & import data sebagai file JSON.</p>
                         <div class="btn-row">
