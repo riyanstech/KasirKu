@@ -470,11 +470,17 @@ window.KR = window.KR || {};
       <div class="order-card ${archived ? 'archived' : ''}">
         <div class="order-card-header">
           <div class="order-thumb">${thumb}</div>
-          <div class="order-body">
-            <div class="order-product">${esc(o.product_name)}</div>
-            <div class="order-price">${fmt(o.product_price)}</div>
-            <div class="order-code">${code} • ${timeAgo(o.created_at)}</div>
-          </div>
+         <div class="order-body">
+           <div class="order-product">${esc(o.product_name)}</div>
+           <div class="order-price">${fmt(o.product_price)}</div>
+           <div class="order-code">
+             ${code} • ${timeAgo(o.created_at)}
+             ${o.items && Array.isArray(o.items) && o.items.length > 1
+               ? ` • <span style="color:var(--primary);font-weight:800;">${o.items.length} item</span>`
+               : ''}
+           </div>
+         </div>
+
           <span class="status-badge ${status.color}">
             <i data-lucide="${status.icon}"></i>${status.text}
           </span>
@@ -486,6 +492,11 @@ window.KR = window.KR || {};
           </span>
           ${metaItems.join('')}
         </div>
+        ${o.items && Array.isArray(o.items) && o.items.length > 1
+          ? `<div class="order-notes" style="background:var(--bg-subtle);color:var(--text-2);font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.6;">
+              ${o.items.map(it => `• ${it.qty}× ${esc(it.name)} — ${fmt(it.price * it.qty)}`).join('<br>')}
+             </div>`
+          : ''}
 
         ${notesHtml}
         ${proofHtml}
