@@ -25,6 +25,10 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+    <!-- Export libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="assets/css/style.css"> 
 </head>
 <body>
@@ -145,6 +149,7 @@
                 </div>
                 <div id="trx-list" class="trx-list"></div>
             </section>
+
             <section id="tab-laporan" class="tab-content">
                 <div class="page-header">
                     <div>
@@ -159,6 +164,16 @@
                             <option value="month">Bulan Ini</option>
                             <option value="all">Semua Waktu</option>
                         </select>
+
+                        <button class="btn btn-secondary" onclick="exportReportExcel()" title="Export Excel">
+                            <i data-lucide="file-spreadsheet"></i> Excel
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportReportCSV()" title="Export CSV">
+                            <i data-lucide="file-text"></i> CSV
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportReportPDF()" title="Export PDF">
+                            <i data-lucide="file-down"></i> PDF
+                        </button>
                     </div>
                 </div>
 
@@ -294,6 +309,13 @@
         </main>
     </div>
 
+    <!-- ==================== FLOATING CART BUTTON (FAB) ==================== -->
+    <button id="cart-fab" class="cart-fab hidden" onclick="scrollToCart()" title="Buka Keranjang">
+        <i data-lucide="shopping-cart"></i>
+        <span id="cart-fab-badge" class="cart-fab-badge">0</span>
+        <span class="cart-fab-total" id="cart-fab-total"></span>
+    </button>
+
     <!-- ==================== LOGIN SCREEN ==================== -->
     <div id="login-screen" class="login-screen hidden">
         <div class="login-card">
@@ -302,7 +324,7 @@
             </div>
             <h1 class="login-title">KasirKu</h1>
             <p class="login-sub">POINT OF SALE</p>
-    
+
             <div class="login-tabs">
                 <button class="login-tab active" data-authtab="login" onclick="KR.auth.switchAuthTab('login')">
                     Masuk
@@ -311,7 +333,7 @@
                     Buat Akun
                 </button>
             </div>
-    
+
             <div id="auth-panel-login" class="auth-panel active">
                 <div class="field">
                     <label>Email</label>
@@ -328,7 +350,7 @@
                     <i data-lucide="log-in"></i> Masuk
                 </button>
             </div>
-    
+
             <div id="auth-panel-register" class="auth-panel">
                 <div class="field">
                     <label>Email</label>
@@ -349,7 +371,7 @@
                     <i data-lucide="user-plus"></i> Buat Akun
                 </button>
             </div>
-    
+
             <p class="login-hint" style="margin-top:16px;">
                 Akun baru otomatis mendapat toko default <strong>Warung Saya</strong>.
             </p>
