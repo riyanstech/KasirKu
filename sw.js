@@ -7,6 +7,7 @@ const ASSETS = [
   './',
   './index.html',
   './assets/css/style.css',
+  './assets/js/supabase.js',
   './assets/js/core.js',
   './assets/js/auth.js',
   './assets/js/vision.js',
