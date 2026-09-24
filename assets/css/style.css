@@ -2941,4 +2941,56 @@ button.nav-tab.active svg * {
   .pwa-banner-desc { font-size: .68rem; }
   .pwa-banner-btn { padding: 8px 12px; font-size: .72rem; }
 }
+
+/* ============================================================
+   PWA SCROLL FIX — Standalone mode scroll lock
+   ============================================================ */
+
+/* Base: pastikan html & body bisa di-scroll vertical */
+html {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100dvh;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+/* Standalone mode (PWA) — pastikan tidak ada yang lock scroll */
+.pwa-standalone,
+.pwa-standalone body {
+  overflow-y: auto !important;
+  overscroll-behavior-y: auto !important;   /* ganti dari 'contain' */
+  height: auto !important;
+  min-height: 100dvh !important;
+  position: static !important;
+  touch-action: pan-y !important;
+}
+
+.pwa-standalone #app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header tetap sticky */
+.pwa-standalone .app-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 40;
+}
+
+/* Pastikan main bisa scroll */
+.pwa-standalone .app-main {
+  flex: 1;
+  overflow: visible;
+}
 /* ==================== END OF FILE ==================== */
