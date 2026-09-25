@@ -69,6 +69,11 @@
                         <i data-lucide="bar-chart-3"></i><span>Laporan</span>
                     </button>
 
+                    <button class="nav-tab" data-tab="tugas" onclick="showTab('tugas', this)">
+                      <i data-lucide="gift"></i><span>Tugas</span>
+                      <span id="tasks-badge" class="nav-badge hidden">0</span>
+                    </button>
+
                     <button class="nav-tab" data-tab="customer" onclick="showTab('customer', this)">
                       <i data-lucide="users"></i><span>Customer</span>
                     </button>
@@ -260,6 +265,33 @@
             
               <div id="customers-stats" class="orders-stats"></div>
               <div id="customers-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-tugas" class="tab-content">
+              <div class="page-header">
+                <div>
+                  <h2>Tugas Berhadiah</h2>
+                  <p id="tasks-count-label">0 tugas</p>
+                </div>
+                <div class="page-header-actions">
+                  <button id="create-task-btn" class="btn btn-primary" onclick="openCreateTaskModal()">
+                    <i data-lucide="plus"></i> Buat Tugas
+                  </button>
+                  <button class="btn btn-secondary" onclick="loadTaskTab()">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                </div>
+              </div>
+            
+              <div class="flex gap-1 p-1 bg-slate-100 rounded-xl mb-4 overflow-x-auto no-scrollbar">
+                <button data-task-tab="tasks" onclick="switchTaskTab('tasks')" class="task-main-tab flex-1 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition active">Tugas</button>
+                <button data-task-tab="socials" onclick="switchTaskTab('socials')" class="task-main-tab flex-1 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition">Akun Sosmed</button>
+                <button data-task-tab="submissions" onclick="switchTaskTab('submissions')" class="task-main-tab flex-1 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition">Bukti Tugas</button>
+                <button data-task-tab="withdrawals" onclick="switchTaskTab('withdrawals')" class="task-main-tab flex-1 py-2.5 rounded-lg text-xs font-bold whitespace-nowrap transition">Penarikan Saldo</button>
+              </div>
+            
+              <div id="tasks-stats" class="orders-stats"></div>
+              <div id="tasks-list" class="orders-list"></div>
             </section>
 
             <section id="tab-pengaturan" class="tab-content">
@@ -844,9 +876,11 @@
         'assets/js/pos.js',
         'assets/js/orders.js',
         'assets/js/customers-admin.js',
+        'assets/js/seller-tasks.js',
         'assets/js/pwa.js', 
         'assets/js/app.js'
       ];
+        
       var i = 0;
       function loadNext() {
         if (i >= scripts.length) {
