@@ -19,13 +19,13 @@
   })[c]);
   const fmt = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 
-  const PLATFORMS = {
-    tiktok:    { name: 'TikTok',    icon: 'music-2',       color: '#000000', placeholder: '@username' },
-    instagram: { name: 'Instagram', icon: 'instagram',     color: '#E1306C', placeholder: '@username' },
-    youtube:   { name: 'YouTube',   icon: 'youtube',       color: '#FF0000', placeholder: '@channel' },
-    facebook:  { name: 'Facebook',  icon: 'facebook',      color: '#1877F2', placeholder: 'username' },
-    twitter:   { name: 'X / Twitter', icon: 'twitter',     color: '#000000', placeholder: '@username' },
-  };
+   const PLATFORMS = {
+     tiktok:    { name: 'TikTok',      icon: 'music-2',      color: '#000000', placeholder: '@username' },
+     instagram: { name: 'Instagram',   icon: 'camera',       color: '#E1306C', placeholder: '@username' },
+     youtube:   { name: 'YouTube',     icon: 'play-circle',  color: '#FF0000', placeholder: '@channel' },
+     facebook:  { name: 'Facebook',    icon: 'thumbs-up',    color: '#1877F2', placeholder: 'username' },
+     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
+   };
 
   function toast(msg, type) {
     if (window.__customerToast) return window.__customerToast(msg, type || 'info');
