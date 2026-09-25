@@ -1134,8 +1134,25 @@
 
       // Info pembayaran
       $('payment-info').textContent = state.seller.payment_info || 'Hubungi kasir via WA untuk info pembayaran.';
-    }
 
+      // ============ BALANCE INIT ============
+      // Reset balance state
+      state.useBalance = false;
+      state.balanceUsed = 0;
+      state.amountDue = totals.total;
+      const balanceToggle = $('co-use-balance');
+      if (balanceToggle) balanceToggle.checked = false;
+
+      // Load balance lalu render UI
+      loadCustomerBalance().then(() => {
+        renderBalanceUI();
+      });
+
+      // Default: sembunyikan detail balance
+      const balDetail = $('co-balance-detail');
+      if (balDetail) balDetail.classList.add('hidden');
+    }
+    
     function selectMethod(method) {
       state.deliveryMethod = method;
       const hasPhysical = state.cart.some(x => x.needs_address);
@@ -1148,18 +1165,6 @@
       const isCod = method === 'cod';
       $('proof-section').classList.toggle('hidden', isCod);
       $('payment-section').classList.toggle('hidden', isCod);
-
-      if (isCod) {
-        state.proofFile = null;
-        state.proofPreview = null;
-        renderProofArea();
-        // Reset balance state
-        state.useBalance = false;
-        state.balanceUsed = 0;
-        state.amountDue = getCartTotals().total;   // ✅ FIX
-        const balanceToggle = $('co-use-balance');
-        if (balanceToggle) balanceToggle.checked = false;
-      }
 
       // Re-check balance visibility saat ganti metode
       setTimeout(() => {
