@@ -527,6 +527,36 @@
               class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none text-sm resize-none transition-all"></textarea>
           </div>
 
+          <!-- BALANCE SECTION -->
+          <div id="balance-section" class="hidden rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200 p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-violet-500 text-white grid place-items-center shadow-md shadow-violet-500/30">
+                  <i data-lucide="wallet" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <div class="font-extrabold text-sm text-violet-900">Saldo Saya</div>
+                  <div id="co-balance-label" class="text-[11px] text-violet-700 font-mono">Rp 0</div>
+                </div>
+              </div>
+              <label class="toggle-row" style="margin:0;">
+                <input type="checkbox" id="co-use-balance" onchange="onToggleUseBalance()">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div id="co-balance-detail" class="hidden">
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-violet-700">Saldo dipakai</span>
+                <span id="co-balance-used" class="font-mono font-bold text-violet-700">Rp 0</span>
+              </div>
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-violet-700">Sisa bayar</span>
+                <span id="co-balance-remaining" class="font-mono font-bold text-violet-700">Rp 0</span>
+              </div>
+              <div id="co-balance-note" class="text-[11px] text-violet-600 mt-2 italic"></div>
+            </div>
+          </div>
+
           <!-- PAYMENT -->
           <div id="payment-section" class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
             <div class="flex items-center justify-between mb-3">
