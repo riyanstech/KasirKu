@@ -1,33 +1,22 @@
 /* ==========================================
    KasirKu — Auth Module (Supabase)
-   Login pakai Email + Password
    ========================================== */
 window.KR = window.KR || {};
 
 KR.auth = (function () {
   'use strict';
 
-  /* ---------- USER CACHE (localStorage) ---------- */
-  function getUserCache() {
-    return KR.store.get('authCache', null);
-  }
-  function setUserCache(data) {
-    KR.store.set('authCache', data);
-  }
-  function clearUserCache() {
-    KR.store.remove('authCache');
-  }
+  function getUserCache() { return KR.store.get('authCache', null); }
+  function setUserCache(data) { KR.store.set('authCache', data); }
+  function clearUserCache() { KR.store.remove('authCache'); }
 
   function isLoggedIn() {
     const c = getUserCache();
     return !!(c && c.loggedIn);
   }
-  // Compat: kode lama masih panggil isGitHubUser → alias ke isLoggedIn
   function isGitHubUser() { return isLoggedIn(); }
-
   function getUser() { return getUserCache(); }
 
-  /* ---------- UI ---------- */
   function showLoginScreen() {
     const el = document.getElementById('login-screen');
     if (el) el.classList.remove('hidden');
@@ -55,36 +44,26 @@ KR.auth = (function () {
     if (!el) return;
     const icons = { ok: 'check-circle', warn: 'alert-triangle', error: 'x-circle' };
     el.className = 'gh-status ' + type;
-    el.innerHTML = `<i data-lucide="${icons[type] || 'info'}"></i><span>${escapeHtml(msg)}</span>`;
+    el.innerHTML = '<i data-lucide="' + (icons[type] || 'info') + '"></i><span>' + escapeHtml(msg) + '</span>';
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- MAPPERS (DB → local) ---------- */
   function mapProductFromDb(p) {
     return {
-      id: p.id,
-      name: p.name,
-      sku: p.sku || '',
-      cost: Number(p.cost) || 0,
-      price: Number(p.price) || 0,
-      stock: Number(p.stock) || 0,
-      category: p.category || '',
+      id: p.id, name: p.name, sku: p.sku || '',
+      cost: Number(p.cost) || 0, price: Number(p.price) || 0,
+      stock: Number(p.stock) || 0, category: p.category || '',
       image: p.image_url || '',
     };
   }
   function mapTrxFromDb(t) {
     return {
-      id: t.trx_code || t.id,
-      dbId: t.id,
+      id: t.trx_code || t.id, dbId: t.id,
       at: new Date(t.created_at).getTime(),
-      items: t.items || [],
-      subtotal: Number(t.subtotal) || 0,
-      discount: Number(t.discount) || 0,
-      total: Number(t.total) || 0,
-      paid: Number(t.paid) || 0,
-      change: Number(t.change_amount) || 0,
-      method: t.method || 'Cash',
-      itemCount: t.item_count || 0,
+      items: t.items || [], subtotal: Number(t.subtotal) || 0,
+      discount: Number(t.discount) || 0, total: Number(t.total) || 0,
+      paid: Number(t.paid) || 0, change: Number(t.change_amount) || 0,
+      method: t.method || 'Cash', itemCount: t.item_count || 0,
     };
   }
 
@@ -105,7 +84,6 @@ KR.auth = (function () {
     }
   }
 
-  /* ---------- REGISTER ---------- */
   async function submitRegister() {
     const emailEl = document.getElementById('reg-email');
     const passwordEl = document.getElementById('reg-password');
@@ -117,30 +95,22 @@ KR.auth = (function () {
     const password2 = password2El.value;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setStatus('register', 'error', 'Email tidak valid');
-      return;
+      setStatus('register', 'error', 'Email tidak valid'); return;
     }
     if (password.length < 6) {
-      setStatus('register', 'error', 'Password minimal 6 karakter');
-      return;
+      setStatus('register', 'error', 'Password minimal 6 karakter'); return;
     }
     if (password !== password2) {
-      setStatus('register', 'error', 'Konfirmasi password tidak cocok');
-      return;
+      setStatus('register', 'error', 'Konfirmasi password tidak cocok'); return;
     }
 
     setStatus('register', 'warn', 'Membuat akun...');
-
     try {
       const username = email.split('@')[0];
       await KR.sb.signUp(email, password, { username, store_name: 'Warung Saya' });
       setStatus('register', 'ok', 'Akun dibuat! Silakan login.');
       KR.toast.success('Akun berhasil dibuat!');
-
-      emailEl.value = '';
-      passwordEl.value = '';
-      password2El.value = '';
-
+      emailEl.value = ''; passwordEl.value = ''; password2El.value = '';
       setTimeout(() => {
         switchAuthTab('login');
         const loginEmail = document.getElementById('login-email');
@@ -148,17 +118,11 @@ KR.auth = (function () {
         document.getElementById('login-password')?.focus();
       }, 1000);
     } catch (e) {
-      console.error('[Register]', e);
       const msg = e.message || 'Unknown error';
-      if (msg.toLowerCase().includes('already')) {
-        setStatus('register', 'error', 'Email sudah terdaftar');
-      } else {
-        setStatus('register', 'error', msg);
-      }
+      setStatus('register', 'error', msg.toLowerCase().includes('already') ? 'Email sudah terdaftar' : msg);
     }
   }
 
-  /* ---------- LOGIN ---------- */
   async function submitLogin() {
     const emailEl = document.getElementById('login-email');
     const passwordEl = document.getElementById('login-password');
@@ -168,12 +132,10 @@ KR.auth = (function () {
     const password = passwordEl.value;
 
     if (!email || !password) {
-      setStatus('login', 'error', 'Isi email & password');
-      return;
+      setStatus('login', 'error', 'Isi email & password'); return;
     }
 
     setStatus('login', 'warn', 'Memverifikasi...');
-
     try {
       await KR.sb.signIn(email, password);
       const user = await KR.sb.getUser();
@@ -183,20 +145,13 @@ KR.auth = (function () {
         loggedIn: true,
         userId: user.id,
         email: user.email,
-        username: profile?.username || email.split('@')[0],
-        role: profile?.role || 'admin',
+        username: (profile && profile.username) || email.split('@')[0],
+        role: (profile && profile.role) || 'admin',
         loginAt: Date.now(),
       });
 
       setStatus('login', 'ok', 'Berhasil masuk!');
-
-      // Pull data (jangan block UI kalau gagal)
-      try {
-        await pullDataFromCloud();
-      } catch (e) {
-        console.warn('[Login] Pull data failed', e);
-      }
-
+      try { await pullDataFromCloud(); } catch (e) { console.warn('[Login] Pull data failed', e); }
       KR.toast.success('Selamat datang!');
 
       setTimeout(() => {
@@ -205,36 +160,21 @@ KR.auth = (function () {
         refreshAllViews();
       }, 500);
     } catch (e) {
-      console.error('[Login]', e);
       const msg = e.message || 'Unknown error';
-      if (msg.toLowerCase().includes('invalid')) {
-        setStatus('login', 'error', 'Email atau password salah');
-      } else {
-        setStatus('login', 'error', msg);
-      }
+      setStatus('login', 'error', msg.toLowerCase().includes('invalid') ? 'Email atau password salah' : msg);
     }
   }
 
-  /* ---------- LOGOUT ---------- */
   function logout() {
     const a = getUser();
-    confirmDialog(
-      'Logout?',
-      `Anda akan keluar dari akun "${a?.email || 'ini'}".`,
-      async () => {
-        try {
-          await KR.sb.signOut();
-        } catch (e) {
-          console.warn(e);
-        }
-        clearUserCache();
-        KR.toast.success('Logout berhasil');
-        setTimeout(() => location.reload(), 500);
-      }
-    );
+    confirmDialog('Logout?', 'Anda akan keluar dari akun "' + (a && a.email ? a.email : 'ini') + '".', async () => {
+      try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
+      clearUserCache();
+      KR.toast.success('Logout berhasil');
+      setTimeout(() => location.reload(), 500);
+    });
   }
 
-  /* ---------- BADGE ---------- */
   function updateBadge() {
     const a = getUser();
     const btn = document.getElementById('user-badge-btn');
@@ -249,46 +189,38 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- ACCOUNT CARD ---------- */
   function renderAccountCard() {
     const el = document.getElementById('account-info');
     if (!el) return;
     const a = getUser();
     if (!a || !a.loggedIn) {
-      el.innerHTML = `
-        <p class="settings-desc">Belum login.</p>
-        <button class="btn btn-primary" onclick="KR.auth.showLoginScreen()">
-          <i data-lucide="log-in"></i> Login
-        </button>`;
+      el.innerHTML = '<p class="settings-desc">Belum login.</p>' +
+        '<button class="btn btn-primary" onclick="KR.auth.showLoginScreen()">' +
+        '<i data-lucide="log-in"></i> Login</button>';
     } else {
       const initial = (a.username || a.email || '?')[0].toUpperCase();
       const roleLabel = a.role === 'admin' ? '👑 Admin' : '👤 Kasir';
-      el.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-subtle);border-radius:12px;margin-bottom:12px;">
-          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:grid;place-items:center;color:#fff;flex-shrink:0;font-weight:900;font-size:1.15rem;">
-            ${escapeHtml(initial)}
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;line-height:1.2;">${escapeHtml(a.username || a.email)}</div>
-            <div style="font-size:.75rem;color:var(--text-3);margin-top:2px;">
-              ${roleLabel} • ${escapeHtml(a.email || '')}
-            </div>
-          </div>
-          <span class="pa-chip primary">Online</span>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-secondary" onclick="KR.auth.reloadFromCloud()">
-            <i data-lucide="cloud-download"></i> Sync dari Cloud
-          </button>
-          <button class="btn btn-danger" onclick="KR.auth.logout()">
-            <i data-lucide="log-out"></i> Logout
-          </button>
-        </div>`;
+      el.innerHTML =
+        '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-subtle);border-radius:12px;margin-bottom:12px;">' +
+          '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:grid;place-items:center;color:#fff;flex-shrink:0;font-weight:900;font-size:1.15rem;">' +
+            escapeHtml(initial) + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:800;line-height:1.2;">' + escapeHtml(a.username || a.email) + '</div>' +
+            '<div style="font-size:.75rem;color:var(--text-3);margin-top:2px;">' +
+              roleLabel + ' • ' + escapeHtml(a.email || '') + '</div>' +
+          '</div>' +
+          '<span class="pa-chip primary">Online</span>' +
+        '</div>' +
+        '<div class="btn-row">' +
+          '<button class="btn btn-secondary" onclick="KR.auth.reloadFromCloud()">' +
+            '<i data-lucide="cloud-download"></i> Sync dari Cloud</button>' +
+          '<button class="btn btn-danger" onclick="KR.auth.logout()">' +
+            '<i data-lucide="log-out"></i> Logout</button>' +
+        '</div>';
     }
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- RELOAD FROM CLOUD ---------- */
   async function reloadFromCloud() {
     showLoading('Mengambil data...');
     try {
@@ -296,14 +228,12 @@ KR.auth = (function () {
       KR.toast.success('Data berhasil disinkronkan');
       refreshAllViews();
     } catch (e) {
-      console.error(e);
       KR.toast.error('Gagal: ' + e.message);
     } finally {
       hideLoading();
     }
   }
 
-  /* ---------- REFRESH ALL ---------- */
   function refreshAllViews() {
     if (typeof renderPosGrid === 'function') renderPosGrid();
     if (typeof renderCart === 'function') renderCart();
@@ -313,91 +243,73 @@ KR.auth = (function () {
     if (typeof loadSettings === 'function') loadSettings();
   }
 
-  /* ---------- INIT ---------- */
-async function init() {
-  const cached = getUserCache();
-
-  // ============ 1. TAMPILKAN UI DARI CACHE (INSTANT) ============
-  if (cached && cached.loggedIn) {
-    hideLoginScreen();
-    updateBadge();
-    refreshAllViews();
-  } else {
-    showLoginScreen();
-  }
-
-  // ============ 2. VALIDASI SESSION DI BACKGROUND ============
-  try {
-    const session = await KR.sb.getSession();
-
-    if (session && session.user) {
-      // Session valid → update cache dengan data terbaru
-      const user = session.user;
-      setUserCache({
-        loggedIn: true,
-        userId: user.id,
-        email: user.email,
-        username: cached?.username || user.email.split('@')[0],
-        role: cached?.role || 'admin',
-        loginAt: cached?.loginAt || Date.now(),
-      });
+  /* ============ INIT — simple & bulletproof ============ */
+  function init() {
+    // STEP 1: Tampilkan UI dari cache dulu (instant)
+    const cached = getUserCache();
+    if (cached && cached.loggedIn) {
+      hideLoginScreen();
       updateBadge();
-
-      // Fetch profile + data cloud
-      KR.sb.getProfile()
-        .then(profile => {
-          if (profile) {
-            setUserCache({
-              loggedIn: true,
-              userId: user.id,
-              email: user.email,
-              username: profile.username || user.email.split('@')[0],
-              role: profile.role || 'admin',
-              loginAt: Date.now(),
-            });
-            updateBadge();
-          }
-        })
-        .catch(e => console.warn('[Auth] getProfile bg failed', e));
-
-      pullDataFromCloud()
-        .then(() => refreshAllViews())
-        .catch(e => console.warn('[Auth] Pull bg failed', e));
+      refreshAllViews();
     } else {
-      // ⚠️ Session null — JANGAN clear cache!
-      // User tetap bisa akses pakai cache sampai klik logout manual
-      console.warn('[Auth] No session — keeping cached user (won\'t auto-logout)');
-      if (!cached || !cached.loggedIn) {
-        // Baru kalau cache juga kosong → tampilkan login
-        showLoginScreen();
-      }
-    }
-  } catch (e) {
-    // ⚠️ Network error — JANGAN clear cache!
-    console.warn('[Auth] Session check failed — using cache only', e);
-    if (!cached || !cached.loggedIn) {
       showLoginScreen();
     }
+
+    // STEP 2: Cek session di background (tanpa block UI)
+    KR.sb.getSession()
+      .then(function (session) {
+        if (session && session.user) {
+          // Session valid → update cache
+          const user = session.user;
+          setUserCache({
+            loggedIn: true,
+            userId: user.id,
+            email: user.email,
+            username: (cached && cached.username) || user.email.split('@')[0],
+            role: (cached && cached.role) || 'admin',
+            loginAt: (cached && cached.loginAt) || Date.now(),
+          });
+          updateBadge();
+          pullDataFromCloud().then(refreshAllViews).catch(function (e) {
+            console.warn('[Auth] Pull failed', e);
+          });
+        }
+        // ⚠️ Kalau session null → JANGAN clear cache, biarkan user pakai cache
+      })
+      .catch(function (e) {
+        console.warn('[Auth] Session check failed', e);
+        // Network error → tetap pakai cache
+      });
+
+    // Keyboard shortcuts
+    var le = document.getElementById('login-email');
+    var lp = document.getElementById('login-password');
+    var rp2 = document.getElementById('reg-password2');
+    if (le) le.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && lp) lp.focus();
+    });
+    if (lp) lp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') submitLogin();
+    });
+    if (rp2) rp2.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') submitRegister();
+    });
   }
 
-  // Keyboard shortcuts
-  document.getElementById('login-email')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('login-password')?.focus();
-  });
-  document.getElementById('login-password')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitLogin();
-  });
-  document.getElementById('reg-password2')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitRegister();
-  });
-}
-
-  /* ---------- EXPOSE ---------- */
   return {
-    init,
-    isLoggedIn, isGitHubUser, getUser,
-    showLoginScreen, hideLoginScreen,
-    switchAuthTab, submitRegister, submitLogin, logout,
-    updateBadge, renderAccountCard, refreshAllViews, reloadFromCloud,
+    init: init,
+    isLoggedIn: isLoggedIn,
+    isGitHubUser: isGitHubUser,
+    getUser: getUser,
+    showLoginScreen: showLoginScreen,
+    hideLoginScreen: hideLoginScreen,
+    switchAuthTab: switchAuthTab,
+    submitRegister: submitRegister,
+    submitLogin: submitLogin,
+    logout: logout,
+    updateBadge: updateBadge,
+    renderAccountCard: renderAccountCard,
+    refreshAllViews: refreshAllViews,
+    reloadFromCloud: reloadFromCloud,
   };
 })();
