@@ -314,83 +314,83 @@ KR.auth = (function () {
   }
 
   /* ---------- INIT ---------- */
-  async function init() {
-    // ============ 1. CACHE-FIRST: cek cache dulu (INSTANT) ============
-    const cached = getUserCache();
+async function init() {
+  const cached = getUserCache();
 
-    if (cached && cached.loggedIn) {
-      // User pernah login → tampilkan dashboard LANGSUNG
-      hideLoginScreen();
+  // ============ 1. TAMPILKAN UI DARI CACHE (INSTANT) ============
+  if (cached && cached.loggedIn) {
+    hideLoginScreen();
+    updateBadge();
+    refreshAllViews();
+  } else {
+    showLoginScreen();
+  }
+
+  // ============ 2. VALIDASI SESSION DI BACKGROUND ============
+  try {
+    const session = await KR.sb.getSession();
+
+    if (session && session.user) {
+      // Session valid → update cache dengan data terbaru
+      const user = session.user;
+      setUserCache({
+        loggedIn: true,
+        userId: user.id,
+        email: user.email,
+        username: cached?.username || user.email.split('@')[0],
+        role: cached?.role || 'admin',
+        loginAt: cached?.loginAt || Date.now(),
+      });
       updateBadge();
-      refreshAllViews();
+
+      // Fetch profile + data cloud
+      KR.sb.getProfile()
+        .then(profile => {
+          if (profile) {
+            setUserCache({
+              loggedIn: true,
+              userId: user.id,
+              email: user.email,
+              username: profile.username || user.email.split('@')[0],
+              role: profile.role || 'admin',
+              loginAt: Date.now(),
+            });
+            updateBadge();
+          }
+        })
+        .catch(e => console.warn('[Auth] getProfile bg failed', e));
+
+      pullDataFromCloud()
+        .then(() => refreshAllViews())
+        .catch(e => console.warn('[Auth] Pull bg failed', e));
     } else {
-      // Belum pernah login → tampilkan login
+      // ⚠️ Session null — JANGAN clear cache!
+      // User tetap bisa akses pakai cache sampai klik logout manual
+      console.warn('[Auth] No session — keeping cached user (won\'t auto-logout)');
+      if (!cached || !cached.loggedIn) {
+        // Baru kalau cache juga kosong → tampilkan login
+        showLoginScreen();
+      }
+    }
+  } catch (e) {
+    // ⚠️ Network error — JANGAN clear cache!
+    console.warn('[Auth] Session check failed — using cache only', e);
+    if (!cached || !cached.loggedIn) {
       showLoginScreen();
     }
-
-    // ============ 2. VALIDASI SESSION DI BACKGROUND ============
-    KR.sb.getSession()
-      .then(session => {
-        if (session && session.user) {
-          // Session valid → update cache
-          const user = session.user;
-          setUserCache({
-            loggedIn: true,
-            userId: user.id,
-            email: user.email,
-            username: cached?.username || user.email.split('@')[0],
-            role: cached?.role || 'admin',
-            loginAt: cached?.loginAt || Date.now(),
-          });
-          updateBadge();
-
-          // Fetch profile di background
-          KR.sb.getProfile()
-            .then(profile => {
-              if (profile) {
-                setUserCache({
-                  loggedIn: true,
-                  userId: user.id,
-                  email: user.email,
-                  username: profile.username || user.email.split('@')[0],
-                  role: profile.role || 'admin',
-                  loginAt: Date.now(),
-                });
-                updateBadge();
-              }
-            })
-            .catch(e => console.warn('[Auth] getProfile failed', e));
-
-          // Pull data cloud
-          pullDataFromCloud()
-            .then(() => refreshAllViews())
-            .catch(e => console.warn('[Auth] Pull failed', e));
-        } else {
-          // Session benar-benar tidak ada → baru kick ke login
-          clearUserCache();
-          showLoginScreen();
-        }
-      })
-      .catch(e => {
-        // ⚠️ NETWORK ERROR — JANGAN kick ke login!
-        // Pakai cache yang ada, biarkan user akses dashboard
-        console.warn('[Auth] Session check failed (network?), using cache', e);
-        if (!cached || !cached.loggedIn) {
-          showLoginScreen();
-        }
-      });
-
-    // Keyboard shortcuts
-    document.getElementById('login-email')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('login-password')?.focus();
-    });
-    document.getElementById('login-password')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') submitLogin();
-    });
-    document.getElementById('reg-password2')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') submitRegister();
-    });
   }
+
+  // Keyboard shortcuts
+  document.getElementById('login-email')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('login-password')?.focus();
+  });
+  document.getElementById('login-password')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitLogin();
+  });
+  document.getElementById('reg-password2')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitRegister();
+  });
+}
 
   /* ---------- EXPOSE ---------- */
   return {
