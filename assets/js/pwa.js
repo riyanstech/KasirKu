@@ -105,16 +105,22 @@ KR.pwa = (function () {
 
   function init() {
     console.log('[PWA] Init — mobile:', isMobile(), 'standalone:', isStandalone());
+
     if (isStandalone()) {
       installed = true;
       document.documentElement.classList.add('pwa-standalone');
       return;
     }
 
+    // ✅ Tunggu Chrome siapkan native prompt → baru tampilkan banner
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      console.log('[PWA] ✅ beforeinstallprompt ready');
+      console.log('[PWA] ✅ Native install READY — banner muncul');
+
+      if (!wasDismissedRecently()) {
+        showBanner();
+      }
     });
 
     window.addEventListener('appinstalled', () => {
@@ -124,11 +130,18 @@ KR.pwa = (function () {
       if (KR.toast) KR.toast.success('KasirKu berhasil di-install! 🎉');
     });
 
-    // Auto-show banner di mobile setelah 1.5 detik (kalau belum dismiss)
-    if (isMobile() && !wasDismissedRecently()) {
+    // iOS: tidak support beforeinstallprompt → banner delay
+    if (isIOS() && !isStandalone() && !wasDismissedRecently()) {
+      setTimeout(() => showBanner(), 3000);
+    }
+
+    // Fallback Android (Firefox / Samsung Internet)
+    if (isAndroid() && !isStandalone()) {
       setTimeout(() => {
-        showBanner();
-      }, 1500);
+        if (!deferredPrompt && !wasDismissedRecently()) {
+          showBanner();
+        }
+      }, 5000);
     }
   }
 
