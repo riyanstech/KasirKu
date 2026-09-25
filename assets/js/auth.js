@@ -315,60 +315,70 @@ KR.auth = (function () {
 
   /* ---------- INIT ---------- */
   async function init() {
-    // 1. Ambil session dari localStorage (instant)
-    let session = null;
-    try {
-      session = await KR.sb.getSession();
-    } catch (e) {
-      console.warn('[Auth] getSession failed', e);
-    }
+    // ============ 1. CACHE-FIRST: cek cache dulu (INSTANT) ============
+    const cached = getUserCache();
 
-    // 2. Kalau session ada → user login
-    if (session && session.user) {
-      const user = session.user;
-
-      // Pakai cache dulu (biar UI cepat)
-      const cached = getUserCache();
-      setUserCache({
-        loggedIn: true,
-        userId: user.id,
-        email: user.email,
-        username: cached?.username || user.email.split('@')[0],
-        role: cached?.role || 'admin',
-        loginAt: cached?.loginAt || Date.now(),
-      });
-
+    if (cached && cached.loggedIn) {
+      // User pernah login → tampilkan dashboard LANGSUNG
       hideLoginScreen();
       updateBadge();
       refreshAllViews();
-
-      // 3. Fetch profile di background — JANGAN block UI
-      KR.sb.getProfile()
-        .then(profile => {
-          if (profile) {
-            setUserCache({
-              loggedIn: true,
-              userId: user.id,
-              email: user.email,
-              username: profile.username || user.email.split('@')[0],
-              role: profile.role || 'admin',
-              loginAt: Date.now(),
-            });
-            updateBadge();
-          }
-        })
-        .catch(e => console.warn('[Auth] getProfile bg failed', e));
-
-      // 4. Pull data cloud di background
-      pullDataFromCloud()
-        .then(() => refreshAllViews())
-        .catch(e => console.warn('[Auth] Pull bg failed', e));
-
     } else {
-      // Tidak ada session → tampilkan login
-      clearUserCache();
+      // Belum pernah login → tampilkan login
       showLoginScreen();
     }
+
+    // ============ 2. VALIDASI SESSION DI BACKGROUND ============
+    KR.sb.getSession()
+      .then(session => {
+        if (session && session.user) {
+          // Session valid → update cache
+          const user = session.user;
+          setUserCache({
+            loggedIn: true,
+            userId: user.id,
+            email: user.email,
+            username: cached?.username || user.email.split('@')[0],
+            role: cached?.role || 'admin',
+            loginAt: cached?.loginAt || Date.now(),
+          });
+          updateBadge();
+
+          // Fetch profile di background
+          KR.sb.getProfile()
+            .then(profile => {
+              if (profile) {
+                setUserCache({
+                  loggedIn: true,
+                  userId: user.id,
+                  email: user.email,
+                  username: profile.username || user.email.split('@')[0],
+                  role: profile.role || 'admin',
+                  loginAt: Date.now(),
+                });
+                updateBadge();
+              }
+            })
+            .catch(e => console.warn('[Auth] getProfile failed', e));
+
+          // Pull data cloud
+          pullDataFromCloud()
+            .then(() => refreshAllViews())
+            .catch(e => console.warn('[Auth] Pull failed', e));
+        } else {
+          // Session benar-benar tidak ada → baru kick ke login
+          clearUserCache();
+          showLoginScreen();
+        }
+      })
+      .catch(e => {
+        // ⚠️ NETWORK ERROR — JANGAN kick ke login!
+        // Pakai cache yang ada, biarkan user akses dashboard
+        console.warn('[Auth] Session check failed (network?), using cache', e);
+        if (!cached || !cached.loggedIn) {
+          showLoginScreen();
+        }
+      });
 
     // Keyboard shortcuts
     document.getElementById('login-email')?.addEventListener('keydown', e => {
