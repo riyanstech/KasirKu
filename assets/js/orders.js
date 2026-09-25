@@ -18,6 +18,8 @@ window.KR = window.KR || {};
   let notificationPermission = 'default';
   let originalTitle = document.title;
   let titleFlashTimer = null;
+  let lastLoginState = false;  
+
 
   // ============== HELPERS ==============
   const $ = (id) => document.getElementById(id);
