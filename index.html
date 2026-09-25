@@ -165,6 +165,10 @@ tailwind.config = {
         <i data-lucide="play-circle" class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"></i>
         <span>Sudah Punya Akun</span>
       </button>
+      <button onclick="triggerInstall()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 sm:py-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-800 font-black hover:border-emerald-500 hover:bg-emerald-100 transition-all text-sm sm:text-base">
+        <i data-lucide="download" class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"></i>
+        <span>Install di HP</span>
+      </button>
     </div>
 
     <!-- Phone mockup -->
@@ -1026,7 +1030,49 @@ window.addEventListener('scroll', () => {
     nav.classList.remove('bg-white/90', 'backdrop-blur-xl', 'shadow-sm', 'border-b', 'border-emerald-100');
   }
 });
+/* ============ INSTALL PWA ============ */
+let deferredPrompt = null;
 
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('[PWA] beforeinstallprompt fired — installable!');
+});
+
+function triggerInstall() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  if (isStandalone) {
+    if (window.toast) toast('Aplikasi sudah terinstall ✅', 'success');
+    return;
+  }
+
+  // Kalau browser siap auto-install
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(({ outcome }) => {
+      if (outcome === 'accepted') {
+        if (window.toast) toast('KasirKu sedang di-install... 🎉', 'success');
+      }
+      deferredPrompt = null;
+    });
+    return;
+  }
+
+  // Fallback manual
+  if (isIOS) {
+    KR.pwa.showIOSInstructions();
+  } else if (isAndroid) {
+    KR.pwa.showAndroidInstructions();
+  } else {
+    // Desktop
+    if (window.toast) toast('Install tersedia di HP (Chrome Android / Safari iOS)', 'info');
+    KR.pwa.showAndroidInstructions();
+  }
+}
+window.triggerInstall = triggerInstall;
 if (window.lucide) lucide.createIcons();
 </script>
 </body>
