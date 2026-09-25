@@ -913,23 +913,57 @@ async function handleLogin() {
   setStatus('login-status', 'warn', 'Memverifikasi...');
 
   try {
-    await sb.auth.signInWithPassword({ email, password });
-    const { data: { user } } = await sb.auth.getUser();
-    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    // ✅ STEP 1: Cek error dari response
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      console.error('[Login] Supabase error:', error);
+      let msg = error.message || 'Gagal login';
+      if (msg.toLowerCase().includes('invalid')) msg = 'Email atau password salah';
+      if (msg.toLowerCase().includes('email not confirmed')) msg = 'Email belum diverifikasi. Cek inbox.';
+      setStatus('login-status', 'error', msg);
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Masuk';
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
 
+    // ✅ STEP 2: Pastikan user ada
+    if (!data || !data.user) {
+      setStatus('login-status', 'error', 'Email atau password salah');
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Masuk';
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    // ✅ STEP 3: Ambil profile (opsional, jangan block)
+    let profile = null;
+    try {
+      const { data: profileData } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+      profile = profileData;
+    } catch (e) {
+      console.warn('[Login] Profile fetch failed (bukan masalah):', e);
+    }
+
+    // ✅ STEP 4: Simpan cache
     localStorage.setItem('kasir:authCache', JSON.stringify({
       loggedIn: true,
-      userId: user.id,
-      email: user.email,
-      username: profile?.username || email.split('@')[0],
-      role: profile?.role || 'admin',
+      userId: data.user.id,
+      email: data.user.email,
+      username: (profile && profile.username) || email.split('@')[0],
+      role: (profile && profile.role) || 'admin',
       loginAt: Date.now()
     }));
 
     setStatus('login-status', 'ok', '✅ Berhasil! Mengalihkan...');
     setTimeout(() => { location.href = '/dashboard'; }, 400);
+
   } catch (e) {
-    setStatus('login-status', 'error', e.message || 'Gagal login');
+    console.error('[Login] Unexpected error:', e);
+    let msg = e.message || 'Gagal login';
+    if (msg.toLowerCase().includes('invalid')) msg = 'Email atau password salah';
+    setStatus('login-status', 'error', msg);
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Masuk';
     if (window.lucide) lucide.createIcons();
