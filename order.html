@@ -29,7 +29,40 @@
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+
+  <script>
+  // Minimal compressImage untuk order.html
+  window.compressImage = function(file, maxDim, quality) {
+    maxDim = maxDim || 800;
+    quality = quality || 0.8;
+    return new Promise(function(resolve, reject) {
+      if (!file) return reject(new Error('File tidak valid'));
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          var w = img.width, h = img.height;
+          var scale = Math.min(maxDim / w, maxDim / h, 1);
+          var tw = Math.round(w * scale), th = Math.round(h * scale);
+          var canvas = document.createElement('canvas');
+          canvas.width = tw; canvas.height = th;
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, tw, th);
+          ctx.drawImage(img, 0, 0, tw, th);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = function() { reject(new Error('Format tidak didukung')); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function() { reject(new Error('Gagal baca file')); };
+      reader.readAsDataURL(file);
+    });
+  };
+  </script>
+  
   <script src="/assets/js/customer-auth.js"></script>
+  <script src="/assets/js/customer-tasks.js"></script>
   <style>
     html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
     body { -webkit-font-smoothing: antialiased; }
@@ -153,6 +186,10 @@
     <!-- 1. Icon Info -->
     <button onclick="scrollToFooter()" class="w-10 h-10 rounded-xl hover:bg-slate-100 grid place-items-center transition" title="Info Toko">
       <i data-lucide="info" class="w-5 h-5 text-slate-500"></i>
+    </button>
+
+    <button id="tasks-header-btn" class="w-10 h-10 rounded-xl hover:bg-amber-50 text-amber-600 grid place-items-center transition relative" title="Tugas Berhadiah" onclick="CustomerTasks.openTasksSheet()">
+      <i data-lucide="gift" class="w-5 h-5"></i>
     </button>
 
     <!-- 2. Icon Pesanan Saya (muncul kalau login) -->
@@ -1188,6 +1225,9 @@
         // Init customer auth
         if (window.KRCustomer) {
           window.KRCustomer.init(profile.id, sb);
+        }
+        if (window.KRCustomerTasks) {
+          window.KRCustomerTasks.init(profile.id, sb);
         }
         showScreen('main');
         icon();
