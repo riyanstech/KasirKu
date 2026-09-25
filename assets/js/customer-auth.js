@@ -145,8 +145,9 @@
 
     if (state.session) {
       const initial = (state.session.name || '?')[0].toUpperCase();
+      // Avatar kecil bulat, subtle
       btn.innerHTML = `
-        <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.85rem;">
+        <div style="width:32px;height:32px;border-radius:50%;background:#10b981;color:#fff;display:grid;place-items:center;font-weight:700;font-size:.8rem;box-shadow:0 2px 6px -1px rgba(16,185,129,.4);">
           ${esc(initial)}
         </div>
       `;
@@ -194,7 +195,7 @@
           </div>
           <div class="flex-1 overflow-y-auto p-5">
             <div class="flex items-center gap-4 mb-5 pb-5 border-b border-slate-100">
-              <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.5rem;flex-shrink:0;">
+              <div style="width:64px;height:64px;border-radius:50%;background:#10b981;color:#fff;display:grid;place-items:center;font-weight:800;font-size:1.5rem;flex-shrink:0;box-shadow:0 4px 10px -2px rgba(16,185,129,.4);">
                 ${esc((s.name || '?')[0].toUpperCase())}
               </div>
               <div style="flex:1;min-width:0;">
@@ -555,7 +556,6 @@
     renderHeaderUI();
     renderMyOrdersButton();
 
-    // Hook proceedToCheckout untuk autofill
     if (typeof window.proceedToCheckout === 'function' && !window.proceedToCheckout._hooked) {
       const orig = window.proceedToCheckout;
       window.proceedToCheckout = function () {
@@ -565,12 +565,10 @@
       window.proceedToCheckout._hooked = true;
     }
 
-    // Auto-show modal login kalau belum login
     if (!state.session) {
       setTimeout(function () { openAuthModal('login'); }, 600);
     }
 
-    // Expose API global
     window.CustomerAuth = {
       state: state,
       openAuthModal: openAuthModal,
