@@ -1437,21 +1437,29 @@ function updateInstallStatus() {
 
 function triggerAppInstall() {
   if (!KR.pwa) return KR.toast.error('PWA module tidak tersedia');
-  if (KR.pwa.isStandalone && KR.pwa.isStandalone()) return KR.toast.info('Aplikasi sudah terinstall');
+
+  const isStandalone = KR.pwa.isStandalone && KR.pwa.isStandalone();
+  if (isStandalone) return KR.toast.info('Aplikasi sudah terinstall');
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
-  const canAutoInstall = KR.pwa.canInstall && KR.pwa.canInstall();
 
-  if (canAutoInstall) {
+  // Coba auto-install via deferredPrompt
+  if (KR.pwa.canInstall && KR.pwa.canInstall()) {
     KR.pwa.triggerInstall();
     setTimeout(updateInstallStatus, 1000);
     return;
   }
 
-  if (isIOS) KR.pwa.showIOSInstructions();
-  else if (isAndroid) KR.pwa.showAndroidInstructions();
-  else KR.toast.info('Install tersedia di HP. Buka di Chrome Android atau Safari iPhone.', 5000);
+  // Fallback — tampilkan instruksi manual berdasarkan platform
+  if (isIOS) {
+    KR.pwa.showIOSInstructions();
+  } else if (isAndroid) {
+    KR.pwa.showAndroidInstructions();
+  } else {
+    // Desktop
+    KR.toast.info('Install hanya di HP. Buka di Chrome Android atau Safari iPhone.', 5000);
+  }
 }
 window.triggerAppInstall = triggerAppInstall;
 window.updateInstallStatus = updateInstallStatus;
