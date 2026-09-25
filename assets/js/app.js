@@ -57,29 +57,21 @@ function showTab(tabId, btn) {
     else b.classList.remove('active');
   });
 
-  if (tabId === 'kasir') {
+  if (tabId === 'kasir' && typeof renderPosGrid === 'function') {
     renderPosGrid();
-    renderCategoryChips();
-    renderCart();
+    if (typeof renderCategoryChips === 'function') renderCategoryChips();
+    if (typeof renderCart === 'function') renderCart();
   }
-  if (tabId === 'produk') renderProductList();
-  if (tabId === 'transaksi') renderTransactionList();
+  if (tabId === 'produk' && typeof renderProductList === 'function') renderProductList();
+  if (tabId === 'transaksi' && typeof renderTransactionList === 'function') renderTransactionList();
   if (tabId === 'pesanan' && typeof loadOrders === 'function') loadOrders();
-  if (tabId === 'laporan') renderReport();
+  if (tabId === 'laporan' && typeof renderReport === 'function') renderReport();
+  if (tabId === 'pengaturan' && typeof loadSettings === 'function') loadSettings();
   if (tabId === 'customer' && typeof loadCustomers === 'function') loadCustomers();
   if (tabId === 'tugas' && typeof loadTaskTab === 'function') loadTaskTab();
-  if (tabId === 'pengaturan') loadSettings();
 
-  if (window.lucide) {
-    lucide.createIcons();
-    requestAnimationFrame(() => {
-      lucide.createIcons();
-      setTimeout(() => lucide.createIcons(), 100);
-      setTimeout(() => lucide.createIcons(), 250);
-    });
-  }
+  if (window.lucide) lucide.createIcons();
 }
-window.showTab = showTab;
 
 /* ==================== THEME ==================== */
 function initTheme() {
@@ -1381,27 +1373,22 @@ function initApp() {
   if (KR.auth) KR.auth.init();
   if (KR.pwa) KR.pwa.init();
 
-  renderPosGrid();
-  renderCategoryChips();
-  renderCart();
+  // Aman: cek dulu fungsi ada atau belum
+  if (typeof renderPosGrid === 'function') renderPosGrid();
+  if (typeof renderCategoryChips === 'function') renderCategoryChips();
+  if (typeof renderCart === 'function') renderCart();
 
   window.addEventListener('products:changed', () => {
     const tab = document.getElementById('tab-kasir');
-    if (tab && tab.classList.contains('active')) renderPosGrid();
+    if (tab && tab.classList.contains('active') && typeof renderPosGrid === 'function') renderPosGrid();
   });
   window.addEventListener('transactions:changed', () => {
     const tab = document.getElementById('tab-transaksi');
-    if (tab && tab.classList.contains('active')) renderTransactionList();
+    if (tab && tab.classList.contains('active') && typeof renderTransactionList === 'function') renderTransactionList();
   });
 
   if (window.lucide) lucide.createIcons();
   console.log('%c[KasirKu] Ready', 'color:#10b981;font-weight:800;');
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
 }
 
 /* ==================== PRODUCT FORM — ONLINE TOGGLE ==================== */
