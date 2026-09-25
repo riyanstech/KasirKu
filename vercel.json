@@ -1,4 +1,5 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     { "source": "/toko/:slug", "destination": "/order.html" },
     { "source": "/toko/:slug/", "destination": "/order.html" }
