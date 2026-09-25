@@ -11,9 +11,9 @@ window.KR = window.KR || {};
   let socials = [];
   let submissions = [];
   let withdrawals = [];
-  let mainTab = 'tasks';        // tasks | socials | submissions | withdrawals
-  let taskFilter = 'all';        // all | active | inactive
-  let socialFilter = 'pending';  // pending | verified | rejected | all
+  let mainTab = 'tasks';
+  let taskFilter = 'all';
+  let socialFilter = 'pending';
   let submissionFilter = 'pending';
   let withdrawalFilter = 'pending';
 
@@ -24,13 +24,13 @@ window.KR = window.KR || {};
   })[c]);
   const parse = (d) => { if (typeof d === 'string') { try { return JSON.parse(d); } catch { return null; } } return d; };
 
-   const PLATFORMS = {
-     tiktok:    { name: 'TikTok',      icon: 'music-2',      color: '#000000', placeholder: '@username' },
-     instagram: { name: 'Instagram',   icon: 'camera',       color: '#E1306C', placeholder: '@username' },
-     youtube:   { name: 'YouTube',     icon: 'play-circle',  color: '#FF0000', placeholder: '@channel' },
-     facebook:  { name: 'Facebook',    icon: 'thumbs-up',    color: '#1877F2', placeholder: 'username' },
-     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
-   };
+  const PLATFORMS = {
+    tiktok:    { name: 'TikTok',      icon: 'music-2',        color: '#000000', placeholder: '@username' },
+    instagram: { name: 'Instagram',   icon: 'camera',         color: '#E1306C', placeholder: '@username' },
+    youtube:   { name: 'YouTube',     icon: 'play-circle',    color: '#FF0000', placeholder: '@channel' },
+    facebook:  { name: 'Facebook',    icon: 'thumbs-up',      color: '#1877F2', placeholder: 'username' },
+    twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
+  };
 
   async function rpc(fn, params) {
     const { data, error } = await KR.sb.client.rpc(fn, params);
@@ -43,7 +43,57 @@ window.KR = window.KR || {};
     return u.id;
   }
 
-  /* ---------- MAIN ---------- */
+  /* ---------- PROOF VIEWER ---------- */
+  window.viewSocialProof = function (url) {
+    if (!url) return KR.toast.error('Bukti tidak tersedia');
+
+    const existing = document.getElementById('proof-viewer-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'proof-viewer-modal';
+    modal.className = 'modal active';
+    modal.style.zIndex = '9999';
+    modal.innerHTML =
+      '<div class="modal-backdrop" onclick="closeProofViewer()"></div>' +
+      '<div style="position:relative;z-index:1;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:12px;">' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;">' +
+          '<button onclick="closeProofViewer()" class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.95);color:#0f172a;">' +
+            '<i data-lucide="x"></i> Tutup' +
+          '</button>' +
+          '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm">' +
+            '<i data-lucide="external-link"></i> Buka di Tab Baru' +
+          '</a>' +
+          '<a href="' + esc(url) + '" download class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.95);color:#0f172a;">' +
+            '<i data-lucide="download"></i> Download' +
+          '</a>' +
+        '</div>' +
+        '<img src="' + esc(url) + '" ' +
+          'style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff;" ' +
+          'onerror="this.style.display=&quot;none&quot;; this.nextElementSibling.style.display=&quot;block&quot;;">' +
+        '<div style="display:none;padding:40px;background:#fff;border-radius:12px;text-align:center;color:#991b1b;max-width:400px;">' +
+          '⚠ Gambar gagal dimuat. Coba buka di tab baru atau download.' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(modal);
+    if (window.lucide) lucide.createIcons();
+
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        closeProofViewer();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  };
+
+  window.closeProofViewer = function () {
+    const modal = document.getElementById('proof-viewer-modal');
+    if (modal) modal.remove();
+  };
+
+  /* ---------- TASKS ---------- */
   async function loadTasks() {
     try {
       const uid = await getUid();
@@ -267,7 +317,7 @@ window.KR = window.KR || {};
     } catch (e) { console.error(e); KR.toast.error('Gagal memuat akun sosmed'); }
   }
 
-    function renderSocials() {
+  function renderSocials() {
     const el = $('tasks-list');
     const countEl = $('tasks-count-label');
     if (!el) return;
@@ -326,6 +376,34 @@ window.KR = window.KR || {};
     }).join('') + '</div>';
     if (window.lucide) lucide.createIcons();
   }
+
+  window.setSocialFilter = (f) => { socialFilter = f; loadSocials(); };
+
+  window.verifySocial = function (id, approve) {
+    const doVerify = async (reason) => {
+      showLoading('Memverifikasi...');
+      try {
+        const uid = await getUid();
+        await rpc('seller_social_verify', {
+          p_social_id: id,
+          p_seller_id: uid,
+          p_approve: approve,
+          p_reason: reason || null,
+        });
+        KR.toast.success(approve ? 'Akun diverifikasi' : 'Akun ditolak');
+        await loadSocials();
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
+    };
+
+    if (approve) {
+      confirmDialog('Setujui Akun?', 'Akun ini akan ditandai sebagai verified.', () => doVerify());
+    } else {
+      const reason = prompt('Alasan penolakan (wajib):');
+      if (!reason || !reason.trim()) return;
+      doVerify(reason.trim());
+    }
+  };
 
   /* ---------- SUBMISSIONS ---------- */
   async function loadSubmissions() {
@@ -396,6 +474,34 @@ window.KR = window.KR || {};
     }).join('') + '</div>';
     if (window.lucide) lucide.createIcons();
   }
+
+  window.setSubmissionFilter = (f) => { submissionFilter = f; loadSubmissions(); };
+
+  window.verifySubmission = function (id, approve) {
+    const doVerify = async (reason) => {
+      showLoading('Memverifikasi...');
+      try {
+        const uid = await getUid();
+        await rpc('seller_submission_verify', {
+          p_submission_id: id,
+          p_seller_id: uid,
+          p_approve: approve,
+          p_reason: reason || null,
+        });
+        KR.toast.success(approve ? 'Disetujui — saldo customer bertambah' : 'Bukti ditolak');
+        await loadSubmissions();
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
+    };
+
+    if (approve) {
+      confirmDialog('Setujui Bukti?', 'Saldo customer akan bertambah otomatis.', () => doVerify());
+    } else {
+      const reason = prompt('Alasan penolakan (wajib):');
+      if (!reason || !reason.trim()) return;
+      doVerify(reason.trim());
+    }
+  };
 
   /* ---------- WITHDRAWALS ---------- */
   async function loadWithdrawals() {
