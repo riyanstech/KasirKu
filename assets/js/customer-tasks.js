@@ -370,6 +370,10 @@
     window.__taskProofData = null;
     renderProofArea();
     if (window.lucide) lucide.createIcons();
+
+    // ⬇️ TAMBAH: Attach event listener untuk file input
+    const proofInput = $('task-proof-input');
+    if (proofInput) proofInput.addEventListener('change', handleProofChange);
   }
 
   function closeSubmitModal() {
