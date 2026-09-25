@@ -1148,6 +1148,7 @@
       const isCod = method === 'cod';
       $('proof-section').classList.toggle('hidden', isCod);
       $('payment-section').classList.toggle('hidden', isCod);
+
       if (isCod) {
         state.proofFile = null;
         state.proofPreview = null;
@@ -1155,19 +1156,11 @@
         // Reset balance state
         state.useBalance = false;
         state.balanceUsed = 0;
-        state.amountDue = totals.total;
+        state.amountDue = getCartTotals().total;   // ✅ FIX
         const balanceToggle = $('co-use-balance');
         if (balanceToggle) balanceToggle.checked = false;
-        
-        // Load balance lalu render
-        loadCustomerBalance().then(() => {
-          renderBalanceUI();
-        });
-        
-        // Init balance UI (default hidden detail)
-        const balDetail = $('co-balance-detail');
-        if (balDetail) balDetail.classList.add('hidden');
       }
+
       // Re-check balance visibility saat ganti metode
       setTimeout(() => {
         if (state.useBalance) updateBalanceDetail();
@@ -1680,18 +1673,6 @@
         contentType: file.type || 'image/jpeg', cacheControl: '3600', upsert: false,
       });
       if (error) throw error;
-      // Update profil customer (supaya data terbaru tersimpan)
-      if (customerSession) {
-        try {
-          await window.KRCustomer.updateProfile({
-            name: name || customerSession.name,
-            phone: phone || customerSession.phone,
-            address: needAddressField ? address : customerSession.address,
-          });
-        } catch (e) {
-          console.warn('[Order] Update customer profile failed', e);
-        }
-      }
       const { data } = sb.storage.from('payment-proofs').getPublicUrl(path);
       return data.publicUrl;
     }
