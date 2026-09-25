@@ -174,26 +174,56 @@
   }
 
   /* ---------- TASKS TAB ---------- */
-  async function loadTasks() {
-    const s = getSession();
-    if (!s) return;
-    const content = $('tasks-tab-content');
-    if (!content) return;
-
-    content.innerHTML = '<div class="py-12 text-center"><div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-amber-500 rounded-full animate-spin"></div><p class="mt-4 text-sm font-bold text-slate-600">Memuat tugas...</p></div>';
-
-    try {
-      const data = await rpc('customer_tasks_list', {
-        p_seller_id: state.sellerId,
-        p_customer_id: s.id,
-      });
-      state.tasks = (data || []).map(parse).filter(Boolean);
-      renderTasks();
-    } catch (e) {
-      console.error('[LoadTasks]', e);
-      content.innerHTML = errorBlock(e.message || 'Gagal memuat');
-    }
-  }
+   async function loadTasks() {
+     const s = getSession();
+     if (!s) return;
+     const content = $('tasks-tab-content');
+     if (!content) return;
+   
+     content.innerHTML = '<div class="py-12 text-center"><div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-amber-500 rounded-full animate-spin"></div><p class="mt-4 text-sm font-bold text-slate-600">Memuat...</p></div>';
+   
+     try {
+       // 1. Cek dulu apakah ada akun sosmed yang verified
+       const socialData = await rpc('customer_social_list', { p_customer_id: s.id });
+       const socials = (socialData || []).map(parse).filter(Boolean);
+       const hasVerified = socials.some(x => x.status === 'verified');
+   
+       if (!hasVerified) {
+         // Tampilkan warning — customer wajib verifikasi akun dulu
+         const hasPending = socials.some(x => x.status === 'pending');
+         content.innerHTML =
+           '<div class="py-12 text-center">' +
+             '<div class="w-20 h-20 mx-auto rounded-3xl bg-amber-100 grid place-items-center mb-4">' +
+               '<i data-lucide="shield-alert" class="w-10 h-10 text-amber-600"></i>' +
+             '</div>' +
+             '<h3 class="font-extrabold text-slate-800 mb-2">Verifikasi Akun Sosmed Dulu</h3>' +
+             '<p class="text-slate-500 text-sm max-w-xs mx-auto mb-5">' +
+               (hasPending
+                 ? 'Akun sosmed kamu sedang menunggu verifikasi admin. Sabar ya 🙏'
+                 : 'Daftarkan dan verifikasi akun sosmed kamu (TikTok/IG/YouTube) untuk bisa ikut tugas berhadiah.') +
+             '</p>' +
+             '<button onclick="CustomerTasks.switchTab(\'social\')" class="px-6 py-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-sm shadow-lg shadow-amber-500/30">' +
+               '<i data-lucide="share-2" class="w-4 h-4 inline mr-1"></i> ' +
+               (hasPending ? 'Lihat Status Akun' : 'Daftarkan Akun Sekarang') +
+             '</button>' +
+           '</div>';
+         if (window.lucide) lucide.createIcons();
+         state.tasks = [];
+         return;
+       }
+   
+       // 2. Sudah ada yang verified → load tugas
+       const data = await rpc('customer_tasks_list', {
+         p_seller_id: state.sellerId,
+         p_customer_id: s.id,
+       });
+       state.tasks = (data || []).map(parse).filter(Boolean);
+       renderTasks();
+     } catch (e) {
+       console.error('[LoadTasks]', e);
+       content.innerHTML = errorBlock(e.message || 'Gagal memuat');
+     }
+   }
 
   function renderTasks() {
     const content = $('tasks-tab-content');
