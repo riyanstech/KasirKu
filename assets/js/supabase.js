@@ -17,12 +17,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storageKey: 'kasirku-auth-token',
     autoRefreshToken: true,
     detectSessionInUrl: false,
-    flowType: 'pkce',
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
   },
 });
 window.supabaseClient = supabaseClient;
