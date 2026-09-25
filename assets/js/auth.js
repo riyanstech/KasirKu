@@ -315,42 +315,62 @@ KR.auth = (function () {
 
   /* ---------- INIT ---------- */
   async function init() {
+    // 1. Ambil session dari localStorage (instant)
+    let session = null;
     try {
-      const session = await KR.sb.getSession();
-      if (session && session.user) {
-        const user = session.user;
-        const profile = await KR.sb.getProfile();
-        setUserCache({
-          loggedIn: true,
-          userId: user.id,
-          email: user.email,
-          username: profile?.username || user.email.split('@')[0],
-          role: profile?.role || 'admin',
-          loginAt: Date.now(),
-        });
-        hideLoginScreen();
-        updateBadge();
-
-        // ✅ FIX: Tampilkan UI dulu pakai cache (instant)
-        refreshAllViews();
-
-        // ✅ Pull data di background (tidak block UI)
-        pullDataFromCloud()
-          .then(() => {
-            refreshAllViews();
-            console.log('[Auth] Cloud data loaded in background');
-          })
-          .catch(e => console.warn('[Auth] Pull background failed', e));
-      } else {
-        clearUserCache();
-        showLoginScreen();
-      }
+      session = await KR.sb.getSession();
     } catch (e) {
-      console.warn('[Auth Init]', e);
+      console.warn('[Auth] getSession failed', e);
+    }
+
+    // 2. Kalau session ada → user login
+    if (session && session.user) {
+      const user = session.user;
+
+      // Pakai cache dulu (biar UI cepat)
+      const cached = getUserCache();
+      setUserCache({
+        loggedIn: true,
+        userId: user.id,
+        email: user.email,
+        username: cached?.username || user.email.split('@')[0],
+        role: cached?.role || 'admin',
+        loginAt: cached?.loginAt || Date.now(),
+      });
+
+      hideLoginScreen();
+      updateBadge();
+      refreshAllViews();
+
+      // 3. Fetch profile di background — JANGAN block UI
+      KR.sb.getProfile()
+        .then(profile => {
+          if (profile) {
+            setUserCache({
+              loggedIn: true,
+              userId: user.id,
+              email: user.email,
+              username: profile.username || user.email.split('@')[0],
+              role: profile.role || 'admin',
+              loginAt: Date.now(),
+            });
+            updateBadge();
+          }
+        })
+        .catch(e => console.warn('[Auth] getProfile bg failed', e));
+
+      // 4. Pull data cloud di background
+      pullDataFromCloud()
+        .then(() => refreshAllViews())
+        .catch(e => console.warn('[Auth] Pull bg failed', e));
+
+    } else {
+      // Tidak ada session → tampilkan login
+      clearUserCache();
       showLoginScreen();
     }
 
-    // Keyboard shortcuts login (tetap sama)
+    // Keyboard shortcuts
     document.getElementById('login-email')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('login-password')?.focus();
     });
