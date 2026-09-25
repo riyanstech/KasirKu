@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#10b981">
+<title>KasirKu — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+      colors: {
+        brand: {
+          500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
+        }
+      }
+    }
+  }
+};
+</script>
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  body { -webkit-font-smoothing: antialiased; }
+  .glass { background: rgba(255,255,255,.1); backdrop-filter: blur(20px); }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+  .float { animation: float 6s ease-in-out infinite; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  .anim-up { animation: fadeUp .5s cubic-bezier(.32,.72,0,1); }
+</style>
+</head>
+<body class="bg-gradient-to-br from-sky-400 via-sky-500 to-blue-600 min-h-screen text-white">
+
+<!-- ============ NAVBAR ============ -->
+<header class="sticky top-0 z-40 glass border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
+    <div class="flex items-center gap-2.5 flex-shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur grid place-items-center ring-1 ring-white/30">
+        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <div class="font-black text-base leading-none">KasirKu</div>
+        <div class="text-[9px] font-bold uppercase tracking-widest text-white/70 mt-0.5">Point of Sale</div>
+      </div>
+    </div>
+
+    <nav class="hidden md:flex items-center gap-6 ml-8 text-sm font-bold">
+      <a href="#fitur" class="hover:text-white/80 transition">Fitur</a>
+      <a href="#harga" class="hover:text-white/80 transition">Harga</a>
+      <a href="#testimoni" class="hover:text-white/80 transition">Testimoni</a>
+      <a href="#faq" class="hover:text-white/80 transition">FAQ</a>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2">
+      <button onclick="openAuth('login')" class="px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/10 transition">
+        Sign In
+      </button>
+      <button onclick="openAuth('register')" class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-sky-600 hover:bg-white/90 transition shadow-lg shadow-white/20">
+        Sign Up
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+  <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+    <!-- LEFT: Marketing -->
+    <div class="anim-up">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur text-xs font-bold mb-6 ring-1 ring-white/20">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        <span>Dipercaya 50.000+ UMKM Indonesia</span>
+      </div>
+
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] mb-5">
+        Kelola Bisnis<br>Jadi Lebih Mudah<br>
+        <span class="relative inline-block">
+          dengan Kasirku
+          <svg class="absolute -bottom-2 left-0 w-full" height="12" viewBox="0 0 300 12" fill="none">
+            <path d="M2 10C50 3 150 3 298 8" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </span>
+      </h1>
+
+      <p class="text-white/85 text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
+        Aplikasi kasir all-in-one untuk UMKM. Transaksi cepat, kelola stok otomatis, laporan real-time. Coba Gratis Sekarang!
+      </p>
+
+      <div class="flex flex-wrap gap-3 mb-10">
+        <button onclick="openAuth('register')" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-sky-600 font-extrabold shadow-2xl shadow-black/20 hover:scale-105 transition-transform">
+          <i data-lucide="rocket" class="w-5 h-5"></i> Mulai Gratis
+        </button>
+        <button onclick="openAuth('login')" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/15 backdrop-blur font-extrabold ring-1 ring-white/30 hover:bg-white/25 transition">
+          <i data-lucide="log-in" class="w-5 h-5"></i> Masuk
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 max-w-md">
+        <div>
+          <div class="text-2xl sm:text-3xl font-black">12.500+</div>
+          <div class="text-xs text-white/70 font-bold">Pengguna Aktif</div>
+        </div>
+        <div>
+          <div class="text-2xl sm:text-3xl font-black">4.9<span class="text-amber-300">★</span></div>
+          <div class="text-xs text-white/70 font-bold">Rating</div>
+        </div>
+        <div>
+          <div class="text-2xl sm:text-3xl font-black">250.000+</div>
+          <div class="text-xs text-white/70 font-bold">Transaksi/Hari</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Phone Mockup -->
+    <div class="hidden lg:flex justify-center relative anim-up">
+      <div class="absolute -top-10 -right-10 w-24 h-24 rounded-3xl bg-amber-400 rotate-12 float"></div>
+      <div class="absolute bottom-10 -left-10 w-16 h-16 rounded-2xl bg-purple-400 -rotate-12 float" style="animation-delay:1s"></div>
+
+      <div class="relative w-72 bg-slate-900 rounded-[2.5rem] p-3 shadow-2xl shadow-black/40 ring-4 ring-white/20">
+        <div class="bg-white rounded-[2rem] overflow-hidden text-slate-900">
+          <div class="bg-sky-500 text-white px-5 py-4">
+            <div class="flex items-center gap-2 mb-1">
+              <div class="w-6 h-6 rounded-lg bg-white/20 grid place-items-center">
+                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="font-black text-sm">KasirKu</span>
+            </div>
+            <div class="text-[10px] text-white/80">Selamat Datang! 👋</div>
+          </div>
+          <div class="p-4 space-y-3">
+            <div class="rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white p-4">
+              <div class="text-[10px] font-bold uppercase opacity-90 mb-1">Omzet Hari Ini</div>
+              <div class="text-2xl font-black">Rp 2.450.000</div>
+              <div class="text-[10px] mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20">
+                <i data-lucide="trending-up" class="w-2.5 h-2.5"></i> +12% vs kemarin
+              </div>
+            </div>
+            <div class="grid grid-cols-4 gap-2">
+              <div class="p-2 rounded-xl bg-sky-50 text-center"><i data-lucide="store" class="w-4 h-4 mx-auto text-sky-600"></i></div>
+              <div class="p-2 rounded-xl bg-emerald-50 text-center"><i data-lucide="package" class="w-4 h-4 mx-auto text-emerald-600"></i></div>
+              <div class="p-2 rounded-xl bg-purple-50 text-center"><i data-lucide="bar-chart-3" class="w-4 h-4 mx-auto text-purple-600"></i></div>
+              <div class="p-2 rounded-xl bg-amber-50 text-center"><i data-lucide="users" class="w-4 h-4 mx-auto text-amber-600"></i></div>
+            </div>
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-lg bg-emerald-100 grid place-items-center"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
+                  <span class="font-bold">TRX-001</span>
+                </div>
+                <span class="font-mono font-black text-emerald-600">+Rp 45.000</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px]">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-lg bg-emerald-100 grid place-items-center"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
+                  <span class="font-bold">TRX-002</span>
+                </div>
+                <span class="font-mono font-black text-emerald-600">+Rp 128.000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ MODAL LOGIN / REGISTER ============ -->
+<div id="auth-modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onclick="closeAuth()"></div>
+  <div class="relative h-full flex items-center justify-center p-4 overflow-y-auto">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden anim-up">
+      <!-- Header -->
+      <div class="px-6 pt-6 pb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-xl bg-sky-500 grid place-items-center text-white">
+              <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="font-black text-slate-900 leading-none">KasirKu</div>
+              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Point of Sale</div>
+            </div>
+          </div>
+          <button onclick="closeAuth()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center text-slate-500">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
+          <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition">Masuk</button>
+          <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition">Buat Akun</button>
+        </div>
+      </div>
+
+      <!-- Login Panel -->
+      <div id="panel-login" class="px-6 pb-6 space-y-4">
+        <div>
+          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
+          <input id="login-email" type="email" autocomplete="email" placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Password</label>
+          <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+        </div>
+        <div id="login-status" class="hidden px-3 py-2 rounded-lg text-xs font-bold"></div>
+        <button id="login-btn" onclick="handleLogin()" class="w-full py-3.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-extrabold shadow-lg shadow-sky-500/30 hover:brightness-110 transition active:scale-[.98]">
+          <i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Masuk
+        </button>
+        <p class="text-center text-xs text-slate-500">
+          Belum punya akun?
+          <button onclick="switchTab('register')" class="font-bold text-sky-600 hover:underline">Daftar gratis</button>
+        </p>
+      </div>
+
+      <!-- Register Panel -->
+      <div id="panel-register" class="px-6 pb-6 space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
+          <input id="reg-email" type="email" autocomplete="off" placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Password</label>
+          <input id="reg-password" type="password" placeholder="min 6 karakter" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Konfirmasi Password</label>
+          <input id="reg-password2" type="password" placeholder="ulangi password" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+        </div>
+        <div id="register-status" class="hidden px-3 py-2 rounded-lg text-xs font-bold"></div>
+        <button id="register-btn" onclick="handleRegister()" class="w-full py-3.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-extrabold shadow-lg shadow-sky-500/30 hover:brightness-110 transition active:scale-[.98]">
+          <i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Buat Akun
+        </button>
+        <p class="text-center text-[11px] text-slate-500 leading-relaxed">
+          Akun baru otomatis mendapat toko default <strong class="text-sky-600">Warung Saya</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading" class="fixed inset-0 z-[100] hidden">
+  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+  <div class="relative h-full grid place-items-center">
+    <div class="bg-white rounded-2xl p-6 text-center shadow-2xl">
+      <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
+      <p class="mt-3 text-sm font-bold text-slate-700">Memproses...</p>
+    </div>
+  </div>
+</div>
+
+<div id="toasts" class="fixed top-4 left-4 right-4 z-[200] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+<script>
+const SUPABASE_URL = 'https://tfgemkitmnuqiiclepqw.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_eO-jDODnzgSKvujTRT5nZw_BJy36AA0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    storage: window.localStorage,
+    storageKey: 'kasirku-auth-token',
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+});
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, type = 'info') {
+  const c = $('toasts');
+  const d = document.createElement('div');
+  const colors = {
+    error: 'bg-red-500',
+    success: 'bg-emerald-500',
+    info: 'bg-sky-500',
+  };
+  d.className = 'pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-sm font-bold text-white ' + (colors[type] || colors.info);
+  d.textContent = msg;
+  c.appendChild(d);
+  setTimeout(() => {
+    d.style.transition = 'all .3s';
+    d.style.opacity = '0';
+    d.style.transform = 'translateY(-10px)';
+    setTimeout(() => d.remove(), 300);
+  }, 3200);
+}
+
+function showLoading(t) { $('loading').classList.remove('hidden'); }
+function hideLoading() { $('loading').classList.add('hidden'); }
+
+function setStatus(id, type, msg) {
+  const el = $(id);
+  if (!el) return;
+  const colors = {
+    ok: 'bg-emerald-50 text-emerald-700',
+    warn: 'bg-amber-50 text-amber-700',
+    error: 'bg-red-50 text-red-700',
+  };
+  el.className = 'px-3 py-2 rounded-lg text-xs font-bold ' + (colors[type] || colors.warn);
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function openAuth(tab) {
+  $('auth-modal').classList.remove('hidden');
+  switchTab(tab || 'login');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAuth() {
+  $('auth-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  $('panel-login').classList.toggle('hidden', !isLogin);
+  $('panel-register').classList.toggle('hidden', isLogin);
+  const activeCls = 'bg-white shadow text-sky-600';
+  const inactiveCls = 'text-slate-500';
+  $('tab-login').className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition ' + (isLogin ? activeCls : inactiveCls);
+  $('tab-register').className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition ' + (!isLogin ? activeCls : inactiveCls);
+  if (window.lucide) lucide.createIcons();
+}
+window.switchTab = switchTab;
+
+async function handleLogin() {
+  const email = $('login-email').value.trim().toLowerCase();
+  const password = $('login-password').value;
+  if (!email || !password) return setStatus('login-status', 'error', 'Isi email & password');
+
+  const btn = $('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'Memverifikasi...';
+  setStatus('login-status', 'warn', 'Memverifikasi...');
+
+  try {
+    await sb.auth.signInWithPassword({ email, password });
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+
+    localStorage.setItem('kasir:authCache', JSON.stringify({
+      loggedIn: true,
+      userId: user.id,
+      email: user.email,
+      username: profile?.username || email.split('@')[0],
+      role: profile?.role || 'admin',
+      loginAt: Date.now(),
+    }));
+
+    setStatus('login-status', 'ok', '✅ Berhasil masuk! Mengalihkan...');
+    toast('Selamat datang!', 'success');
+    setTimeout(() => { location.href = '/index.html'; }, 400);
+  } catch (e) {
+    setStatus('login-status', 'error', e.message || 'Gagal login');
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Masuk';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+window.handleLogin = handleLogin;
+
+async function handleRegister() {
+  const email = $('reg-email').value.trim().toLowerCase();
+  const password = $('reg-password').value;
+  const password2 = $('reg-password2').value;
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return setStatus('register-status', 'error', 'Email tidak valid');
+  }
+  if (password.length < 6) return setStatus('register-status', 'error', 'Password minimal 6 karakter');
+  if (password !== password2) return setStatus('register-status', 'error', 'Konfirmasi password tidak cocok');
+
+  const btn = $('register-btn');
+  btn.disabled = true;
+  btn.textContent = 'Mendaftar...';
+  setStatus('register-status', 'warn', 'Membuat akun...');
+
+  try {
+    const username = email.split('@')[0];
+    await sb.auth.signUp({ email, password, options: { data: { username, store_name: 'Warung Saya' } } });
+    setStatus('register-status', 'ok', '✅ Akun dibuat! Silakan login.');
+    toast('Akun berhasil dibuat!', 'success');
+    setTimeout(() => {
+      switchTab('login');
+      $('login-email').value = email;
+      $('login-password').focus();
+    }, 1200);
+  } catch (e) {
+    setStatus('register-status', 'error', e.message || 'Gagal daftar');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Buat Akun';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+window.handleRegister = handleRegister;
+
+window.openAuth = openAuth;
+window.closeAuth = closeAuth;
+
+// Auto-redirect kalau sudah login
+(async function checkAlreadyLoggedIn() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      localStorage.setItem('kasir:authCache', JSON.stringify({
+        loggedIn: true,
+        userId: session.user.id,
+        email: session.user.email,
+        username: session.user.email.split('@')[0],
+        role: 'admin',
+        loginAt: Date.now(),
+      }));
+      location.href = '/index.html';
+    }
+  } catch (e) {
+    console.warn('[Login page] Session check failed', e);
+  }
+  if (window.lucide) lucide.createIcons();
+})();
+
+if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>
