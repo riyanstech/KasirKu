@@ -434,6 +434,18 @@
                         <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
                     </div>
 
+                    <div class="settings-card" id="install-app-card">
+                      <h3><i data-lucide="smartphone"></i> Install Aplikasi</h3>
+                      <p class="settings-desc">Install KasirKu di homescreen HP kamu untuk akses lebih cepat + notifikasi order langsung.</p>
+                      <div id="install-app-status" class="gh-status warn" style="margin-bottom:12px">
+                        <i data-lucide="info"></i>
+                        <span id="install-app-status-text">Cek ketersediaan install...</span>
+                      </div>
+                      <button id="install-app-btn" class="btn btn-primary btn-lg" style="width:100%" onclick="triggerAppInstall()">
+                        <i data-lucide="download"></i> Install Sekarang
+                      </button>
+                    </div>
+
                     <div class="settings-card danger">
                         <h3><i data-lucide="alert-octagon"></i> Zona Bahaya</h3>
                         <p class="settings-desc">Reset cache lokal. Data cloud tetap aman & akan diambil ulang saat reload.</p>
