@@ -2,7 +2,7 @@
   "name": "KasirKu — Point of Sale",
   "short_name": "KasirKu",
   "description": "Aplikasi kasir & toko online untuk warung dan UMKM",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
