@@ -1031,12 +1031,13 @@ window.addEventListener('scroll', () => {
   }
 });
 /* ============ INSTALL PWA ============ */
+/* ============ INSTALL PWA ============ */
 let deferredPrompt = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  console.log('[PWA] beforeinstallprompt fired — installable!');
+  console.log('[PWA] Install ready');
 });
 
 function triggerInstall() {
@@ -1044,35 +1045,84 @@ function triggerInstall() {
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-  if (isStandalone) {
-    if (window.toast) toast('Aplikasi sudah terinstall ✅', 'success');
-    return;
-  }
+  if (isStandalone) { toast('Aplikasi sudah terinstall ✅', 'success'); return; }
 
-  // Kalau browser siap auto-install
   if (deferredPrompt) {
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(({ outcome }) => {
-      if (outcome === 'accepted') {
-        if (window.toast) toast('KasirKu sedang di-install... 🎉', 'success');
-      }
+      if (outcome === 'accepted') toast('KasirKu sedang di-install... 🎉', 'success');
       deferredPrompt = null;
     });
     return;
   }
 
-  // Fallback manual
-  if (isIOS) {
-    KR.pwa.showIOSInstructions();
-  } else if (isAndroid) {
-    KR.pwa.showAndroidInstructions();
-  } else {
-    // Desktop
-    if (window.toast) toast('Install tersedia di HP (Chrome Android / Safari iOS)', 'info');
-    KR.pwa.showAndroidInstructions();
-  }
+  // Fallback: tampilkan modal instruksi
+  if (isIOS) showPwaModal('ios');
+  else if (isAndroid) showPwaModal('android');
+  else showPwaModal('android'); // desktop → kasih instruksi android
 }
 window.triggerInstall = triggerInstall;
+
+/* ============ PWA MODAL (self-contained) ============ */
+function showPwaModal(type) {
+  const existing = document.getElementById('pwa-inline-modal');
+  if (existing) existing.remove();
+
+  const steps = type === 'ios' ? [
+    'Tap ikon <strong>Share</strong> di bawah Safari',
+    'Pilih <strong>"Add to Home Screen"</strong>',
+    'Tap <strong>"Add"</strong> di kanan atas'
+  ] : [
+    'Tap menu <strong>⋮</strong> (3 titik) di kanan atas Chrome',
+    'Pilih <strong>"Install app"</strong> atau <strong>"Add to Home screen"</strong>',
+    'Tap <strong>"Install"</strong>'
+  ];
+  const title = type === 'ios' ? 'Install di iPhone' : 'Install di Android';
+
+  const modal = document.createElement('div');
+  modal.id = 'pwa-inline-modal';
+  modal.className = 'fixed inset-0 z-[200]';
+  modal.innerHTML =
+    '<div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onclick="document.getElementById(\'pwa-inline-modal\').remove()"></div>' +
+    '<div class="relative h-full flex items-center justify-center p-4">' +
+      '<div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">' +
+        '<div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">' +
+          '<div class="flex items-center gap-2">' +
+            '<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white">' +
+              '<i data-lucide="smartphone" class="w-4 h-4"></i>' +
+            '</div>' +
+            '<div class="font-black text-slate-900 text-sm">' + title + '</div>' +
+          '</div>' +
+          '<button onclick="document.getElementById(\'pwa-inline-modal\').remove()" class="w-8 h-8 rounded-lg hover:bg-slate-100 grid place-items-center text-slate-500">' +
+            '<i data-lucide="x" class="w-4 h-4"></i>' +
+          '</button>' +
+        '</div>' +
+        '<div class="p-5">' +
+          '<ol class="space-y-4">' +
+            steps.map((s, i) =>
+              '<li class="flex gap-3 items-start">' +
+                '<div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-black text-xs grid place-items-center flex-shrink-0">' + (i + 1) + '</div>' +
+                '<div class="text-sm text-slate-700 leading-relaxed">' + s + '</div>' +
+              '</li>'
+            ).join('') +
+          '</ol>' +
+          '<div class="mt-5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex gap-2">' +
+            '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>' +
+            '<div class="text-xs text-emerald-800">Icon KasirKu akan muncul di homescreen HP kamu</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="px-5 py-4 border-t border-slate-100 bg-slate-50">' +
+          '<button onclick="document.getElementById(\'pwa-inline-modal\').remove()" class="w-full py-3 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-black text-sm">' +
+            'Mengerti' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  if (window.lucide) lucide.createIcons();
+}
+window.showPwaModal = showPwaModal;
+
 if (window.lucide) lucide.createIcons();
 </script>
 </body>
