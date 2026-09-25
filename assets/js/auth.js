@@ -1,11 +1,14 @@
 /* ==========================================
    KasirKu — Auth Module (Supabase)
+   Login pakai Email + Password
+   Redirect-based (login.html ↔ index.html)
    ========================================== */
 window.KR = window.KR || {};
 
 KR.auth = (function () {
   'use strict';
 
+  /* ---------- USER CACHE ---------- */
   function getUserCache() { return KR.store.get('authCache', null); }
   function setUserCache(data) { KR.store.set('authCache', data); }
   function clearUserCache() { KR.store.remove('authCache'); }
@@ -17,53 +20,51 @@ KR.auth = (function () {
   function isGitHubUser() { return isLoggedIn(); }
   function getUser() { return getUserCache(); }
 
+  /* ---------- UI (no-op, karena login screen sudah dipisah) ---------- */
   function showLoginScreen() {
-    const el = document.getElementById('login-screen');
-    if (el) el.classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
+    // Kalau tidak login → redirect
+    if (location.pathname.indexOf('login.html') === -1) {
+      location.href = '/login.html';
+    }
   }
   function hideLoginScreen() {
-    const el = document.getElementById('login-screen');
-    if (el) el.classList.add('hidden');
+    // No-op
   }
 
   function switchAuthTab(tab) {
-    document.querySelectorAll('.login-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.authtab === tab);
-    });
-    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-    const panel = document.getElementById('auth-panel-' + tab);
-    if (panel) panel.classList.add('active');
-    if (tab === 'login') setStatus('login', 'warn', 'Siap masuk');
-    if (tab === 'register') setStatus('register', 'warn', 'Isi data di atas');
+    // No-op di halaman index
   }
 
   function setStatus(which, type, msg) {
-    const id = which === 'login' ? 'login-status' : 'register-status';
-    const el = document.getElementById(id);
-    if (!el) return;
-    const icons = { ok: 'check-circle', warn: 'alert-triangle', error: 'x-circle' };
-    el.className = 'gh-status ' + type;
-    el.innerHTML = '<i data-lucide="' + (icons[type] || 'info') + '"></i><span>' + escapeHtml(msg) + '</span>';
-    if (window.lucide) lucide.createIcons();
+    // No-op
   }
 
+  /* ---------- MAPPERS (DB → local) ---------- */
   function mapProductFromDb(p) {
     return {
-      id: p.id, name: p.name, sku: p.sku || '',
-      cost: Number(p.cost) || 0, price: Number(p.price) || 0,
-      stock: Number(p.stock) || 0, category: p.category || '',
+      id: p.id,
+      name: p.name,
+      sku: p.sku || '',
+      cost: Number(p.cost) || 0,
+      price: Number(p.price) || 0,
+      stock: Number(p.stock) || 0,
+      category: p.category || '',
       image: p.image_url || '',
     };
   }
   function mapTrxFromDb(t) {
     return {
-      id: t.trx_code || t.id, dbId: t.id,
+      id: t.trx_code || t.id,
+      dbId: t.id,
       at: new Date(t.created_at).getTime(),
-      items: t.items || [], subtotal: Number(t.subtotal) || 0,
-      discount: Number(t.discount) || 0, total: Number(t.total) || 0,
-      paid: Number(t.paid) || 0, change: Number(t.change_amount) || 0,
-      method: t.method || 'Cash', itemCount: t.item_count || 0,
+      items: t.items || [],
+      subtotal: Number(t.subtotal) || 0,
+      discount: Number(t.discount) || 0,
+      total: Number(t.total) || 0,
+      paid: Number(t.paid) || 0,
+      change: Number(t.change_amount) || 0,
+      method: t.method || 'Cash',
+      itemCount: t.item_count || 0,
     };
   }
 
@@ -84,97 +85,43 @@ KR.auth = (function () {
     }
   }
 
+  /* ---------- REGISTER (kalau dipanggil dari index) ---------- */
   async function submitRegister() {
-    const emailEl = document.getElementById('reg-email');
-    const passwordEl = document.getElementById('reg-password');
-    const password2El = document.getElementById('reg-password2');
-    if (!emailEl || !passwordEl || !password2El) return;
-
-    const email = emailEl.value.trim().toLowerCase();
-    const password = passwordEl.value;
-    const password2 = password2El.value;
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setStatus('register', 'error', 'Email tidak valid'); return;
-    }
-    if (password.length < 6) {
-      setStatus('register', 'error', 'Password minimal 6 karakter'); return;
-    }
-    if (password !== password2) {
-      setStatus('register', 'error', 'Konfirmasi password tidak cocok'); return;
-    }
-
-    setStatus('register', 'warn', 'Membuat akun...');
-    try {
-      const username = email.split('@')[0];
-      await KR.sb.signUp(email, password, { username, store_name: 'Warung Saya' });
-      setStatus('register', 'ok', 'Akun dibuat! Silakan login.');
-      KR.toast.success('Akun berhasil dibuat!');
-      emailEl.value = ''; passwordEl.value = ''; password2El.value = '';
-      setTimeout(() => {
-        switchAuthTab('login');
-        const loginEmail = document.getElementById('login-email');
-        if (loginEmail) loginEmail.value = email;
-        document.getElementById('login-password')?.focus();
-      }, 1000);
-    } catch (e) {
-      const msg = e.message || 'Unknown error';
-      setStatus('register', 'error', msg.toLowerCase().includes('already') ? 'Email sudah terdaftar' : msg);
-    }
+    // Karena login.html yang handle register, fungsi ini redirect saja
+    location.href = '/login.html';
   }
 
+  /* ---------- LOGIN (kalau dipanggil dari index) ---------- */
   async function submitLogin() {
-    const emailEl = document.getElementById('login-email');
-    const passwordEl = document.getElementById('login-password');
-    if (!emailEl || !passwordEl) return;
-
-    const email = emailEl.value.trim().toLowerCase();
-    const password = passwordEl.value;
-
-    if (!email || !password) {
-      setStatus('login', 'error', 'Isi email & password'); return;
-    }
-
-    setStatus('login', 'warn', 'Memverifikasi...');
-    try {
-      await KR.sb.signIn(email, password);
-      const user = await KR.sb.getUser();
-      const profile = await KR.sb.getProfile();
-
-      setUserCache({
-        loggedIn: true,
-        userId: user.id,
-        email: user.email,
-        username: (profile && profile.username) || email.split('@')[0],
-        role: (profile && profile.role) || 'admin',
-        loginAt: Date.now(),
-      });
-
-      setStatus('login', 'ok', 'Berhasil masuk!');
-      try { await pullDataFromCloud(); } catch (e) { console.warn('[Login] Pull data failed', e); }
-      KR.toast.success('Selamat datang!');
-
-      setTimeout(() => {
-        hideLoginScreen();
-        updateBadge();
-        refreshAllViews();
-      }, 500);
-    } catch (e) {
-      const msg = e.message || 'Unknown error';
-      setStatus('login', 'error', msg.toLowerCase().includes('invalid') ? 'Email atau password salah' : msg);
-    }
+    location.href = '/login.html';
   }
 
+  /* ---------- LOGOUT ---------- */
   function logout() {
     const a = getUser();
-    confirmDialog('Logout?', 'Anda akan keluar dari akun "' + (a && a.email ? a.email : 'ini') + '".', async () => {
-      try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
-      clearUserCache();
-      KR.toast.success('Logout berhasil');
-      setTimeout(() => location.reload(), 500);
-    });
+
+    if (typeof confirmDialog === 'function') {
+      confirmDialog(
+        'Logout?',
+        'Anda akan keluar dari akun "' + (a && a.email ? a.email : 'ini') + '".',
+        async () => {
+          try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
+          clearUserCache();
+          try { KR.toast.success('Logout berhasil'); } catch (e) {}
+          setTimeout(function () { location.href = '/login.html'; }, 400);
+        }
+      );
+    } else {
+      if (!confirm('Logout dari akun ini?')) return;
+      (async () => {
+        try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
+        clearUserCache();
+        location.href = '/login.html';
+      })();
+    }
   }
 
+  /* ---------- BADGE ---------- */
   function updateBadge() {
     const a = getUser();
     const btn = document.getElementById('user-badge-btn');
@@ -189,13 +136,16 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
+  /* ---------- ACCOUNT CARD ---------- */
   function renderAccountCard() {
     const el = document.getElementById('account-info');
     if (!el) return;
     const a = getUser();
+
     if (!a || !a.loggedIn) {
-      el.innerHTML = '<p class="settings-desc">Belum login.</p>' +
-        '<button class="btn btn-primary" onclick="KR.auth.showLoginScreen()">' +
+      el.innerHTML =
+        '<p class="settings-desc">Belum login.</p>' +
+        '<button class="btn btn-primary" onclick="location.href=\'/login.html\'">' +
         '<i data-lucide="log-in"></i> Login</button>';
     } else {
       const initial = (a.username || a.email || '?')[0].toUpperCase();
@@ -203,11 +153,13 @@ KR.auth = (function () {
       el.innerHTML =
         '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-subtle);border-radius:12px;margin-bottom:12px;">' +
           '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:grid;place-items:center;color:#fff;flex-shrink:0;font-weight:900;font-size:1.15rem;">' +
-            escapeHtml(initial) + '</div>' +
+            escapeHtml(initial) +
+          '</div>' +
           '<div style="flex:1;min-width:0;">' +
             '<div style="font-weight:800;line-height:1.2;">' + escapeHtml(a.username || a.email) + '</div>' +
             '<div style="font-size:.75rem;color:var(--text-3);margin-top:2px;">' +
-              roleLabel + ' • ' + escapeHtml(a.email || '') + '</div>' +
+              roleLabel + ' • ' + escapeHtml(a.email || '') +
+            '</div>' +
           '</div>' +
           '<span class="pa-chip primary">Online</span>' +
         '</div>' +
@@ -221,19 +173,22 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
+  /* ---------- RELOAD FROM CLOUD ---------- */
   async function reloadFromCloud() {
-    showLoading('Mengambil data...');
+    if (typeof showLoading === 'function') showLoading('Mengambil data...');
     try {
       await pullDataFromCloud();
-      KR.toast.success('Data berhasil disinkronkan');
+      try { KR.toast.success('Data berhasil disinkronkan'); } catch (e) {}
       refreshAllViews();
     } catch (e) {
-      KR.toast.error('Gagal: ' + e.message);
+      console.error(e);
+      try { KR.toast.error('Gagal: ' + e.message); } catch (err) {}
     } finally {
-      hideLoading();
+      if (typeof hideLoading === 'function') hideLoading();
     }
   }
 
+  /* ---------- REFRESH ALL ---------- */
   function refreshAllViews() {
     if (typeof renderPosGrid === 'function') renderPosGrid();
     if (typeof renderCart === 'function') renderCart();
@@ -243,74 +198,63 @@ KR.auth = (function () {
     if (typeof loadSettings === 'function') loadSettings();
   }
 
-  /* ============ INIT — bulletproof ============ */
+  /* ---------- INIT ---------- */
   function init() {
     const cached = getUserCache();
 
     console.log('[Auth Init] Cache:', cached);
     console.log('[Auth Init] isLoggedIn:', !!(cached && cached.loggedIn));
 
-    if (cached && cached.loggedIn) {
-      // User ada di cache → DASHBOARD, sembunyikan login
-      hideLoginScreen();
-      updateBadge();
-      refreshAllViews();
-      console.log('[Auth Init] → Dashboard (cached)');
+    // STEP 1: Cek cache
+    if (!cached || !cached.loggedIn) {
+      console.log('[Auth Init] → Redirect to /login.html');
+      location.href = '/login.html';
+      return;
+    }
 
-      // Pull data cloud di background (TIDAK cek session)
-      setTimeout(function () {
+    // STEP 2: User sudah login → tampilkan dashboard
+    console.log('[Auth Init] → Show dashboard');
+    updateBadge();
+    refreshAllViews();
+
+    // STEP 3: Validasi session di background (jangan block UI)
+    KR.sb.getSession()
+      .then(function (session) {
+        if (!session || !session.user) {
+          console.warn('[Auth Init] Session expired, redirect to login');
+          clearUserCache();
+          location.href = '/login.html';
+          return;
+        }
+
+        console.log('[Auth Init] Session valid, user:', session.user.email);
+
+        // Update cache dengan data terbaru
+        const user = session.user;
+        setUserCache({
+          loggedIn: true,
+          userId: user.id,
+          email: user.email,
+          username: (cached && cached.username) || user.email.split('@')[0],
+          role: (cached && cached.role) || 'admin',
+          loginAt: (cached && cached.loginAt) || Date.now(),
+        });
+        updateBadge();
+
+        // Pull data cloud di background
         pullDataFromCloud()
           .then(refreshAllViews)
           .catch(function (e) { console.warn('[Auth] Pull failed', e); });
-      }, 300);
-    } else {
-      // Tidak ada cache → LOGIN SCREEN
-      showLoginScreen();
-      console.log('[Auth Init] → Login screen');
-    }
-
-    // Background: validasi session TAPI JANGAN ubah UI
-    KR.sb.getSession()
-      .then(function (session) {
-        if (session && session.user) {
-          const user = session.user;
-          setUserCache({
-            loggedIn: true,
-            userId: user.id,
-            email: user.email,
-            username: (cached && cached.username) || user.email.split('@')[0],
-            role: (cached && cached.role) || 'admin',
-            loginAt: (cached && cached.loginAt) || Date.now(),
-          });
-          updateBadge();
-        } else if (!cached || !cached.loggedIn) {
-          // Benar-benar belum login
-          showLoginScreen();
-        }
-        // ⚠️ Kalau cached.loggedIn tapi session null → JANGAN apa-apa
       })
       .catch(function (e) {
-        console.warn('[Auth] Session check failed (network?)', e);
-        // Network error → tetap pakai cache
+        // Network error → tetap pakai cache (JANGAN redirect)
+        console.warn('[Auth Init] Session check failed (network?), using cache', e);
       });
-
-    // Keyboard shortcuts
-    var le = document.getElementById('login-email');
-    var lp = document.getElementById('login-password');
-    var rp2 = document.getElementById('reg-password2');
-    if (le) le.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && lp) lp.focus();
-    });
-    if (lp) lp.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') submitLogin();
-    });
-    if (rp2) rp2.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') submitRegister();
-    });
   }
 
+  /* ---------- EXPOSE ---------- */
   return {
-    init: init,
+    init,
     isLoggedIn: isLoggedIn,
     isGitHubUser: isGitHubUser,
     getUser: getUser,
