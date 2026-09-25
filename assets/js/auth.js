@@ -243,23 +243,36 @@ KR.auth = (function () {
     if (typeof loadSettings === 'function') loadSettings();
   }
 
-  /* ============ INIT — simple & bulletproof ============ */
+  /* ============ INIT — bulletproof ============ */
   function init() {
-    // STEP 1: Tampilkan UI dari cache dulu (instant)
     const cached = getUserCache();
+
+    console.log('[Auth Init] Cache:', cached);
+    console.log('[Auth Init] isLoggedIn:', !!(cached && cached.loggedIn));
+
     if (cached && cached.loggedIn) {
+      // User ada di cache → DASHBOARD, sembunyikan login
       hideLoginScreen();
       updateBadge();
       refreshAllViews();
+      console.log('[Auth Init] → Dashboard (cached)');
+
+      // Pull data cloud di background (TIDAK cek session)
+      setTimeout(function () {
+        pullDataFromCloud()
+          .then(refreshAllViews)
+          .catch(function (e) { console.warn('[Auth] Pull failed', e); });
+      }, 300);
     } else {
+      // Tidak ada cache → LOGIN SCREEN
       showLoginScreen();
+      console.log('[Auth Init] → Login screen');
     }
 
-    // STEP 2: Cek session di background (tanpa block UI)
+    // Background: validasi session TAPI JANGAN ubah UI
     KR.sb.getSession()
       .then(function (session) {
         if (session && session.user) {
-          // Session valid → update cache
           const user = session.user;
           setUserCache({
             loggedIn: true,
@@ -270,14 +283,14 @@ KR.auth = (function () {
             loginAt: (cached && cached.loginAt) || Date.now(),
           });
           updateBadge();
-          pullDataFromCloud().then(refreshAllViews).catch(function (e) {
-            console.warn('[Auth] Pull failed', e);
-          });
+        } else if (!cached || !cached.loggedIn) {
+          // Benar-benar belum login
+          showLoginScreen();
         }
-        // ⚠️ Kalau session null → JANGAN clear cache, biarkan user pakai cache
+        // ⚠️ Kalau cached.loggedIn tapi session null → JANGAN apa-apa
       })
       .catch(function (e) {
-        console.warn('[Auth] Session check failed', e);
+        console.warn('[Auth] Session check failed (network?)', e);
         // Network error → tetap pakai cache
       });
 
