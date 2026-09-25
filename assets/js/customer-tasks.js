@@ -81,21 +81,24 @@
             </button>
           </div>
 
-          <div class="px-5 pt-4 pb-2 flex-shrink-0" id="tasks-summary-wrap">
-            <div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Saldo Kamu</div>
-                  <div id="task-balance" class="font-mono font-black text-2xl text-amber-700 mt-1">Rp 0</div>
-                  <div id="task-earned" class="text-[10px] text-amber-600 mt-0.5">Total earned: Rp 0</div>
-                </div>
-                <div class="text-right">
-                  <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 mb-1">Progress</div>
-                  <div id="task-progress" class="font-mono font-black text-sm text-amber-700">0/0</div>
-                </div>
-              </div>
-            </div>
-          </div>
+         <div class="px-5 pt-4 pb-2 flex-shrink-0" id="tasks-summary-wrap">
+           <div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
+             <div class="flex items-center justify-between mb-3">
+               <div>
+                 <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Saldo Kamu</div>
+                 <div id="task-balance" class="font-mono font-black text-2xl text-amber-700 mt-1">Rp 0</div>
+                 <div id="task-earned" class="text-[10px] text-amber-600 mt-0.5">Total earned: Rp 0</div>
+               </div>
+               <div class="text-right">
+                 <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 mb-1">Progress</div>
+                 <div id="task-progress" class="font-mono font-black text-sm text-amber-700">0/0</div>
+               </div>
+             </div>
+             <button onclick="CustomerTasks.openWithdrawalModal()" class="w-full py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md hover:brightness-110 transition active:scale-[.98]">
+               <i data-lucide="banknote" class="w-3.5 h-3.5 inline mr-1"></i> Tarik Saldo ke Rekening
+             </button>
+           </div>
+         </div>
 
           <div class="px-5 pb-2 flex-shrink-0">
             <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto no-scrollbar">
@@ -741,6 +744,189 @@
     '</div>';
   }
 
+     /* ---------- WITHDRAWAL ---------- */
+  let currentBalance = 0;
+
+  async function loadSummary() {
+    const s = getSession();
+    if (!s) return;
+    try {
+      const data = await rpc('customer_rewards_summary', { p_customer_id: s.id });
+      const sum = parse(data) || {};
+      currentBalance = Number(sum.balance) || 0;
+      const balEl = $('task-balance');
+      const earnedEl = $('task-earned');
+      const progEl = $('task-progress');
+      if (balEl) balEl.textContent = fmt(sum.balance || 0);
+      if (earnedEl) earnedEl.textContent = 'Total earned: ' + fmt(sum.total_earned || 0);
+      if (progEl) {
+        const app = sum.approved_count || 0;
+        const total = app + (sum.pending_count || 0);
+        progEl.textContent = app + '/' + total;
+      }
+    } catch (e) {
+      console.warn('[Summary]', e);
+    }
+  }
+
+  function openWithdrawalModal() {
+    const s = getSession();
+    if (!s) return;
+    if (currentBalance < 10000) {
+      return toast('Saldo minimal Rp 10.000 untuk penarikan', 'error');
+    }
+
+    const existing = $('withdrawal-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'withdrawal-modal';
+    modal.className = 'fixed inset-0 z-[60]';
+    modal.innerHTML = `
+      <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onclick="CustomerTasks.closeWithdrawalModal()"></div>
+      <div class="relative h-full flex items-end sm:items-center justify-center sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[94dvh] flex flex-col shadow-2xl anim-up">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 grid place-items-center text-white shadow-lg shadow-violet-500/30">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-base">Tarik Saldo</h3>
+                <p class="text-[11px] text-slate-500">Minimal Rp 10.000</p>
+              </div>
+            </div>
+            <button onclick="CustomerTasks.closeWithdrawalModal()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center">
+              <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-5 space-y-4">
+            <div class="rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200 p-4">
+              <div class="text-[10px] font-extrabold uppercase tracking-wider text-violet-700">Saldo Tersedia</div>
+              <div class="font-mono font-black text-2xl text-violet-700 mt-1">${fmt(currentBalance)}</div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Nominal Penarikan <span class="text-red-500">*</span></label>
+              <input id="wd-amount" type="number" inputmode="numeric" class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none text-lg font-mono font-bold" placeholder="10000" min="10000" max="${currentBalance}">
+              <div class="flex gap-2 mt-2">
+                <button onclick="document.getElementById('wd-amount').value=10000; CustomerTasks._updateWdHint()" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold">10rb</button>
+                <button onclick="document.getElementById('wd-amount').value=50000; CustomerTasks._updateWdHint()" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold">50rb</button>
+                <button onclick="document.getElementById('wd-amount').value=100000; CustomerTasks._updateWdHint()" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold">100rb</button>
+                <button onclick="document.getElementById('wd-amount').value=${currentBalance}; CustomerTasks._updateWdHint()" class="px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 text-xs font-bold">Semua</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Bank / E-Wallet <span class="text-red-500">*</span></label>
+              <select id="wd-bank" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none text-sm">
+                <option value="">Pilih bank / e-wallet</option>
+                <option value="BCA">BCA</option>
+                <option value="Mandiri">Mandiri</option>
+                <option value="BNI">BNI</option>
+                <option value="BRI">BRI</option>
+                <option value="BSI">BSI</option>
+                <option value="CIMB">CIMB Niaga</option>
+                <option value="Permata">Permata</option>
+                <option value="DANA">DANA</option>
+                <option value="OVO">OVO</option>
+                <option value="GoPay">GoPay</option>
+                <option value="ShopeePay">ShopeePay</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Nomor Rekening / HP <span class="text-red-500">*</span></label>
+              <input id="wd-account" type="text" inputmode="numeric" placeholder="1234567890" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none text-sm font-mono">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Nama Pemilik Rekening <span class="text-red-500">*</span></label>
+              <input id="wd-holder" type="text" placeholder="Sesuai buku tabungan" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 outline-none text-sm">
+            </div>
+
+            <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 flex gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+              <div class="text-[11px] text-amber-800 leading-relaxed">
+                Setelah dikirim, admin akan verifikasi & transfer <strong>1×24 jam</strong>. Cek status di tab <strong>Pesanan Saya</strong>.
+              </div>
+            </div>
+          </div>
+          <div class="px-5 py-4 border-t border-slate-100 bg-slate-50/70 flex gap-2">
+            <button onclick="CustomerTasks.closeWithdrawalModal()" class="flex-1 py-3 rounded-xl bg-slate-200 text-slate-700 font-bold text-sm">Batal</button>
+            <button id="wd-submit-btn" onclick="CustomerTasks.submitWithdrawal()" class="flex-1 py-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white font-extrabold text-sm shadow-lg shadow-violet-500/30">
+              <i data-lucide="send" class="w-4 h-4 inline mr-1"></i> Ajukan
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    if (window.lucide) lucide.createIcons();
+    $('wd-amount')?.addEventListener('input', updateWdHint);
+  }
+
+  function closeWithdrawalModal() {
+    const modal = $('withdrawal-modal');
+    if (modal) modal.remove();
+  }
+
+  function updateWdHint() {
+    const amount = Number($('wd-amount')?.value) || 0;
+    const submitBtn = $('wd-submit-btn');
+    if (!submitBtn) return;
+    if (amount < 10000 || amount > currentBalance) {
+      submitBtn.style.opacity = '0.5';
+      submitBtn.style.pointerEvents = 'none';
+    } else {
+      submitBtn.style.opacity = '1';
+      submitBtn.style.pointerEvents = 'auto';
+    }
+  }
+
+  async function submitWithdrawal() {
+    const s = getSession();
+    if (!s) return toast('Silakan login dulu', 'error');
+
+    const amount = Number($('wd-amount')?.value) || 0;
+    const bank = $('wd-bank')?.value;
+    const account = $('wd-account')?.value.trim();
+    const holder = $('wd-holder')?.value.trim();
+
+    if (amount < 10000) return toast('Minimal Rp 10.000', 'error');
+    if (amount > currentBalance) return toast('Saldo tidak cukup', 'error');
+    if (!bank) return toast('Pilih bank / e-wallet', 'error');
+    if (!account || account.length < 4) return toast('No. rekening wajib diisi', 'error');
+    if (!holder || holder.length < 2) return toast('Nama pemilik wajib diisi', 'error');
+
+    const btn = $('wd-submit-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Mengirim...'; }
+
+    try {
+      const res = await rpc('customer_withdrawal_request', {
+        p_customer_id: s.id,
+        p_seller_id: state.sellerId,
+        p_amount: amount,
+        p_bank: bank,
+        p_account: account,
+        p_holder: holder,
+      });
+      const r = parse(res) || {};
+      toast('Pengajuan terkirim! Kode: #' + (r.order_code || ''), 'success');
+      closeWithdrawalModal();
+      await loadSummary();
+      // Buka Pesanan Saya biar user lihat
+      setTimeout(() => {
+        if (window.CustomerAuth?.openMyOrders) window.CustomerAuth.openMyOrders();
+      }, 700);
+    } catch (e) {
+      console.error('[Withdrawal]', e);
+      toast('Gagal: ' + e.message, 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="send" class="w-4 h-4 inline mr-1"></i> Ajukan'; if (window.lucide) lucide.createIcons(); }
+    }
+  }
+
   /* ---------- INIT ---------- */
   function init(sellerId, sb) {
     state.sellerId = sellerId;
@@ -757,6 +943,10 @@
       removeSocialProof: removeSocialProof,
       submitSocial: submitSocial,
       deleteSocial: deleteSocial,
+      openWithdrawalModal: openWithdrawalModal,      // ← TAMBAH
+      closeWithdrawalModal: closeWithdrawalModal,    // ← TAMBAH
+      submitWithdrawal: submitWithdrawal,            // ← TAMBAH
+      _updateWdHint: updateWdHint,                   // ← TAMBAH
       refresh: () => { loadSummary(); loadTasks(); },
     };
   }
