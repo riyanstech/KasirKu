@@ -826,6 +826,10 @@
       categoryFilter: '',
       searchQuery: '',
       lastSuccessCode: '',
+      customerBalance: 0,       // ← TAMBAH
+      useBalance: false,        // ← TAMBAH
+      balanceUsed: 0,           // ← TAMBAH
+      amountDue: 0,             // ← TAMBAH
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1157,7 +1161,26 @@
         state.proofFile = null;
         state.proofPreview = null;
         renderProofArea();
+        // Reset balance state
+        state.useBalance = false;
+        state.balanceUsed = 0;
+        state.amountDue = totals.total;
+        const balanceToggle = $('co-use-balance');
+        if (balanceToggle) balanceToggle.checked = false;
+        
+        // Load balance lalu render
+        loadCustomerBalance().then(() => {
+          renderBalanceUI();
+        });
+        
+        // Init balance UI (default hidden detail)
+        const balDetail = $('co-balance-detail');
+        if (balDetail) balDetail.classList.add('hidden');
       }
+      // Re-check balance visibility saat ganti metode
+      setTimeout(() => {
+        if (state.useBalance) updateBalanceDetail();
+      }, 50);
       icon();
     }
     window.selectMethod = selectMethod;
@@ -1386,116 +1409,278 @@
     function normalizePhone(s) { return String(s || '').replace(/[^\d+]/g, ''); }
     function isValidPhone(s) { return /^(\+?62|0)8[1-9][0-9]{6,11}$/.test(normalizePhone(s)); }
 
-    async function submitOrder() {
-      if (!state.cart.length || !state.seller) return;
-
-      const hasDigital = state.cart.some(x => !x.needs_address);
-      const hasPhysical = state.cart.some(x => x.needs_address);
-      const method = state.deliveryMethod;
-      const isCod = method === 'cod';
-      const needAddressField = hasPhysical && (method === 'delivery' || method === 'cod');
-
-      const target = $('inp-target').value.trim();
-      const address = $('inp-address').value.trim();
-      const name = $('inp-name').value.trim();
-      const phone = $('inp-phone').value.trim();
-      const notes = $('inp-notes').value.trim();
-
-      // Validasi
-      if (hasDigital) {
-        if (!target) { $('err-target').textContent = 'Nomor tujuan wajib diisi'; $('err-target').classList.remove('hidden'); return; }
-        if (!isValidPhone(target)) { $('err-target').textContent = 'Format nomor tidak valid'; $('err-target').classList.remove('hidden'); return; }
-        $('err-target').classList.add('hidden');
+    /* ---------- BALANCE INTEGRATION ---------- */
+    async function loadCustomerBalance() {
+      const s = window.KRCustomer?.getSession?.();
+      if (!s) { state.customerBalance = 0; return 0; }
+      try {
+        const { data, error } = await sb.rpc('customer_rewards_summary', { p_customer_id: s.id });
+        if (error) throw error;
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        state.customerBalance = Number(parsed?.balance) || 0;
+      } catch (e) {
+        console.warn('[Balance] Load failed', e);
+        state.customerBalance = 0;
       }
-
-      if (needAddressField) {
-        if (!address) { $('err-address').textContent = 'Alamat wajib diisi'; $('err-address').classList.remove('hidden'); return; }
-        if (address.length < 10) { $('err-address').textContent = 'Alamat terlalu pendek'; $('err-address').classList.remove('hidden'); return; }
-        $('err-address').classList.add('hidden');
+      return state.customerBalance;
+    }
+    
+    function renderBalanceUI() {
+      const section = $('balance-section');
+      const label = $('co-balance-label');
+      const toggle = $('co-use-balance');
+      if (!section || !label || !toggle) return;
+    
+      const session = window.KRCustomer?.getSession?.();
+      if (!session) { section.classList.add('hidden'); return; }
+    
+      section.classList.remove('hidden');
+      label.textContent = fmt(state.customerBalance);
+    
+      // Disable toggle kalau saldo < total
+      const totals = getCartTotals();
+      if (state.customerBalance <= 0) {
+        toggle.disabled = true;
+        toggle.checked = false;
+        state.useBalance = false;
+      } else {
+        toggle.disabled = false;
       }
-
-      if (hasPhysical && !name) {
-        $('err-name').textContent = 'Nama wajib diisi';
-        $('err-name').classList.remove('hidden');
+    
+      updateBalanceDetail();
+    }
+    
+    function updateBalanceDetail() {
+      const detail = $('co-balance-detail');
+      const usedEl = $('co-balance-used');
+      const remEl = $('co-balance-remaining');
+      const noteEl = $('co-balance-note');
+      if (!detail) return;
+    
+      const totals = getCartTotals();
+      if (!state.useBalance) {
+        detail.classList.add('hidden');
+        state.balanceUsed = 0;
+        state.amountDue = totals.total;
         return;
       }
-      $('err-name').classList.add('hidden');
-
-      if (!isCod && !state.proofFile) return toast('Upload bukti transfer dulu', 'error');
-      if (phone && !isValidPhone(phone)) return toast('Format No. WA tidak valid', 'error');
-
-      const customerSession = window.KRCustomer?.getSession?.() || null;   // ← TAMBAH INI
-      
-      const btn = $('btn-submit');
-      btn.disabled = true;
-
-      try {
-        let proofUrl = null;
-        if (!isCod) {
-          showLoading('Mengunggah bukti...');
-          proofUrl = await uploadProof(state.proofFile);
+    
+      detail.classList.remove('hidden');
+      const usable = Math.min(state.customerBalance, totals.total);
+      state.balanceUsed = usable;
+      state.amountDue = Math.max(0, totals.total - usable);
+    
+      if (usedEl) usedEl.textContent = fmt(usable);
+      if (remEl) remEl.textContent = fmt(state.amountDue);
+    
+      if (noteEl) {
+        if (state.amountDue === 0) {
+          noteEl.textContent = '✓ Saldo cukup — tidak perlu transfer';
+          noteEl.className = 'text-[11px] text-emerald-600 mt-2 font-bold';
+        } else {
+          noteEl.textContent = 'Masih perlu transfer ' + fmt(state.amountDue);
+          noteEl.className = 'text-[11px] text-amber-700 mt-2 font-bold';
         }
-
-        showLoading('Mengirim pesanan...');
-        const totals = getCartTotals();
-
-        // Summary name untuk kompatibilitas dashboard
-        const firstName = state.cart[0].name;
-        const summaryName = state.cart.length === 1
-          ? firstName
-          : `${firstName} + ${state.cart.length - 1} lainnya`;
-
-        // Items array lengkap
-        const itemsData = state.cart.map(x => ({
-          product_id: x.productId,
-          name: x.name,
-          price: x.price,
-          qty: x.qty,
-          needs_address: x.needs_address,
-          image_url: x.image_url || null,
-          subtotal: x.price * x.qty,
-        }));
-
-        const orderCode = 'ORD' + Date.now().toString(36).toUpperCase() +
-                          Math.random().toString(36).slice(2, 5).toUpperCase();
-
-        const insertData = {
-          seller_id: state.seller.id,
-          customer_id: customerSession?.id || null,
-          product_id: state.cart[0].productId, // backward-compat
-          product_name: summaryName,
-          product_price: totals.total,
-          target_number: hasDigital ? normalizePhone(target) : (address || '-'),
-          customer_name: name || null,
-          customer_phone: phone ? normalizePhone(phone) : null,
-          notes: notes || null,
-          payment_proof_url: proofUrl,
-          status: 'pending',
-          delivery_method: hasPhysical ? method : 'digital',
-          delivery_address: needAddressField ? address : null,
-          delivery_fee: 0,
-          items: itemsData,
-          order_code: orderCode,
-        };
-
-        const { error } = await sb.from('online_orders').insert(insertData);
-        if (error) throw error;
-
-        // Reset cart
-        state.cart = [];
-        updateCartFab();
-
-        hideLoading();
-        closeAllModals();
-        showSuccess(orderCode);
-      } catch (e) {
-        console.error('[Submit]', e);
-        hideLoading();
-        toast('Gagal: ' + (e.message || 'Unknown'), 'error');
-      } finally {
-        btn.disabled = false;
       }
+    
+      // Toggle section payment & proof berdasar amountDue
+      const isCod = state.deliveryMethod === 'cod';
+      const paymentSection = $('payment-section');
+      const proofSection = $('proof-section');
+      if (paymentSection) paymentSection.classList.toggle('hidden', isCod || state.amountDue === 0);
+      if (proofSection) proofSection.classList.toggle('hidden', isCod || state.amountDue === 0);
     }
+    
+    function onToggleUseBalance() {
+      const toggle = $('co-use-balance');
+      if (!toggle) return;
+      state.useBalance = !!toggle.checked;
+      updateBalanceDetail();
+      if (window.lucide) lucide.createIcons();
+    }
+    
+    window.onToggleUseBalance = onToggleUseBalance;
+
+   async function submitOrder() {
+    if (!state.cart.length || !state.seller) return;
+  
+    const hasDigital = state.cart.some(x => !x.needs_address);
+    const hasPhysical = state.cart.some(x => x.needs_address);
+    const method = state.deliveryMethod;
+    const isCod = method === 'cod';
+    const needAddressField = hasPhysical && (method === 'delivery' || method === 'cod');
+  
+    const target = $('inp-target').value.trim();
+    const address = $('inp-address').value.trim();
+    const name = $('inp-name').value.trim();
+    const phone = $('inp-phone').value.trim();
+    const notes = $('inp-notes').value.trim();
+  
+    // ============ DEKLARASI CUSTOMER SESSION ============
+    const customerSession = window.KRCustomer?.getSession?.() || null;
+  
+    // ============ HITUNG BALANCE (STEP F) ============
+    const totalsForBalance = getCartTotals();
+    let balanceToUse = 0;
+    let amountDue = totalsForBalance.total;
+    if (state.useBalance && customerSession && state.customerBalance > 0) {
+      balanceToUse = Math.min(state.customerBalance, totalsForBalance.total);
+      amountDue = Math.max(0, totalsForBalance.total - balanceToUse);
+    }
+  
+    // ============ VALIDASI ============
+    if (hasDigital) {
+      if (!target) { $('err-target').textContent = 'Nomor tujuan wajib diisi'; $('err-target').classList.remove('hidden'); return; }
+      if (!isValidPhone(target)) { $('err-target').textContent = 'Format nomor tidak valid'; $('err-target').classList.remove('hidden'); return; }
+      $('err-target').classList.add('hidden');
+    }
+  
+    if (needAddressField) {
+      if (!address) { $('err-address').textContent = 'Alamat wajib diisi'; $('err-address').classList.remove('hidden'); return; }
+      if (address.length < 10) { $('err-address').textContent = 'Alamat terlalu pendek'; $('err-address').classList.remove('hidden'); return; }
+      $('err-address').classList.add('hidden');
+    }
+  
+    if (hasPhysical && !name) {
+      $('err-name').textContent = 'Nama wajib diisi';
+      $('err-name').classList.remove('hidden');
+      return;
+    }
+    $('err-name').classList.add('hidden');
+  
+    // ============ VALIDASI BUKTI (STEP G) ============
+    // Bukti hanya wajib kalau masih ada sisa bayar
+    if (!isCod && amountDue > 0 && !state.proofFile) {
+      return toast('Upload bukti transfer dulu', 'error');
+    }
+    if (phone && !isValidPhone(phone)) return toast('Format No. WA tidak valid', 'error');
+  
+    const btn = $('btn-submit');
+    btn.disabled = true;
+  
+    try {
+      // ============ UPLOAD BUKTI ============
+      let proofUrl = null;
+      if (!isCod && amountDue > 0 && state.proofFile) {
+        showLoading('Mengunggah bukti...');
+        proofUrl = await uploadProof(state.proofFile);
+      }
+  
+      showLoading('Mengirim pesanan...');
+      const totals = getCartTotals();
+  
+      const firstName = state.cart[0].name;
+      const summaryName = state.cart.length === 1
+        ? firstName
+        : firstName + ' + ' + (state.cart.length - 1) + ' lainnya';
+  
+      const itemsData = state.cart.map(x => ({
+        product_id: x.productId,
+        name: x.name,
+        price: x.price,
+        qty: x.qty,
+        needs_address: x.needs_address,
+        image_url: x.image_url || null,
+        subtotal: x.price * x.qty,
+      }));
+  
+      const orderCode = 'ORD' + Date.now().toString(36).toUpperCase() +
+                        Math.random().toString(36).slice(2, 5).toUpperCase();
+  
+      const insertData = {
+        seller_id: state.seller.id,
+        customer_id: customerSession?.id || null,
+        product_id: state.cart[0].productId,
+        product_name: summaryName,
+        product_price: totals.total,
+        target_number: hasDigital ? normalizePhone(target) : (address || '-'),
+        customer_name: name || null,
+        customer_phone: phone ? normalizePhone(phone) : null,
+        notes: notes || null,
+        payment_proof_url: proofUrl,
+        status: 'pending',
+        delivery_method: hasPhysical ? method : 'digital',
+        delivery_address: needAddressField ? address : null,
+        delivery_fee: 0,
+        items: itemsData,
+        order_code: orderCode,
+        order_type: 'product',
+        balance_used: balanceToUse,
+        amount_due: amountDue,
+      };
+  
+      // ================================================
+      // ⬇️⬇️⬇️ STEP H: POTONG SALDO DULU ⬇️⬇️⬇️
+      // ================================================
+      if (balanceToUse > 0 && customerSession) {
+        showLoading('Memotong saldo...');
+        const { error: balErr } = await sb.rpc('customer_balance_use', {
+          p_customer_id: customerSession.id,
+          p_amount: balanceToUse,
+        });
+        if (balErr) throw new Error('Gagal potong saldo: ' + balErr.message);
+      }
+  
+      // ================================================
+      // ⬇️⬇️⬇️ INSERT ORDER ⬇️⬇️⬇️
+      // ================================================
+      showLoading('Mengirim pesanan...');
+      const { error } = await sb.from('online_orders').insert(insertData);
+  
+      // Kalau insert gagal, ROLLBACK saldo
+      if (error) {
+        if (balanceToUse > 0 && customerSession) {
+          try {
+            await sb.rpc('customer_balance_refund', {
+              p_customer_id: customerSession.id,
+              p_amount: balanceToUse,
+            });
+            console.log('[Rollback] Saldo dikembalikan');
+          } catch (rbErr) {
+            console.error('[Rollback failed]', rbErr);
+          }
+        }
+        throw error;
+      }
+  
+      // ================================================
+      // ⬇️⬇️⬇️ UPDATE PROFIL CUSTOMER ⬇️⬇️⬇️
+      // ================================================
+      if (customerSession) {
+        try {
+          await window.KRCustomer.updateProfile({
+            name: name || customerSession.name,
+            phone: phone || customerSession.phone,
+            address: needAddressField ? address : customerSession.address,
+          });
+        } catch (e) {
+          console.warn('[Order] Update customer profile failed', e);
+        }
+      }
+  
+      // ================================================
+      // ⬇️⬇️⬇️ STEP I: RESET STATE SETELAH SUKSES ⬇️⬇️⬇️
+      // ================================================
+      state.useBalance = false;
+      state.balanceUsed = 0;
+      state.amountDue = 0;
+      state.customerBalance = 0;
+  
+      // Reset cart
+      state.cart = [];
+      updateCartFab();
+  
+      hideLoading();
+      closeAllModals();
+      showSuccess(orderCode);
+    } catch (e) {
+      console.error('[Submit]', e);
+      hideLoading();
+      toast('Gagal: ' + (e.message || 'Unknown'), 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
     async function uploadProof(file) {
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
