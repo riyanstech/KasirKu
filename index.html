@@ -359,7 +359,7 @@ async function handleLogin() {
 
     setStatus('login-status', 'ok', '✅ Berhasil masuk! Mengalihkan...');
     toast('Selamat datang!', 'success');
-    setTimeout(() => { location.href = '/index.html'; }, 400);
+    setTimeout(() => { location.href = '/dashboard.html'; }, 400);
   } catch (e) {
     setStatus('login-status', 'error', e.message || 'Gagal login');
     btn.disabled = false;
@@ -421,7 +421,7 @@ window.closeAuth = closeAuth;
         role: 'admin',
         loginAt: Date.now(),
       }));
-      location.href = '/index.html';
+      location.href = '/dashboard.html';
     }
   } catch (e) {
     console.warn('[Login page] Session check failed', e);
