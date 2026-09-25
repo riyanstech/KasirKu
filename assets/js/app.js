@@ -1436,29 +1436,57 @@ function updateInstallStatus() {
 }
 
 function triggerAppInstall() {
-  if (!KR.pwa) return KR.toast.error('PWA module tidak tersedia');
+  console.log('[Install] Tombol diklik');
+  console.log('[Install] KR.pwa:', !!KR.pwa);
+  console.log('[Install] canInstall:', KR.pwa?.canInstall?.());
+  console.log('[Install] isStandalone:', KR.pwa?.isStandalone?.());
+
+  if (!KR.pwa) {
+    return KR.toast.error('PWA module tidak tersedia — reload halaman');
+  }
 
   const isStandalone = KR.pwa.isStandalone && KR.pwa.isStandalone();
-  if (isStandalone) return KR.toast.info('Aplikasi sudah terinstall');
+  if (isStandalone) {
+    return KR.toast.info('Aplikasi sudah terinstall ✅');
+  }
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = /Android/i.test(navigator.userAgent);
+  const canAuto = KR.pwa.canInstall && KR.pwa.canInstall();
 
-  // Coba auto-install via deferredPrompt
-  if (KR.pwa.canInstall && KR.pwa.canInstall()) {
-    KR.pwa.triggerInstall();
-    setTimeout(updateInstallStatus, 1000);
-    return;
+  console.log('[Install] Platform — iOS:', isIOS, 'Android:', isAndroid, 'CanAuto:', canAuto);
+
+  // PRIORITAS 1: Auto-install via deferredPrompt
+  if (canAuto) {
+    try {
+      KR.pwa.triggerInstall();
+      setTimeout(updateInstallStatus, 1500);
+      return;
+    } catch (e) {
+      console.error('[Install] triggerInstall error', e);
+    }
   }
 
-  // Fallback — tampilkan instruksi manual berdasarkan platform
-  if (isIOS) {
-    KR.pwa.showIOSInstructions();
-  } else if (isAndroid) {
-    KR.pwa.showAndroidInstructions();
-  } else {
-    // Desktop
-    KR.toast.info('Install hanya di HP. Buka di Chrome Android atau Safari iPhone.', 5000);
+  // PRIORITAS 2: Fallback ke instruksi manual
+  try {
+    if (isIOS) {
+      console.log('[Install] Show iOS instructions');
+      KR.pwa.showIOSInstructions();
+      KR.toast.info('Ikuti langkah install di iPhone', 4000);
+    } else if (isAndroid) {
+      console.log('[Install] Show Android instructions');
+      KR.pwa.showAndroidInstructions();
+      KR.toast.info('Ikuti langkah install di Android', 4000);
+    } else {
+      // Desktop
+      KR.toast.info('Install hanya di HP. Buka di Chrome Android atau Safari iPhone.', 5000);
+      if (KR.pwa.showAndroidInstructions) {
+        KR.pwa.showAndroidInstructions();
+      }
+    }
+  } catch (e) {
+    console.error('[Install] Fallback error', e);
+    KR.toast.error('Gagal buka instruksi install');
   }
 }
 window.triggerAppInstall = triggerAppInstall;
