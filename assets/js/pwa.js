@@ -124,12 +124,15 @@ KR.pwa = (function () {
     });
 
     // Deteksi berhasil install
+
     window.addEventListener('appinstalled', () => {
       installed = true;
       console.log('[PWA] App installed');
       markDismissed();
       hideBanner();
       if (KR.toast) KR.toast.success('KasirKu berhasil di-install! 🎉');
+      // Update status di Pengaturan
+      if (typeof updateInstallStatus === 'function') updateInstallStatus();
     });
 
     // iOS: prompt manual karena Safari gak support beforeinstallprompt
