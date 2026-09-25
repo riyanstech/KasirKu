@@ -965,6 +965,22 @@
   function init(sellerId, sb) {
     state.sellerId = sellerId;
     state.sb = sb;
+
+    // Show/hide tombol gift di header berdasarkan session
+    const updateHeaderBtn = () => {
+      const btn = document.getElementById('tasks-header-btn');
+      if (!btn) return;
+      const session = window.KRCustomer?.getSession?.();
+      if (session) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    };
+    updateHeaderBtn();
+    // Delay 500ms jaga-jaga kalau customer-auth init belakangan
+    setTimeout(updateHeaderBtn, 500);
+
     window.CustomerTasks = {
       openTasksSheet: openTasksSheet,
       switchTab: switchTab,
@@ -977,10 +993,10 @@
       removeSocialProof: removeSocialProof,
       submitSocial: submitSocial,
       deleteSocial: deleteSocial,
-      openWithdrawalModal: openWithdrawalModal,      // ← TAMBAH
-      closeWithdrawalModal: closeWithdrawalModal,    // ← TAMBAH
-      submitWithdrawal: submitWithdrawal,            // ← TAMBAH
-      _updateWdHint: updateWdHint,                   // ← TAMBAH
+      openWithdrawalModal: openWithdrawalModal,
+      closeWithdrawalModal: closeWithdrawalModal,
+      submitWithdrawal: submitWithdrawal,
+      _updateWdHint: updateWdHint,
       refresh: () => { loadSummary(); loadTasks(); },
     };
   }
