@@ -1,14 +1,13 @@
 /* ==========================================
    KasirKu — Auth Module (Supabase)
    Login pakai Email + Password
-   Redirect-based (login.html ↔ index.html)
+   Redirect-based (index.html ↔ dashboard.html)
    ========================================== */
 window.KR = window.KR || {};
 
 KR.auth = (function () {
   'use strict';
 
-  /* ---------- USER CACHE ---------- */
   function getUserCache() { return KR.store.get('authCache', null); }
   function setUserCache(data) { KR.store.set('authCache', data); }
   function clearUserCache() { KR.store.remove('authCache'); }
@@ -20,42 +19,26 @@ KR.auth = (function () {
   function isGitHubUser() { return isLoggedIn(); }
   function getUser() { return getUserCache(); }
 
-  /* ---------- UI (no-op, karena login screen sudah dipisah) ---------- */
   function showLoginScreen() {
-    // Kalau tidak login → redirect
-    if (location.pathname.indexOf('login.html') === -1) {
-      location.href = '/login.html';
+    if (location.pathname.indexOf('dashboard.html') !== -1) {
+      location.href = '/';
     }
   }
-  function hideLoginScreen() {
-    // No-op
-  }
+  function hideLoginScreen() {}
+  function switchAuthTab() {}
+  function setStatus() {}
 
-  function switchAuthTab(tab) {
-    // No-op di halaman index
-  }
-
-  function setStatus(which, type, msg) {
-    // No-op
-  }
-
-  /* ---------- MAPPERS (DB → local) ---------- */
   function mapProductFromDb(p) {
     return {
-      id: p.id,
-      name: p.name,
-      sku: p.sku || '',
-      cost: Number(p.cost) || 0,
-      price: Number(p.price) || 0,
-      stock: Number(p.stock) || 0,
-      category: p.category || '',
+      id: p.id, name: p.name, sku: p.sku || '',
+      cost: Number(p.cost) || 0, price: Number(p.price) || 0,
+      stock: Number(p.stock) || 0, category: p.category || '',
       image: p.image_url || '',
     };
   }
   function mapTrxFromDb(t) {
     return {
-      id: t.trx_code || t.id,
-      dbId: t.id,
+      id: t.trx_code || t.id, dbId: t.id,
       at: new Date(t.created_at).getTime(),
       items: t.items || [],
       subtotal: Number(t.subtotal) || 0,
@@ -85,43 +68,28 @@ KR.auth = (function () {
     }
   }
 
-  /* ---------- REGISTER (kalau dipanggil dari index) ---------- */
-  async function submitRegister() {
-    // Karena login.html yang handle register, fungsi ini redirect saja
-    location.href = '/login.html';
-  }
+  async function submitRegister() { location.href = '/'; }
+  async function submitLogin() { location.href = '/'; }
 
-  /* ---------- LOGIN (kalau dipanggil dari index) ---------- */
-  async function submitLogin() {
-    location.href = '/login.html';
-  }
-
-  /* ---------- LOGOUT ---------- */
   function logout() {
     const a = getUser();
-
     if (typeof confirmDialog === 'function') {
-      confirmDialog(
-        'Logout?',
-        'Anda akan keluar dari akun "' + (a && a.email ? a.email : 'ini') + '".',
-        async () => {
-          try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
-          clearUserCache();
-          try { KR.toast.success('Logout berhasil'); } catch (e) {}
-          setTimeout(function () { location.href = '/login.html'; }, 400);
-        }
-      );
+      confirmDialog('Logout?', 'Anda akan keluar dari akun "' + (a && a.email ? a.email : 'ini') + '".', async () => {
+        try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
+        clearUserCache();
+        try { KR.toast.success('Logout berhasil'); } catch (e) {}
+        setTimeout(function () { location.href = '/'; }, 400);
+      });
     } else {
       if (!confirm('Logout dari akun ini?')) return;
       (async () => {
         try { await KR.sb.signOut(); } catch (e) { console.warn(e); }
         clearUserCache();
-        location.href = '/login.html';
+        location.href = '/';
       })();
     }
   }
 
-  /* ---------- BADGE ---------- */
   function updateBadge() {
     const a = getUser();
     const btn = document.getElementById('user-badge-btn');
@@ -136,16 +104,14 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- ACCOUNT CARD ---------- */
   function renderAccountCard() {
     const el = document.getElementById('account-info');
     if (!el) return;
     const a = getUser();
-
     if (!a || !a.loggedIn) {
       el.innerHTML =
         '<p class="settings-desc">Belum login.</p>' +
-        '<button class="btn btn-primary" onclick="location.href=\'/login.html\'">' +
+        '<button class="btn btn-primary" onclick="location.href=\'/\'">' +
         '<i data-lucide="log-in"></i> Login</button>';
     } else {
       const initial = (a.username || a.email || '?')[0].toUpperCase();
@@ -173,7 +139,6 @@ KR.auth = (function () {
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- RELOAD FROM CLOUD ---------- */
   async function reloadFromCloud() {
     if (typeof showLoading === 'function') showLoading('Mengambil data...');
     try {
@@ -188,7 +153,6 @@ KR.auth = (function () {
     }
   }
 
-  /* ---------- REFRESH ALL ---------- */
   function refreshAllViews() {
     if (typeof renderPosGrid === 'function') renderPosGrid();
     if (typeof renderCart === 'function') renderCart();
@@ -201,35 +165,30 @@ KR.auth = (function () {
   /* ---------- INIT ---------- */
   function init() {
     const cached = getUserCache();
-
     console.log('[Auth Init] Cache:', cached);
-    console.log('[Auth Init] isLoggedIn:', !!(cached && cached.loggedIn));
 
-    // STEP 1: Cek cache
+    // Belum login → redirect ke landing page (root)
     if (!cached || !cached.loggedIn) {
-      console.log('[Auth Init] → Redirect to /login.html');
-      location.href = '/login.html';
+      console.log('[Auth Init] → Redirect to / (landing)');
+      location.href = '/';
       return;
     }
 
-    // STEP 2: User sudah login → tampilkan dashboard
+    // Sudah login → tampilkan dashboard
     console.log('[Auth Init] → Show dashboard');
     updateBadge();
     refreshAllViews();
 
-    // STEP 3: Validasi session di background (jangan block UI)
+    // Validasi session di background
     KR.sb.getSession()
       .then(function (session) {
         if (!session || !session.user) {
-          console.warn('[Auth Init] Session expired, redirect to login');
+          console.warn('[Auth Init] Session expired, redirect to /');
           clearUserCache();
-          location.href = '/login.html';
+          location.href = '/';
           return;
         }
-
-        console.log('[Auth Init] Session valid, user:', session.user.email);
-
-        // Update cache dengan data terbaru
+        console.log('[Auth Init] Session valid:', session.user.email);
         const user = session.user;
         setUserCache({
           loggedIn: true,
@@ -241,20 +200,17 @@ KR.auth = (function () {
         });
         updateBadge();
 
-        // Pull data cloud di background
         pullDataFromCloud()
           .then(refreshAllViews)
           .catch(function (e) { console.warn('[Auth] Pull failed', e); });
       })
       .catch(function (e) {
-        // Network error → tetap pakai cache (JANGAN redirect)
-        console.warn('[Auth Init] Session check failed (network?), using cache', e);
+        console.warn('[Auth Init] Session check failed', e);
       });
   }
 
-  /* ---------- EXPOSE ---------- */
   return {
-    init,
+    init: init,
     isLoggedIn: isLoggedIn,
     isGitHubUser: isGitHubUser,
     getUser: getUser,
