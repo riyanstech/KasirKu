@@ -3129,4 +3129,36 @@ body {
   .customer-stats { font-size: .72rem; gap: 12px; }
   .customer-timeline { font-size: .62rem; }
 }
+
+/* Tugas main tabs */
+.task-main-tab {
+  color: #64748b;
+  background: transparent;
+  box-shadow: none;
+}
+.task-main-tab.active {
+  background: #fff;
+  color: var(--primary-dark);
+  box-shadow: 0 2px 6px -2px rgba(15,23,42,.1);
+}
+
+/* Badge di navbar */
+.nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(239,68,68,.5);
+  pointer-events: none;
+}
+.nav-badge.hidden { display: none !important; }
 /* ==================== END OF FILE ==================== */
