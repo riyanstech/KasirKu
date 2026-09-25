@@ -267,7 +267,7 @@ window.KR = window.KR || {};
     } catch (e) { console.error(e); KR.toast.error('Gagal memuat akun sosmed'); }
   }
 
-  function renderSocials() {
+    function renderSocials() {
     const el = $('tasks-list');
     const countEl = $('tasks-count-label');
     if (!el) return;
@@ -288,7 +288,7 @@ window.KR = window.KR || {};
       return;
     }
 
-    el.innerHTML = tabs + '<div class="space-y-2">' + socials.map(s => {
+    el.innerHTML = tabs + '<div class="space-y-3">' + socials.map(s => {
       const plat = PLATFORMS[s.platform] || { name: s.platform, icon: 'globe', color: '#64748b' };
       const statusBadge = {
         pending:  '<span class="customer-badge" style="background:#fef3c7;color:#92400e;">Pending</span>',
@@ -296,58 +296,36 @@ window.KR = window.KR || {};
         rejected: '<span class="customer-badge" style="background:#fee2e2;color:#991b1b;">Rejected</span>',
       }[s.status] || '';
 
+      const proofThumb = s.proof_url
+        ? '<img src="' + esc(s.proof_url) + '" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')" ' +
+          'style="width:100%;max-width:280px;height:200px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;margin-top:8px;cursor:pointer;background:#fff;">'
+        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">⚠ Bukti tidak ada</div>';
+
       const actions = s.status === 'pending'
         ? '<button class="btn btn-primary btn-sm" onclick="verifySocial(\'' + s.id + '\', true)"><i data-lucide="check"></i> Setujui</button>' +
           '<button class="btn btn-danger btn-sm" onclick="verifySocial(\'' + s.id + '\', false)"><i data-lucide="x"></i> Tolak</button>'
-        : '<button class="btn btn-secondary btn-sm" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')"><i data-lucide="image"></i> Bukti</button>';
+        : '<button class="btn btn-secondary btn-sm" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')"><i data-lucide="image"></i> Lihat Besar</button>';
 
-      return '<div class="customer-card">' +
-        '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="' + plat.icon + '" class="w-5 h-5"></i>' +
+      return '<div class="customer-card" style="flex-direction:column;align-items:stretch;">' +
+        '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+          '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+            '<i data-lucide="' + plat.icon + '" class="w-5 h-5"></i>' +
+          '</div>' +
+          '<div class="customer-body" style="flex:1;min-width:0;">' +
+            '<div class="customer-name">' + esc(s.username) + ' ' + statusBadge + '</div>' +
+            '<div class="customer-username">' + plat.name + ' • Customer: ' + esc(s.customer_name || '-') + '</div>' +
+            '<div class="customer-stats"><div>' + esc(s.customer_phone || 'No HP tidak ada') + '</div></div>' +
+          '</div>' +
+          '<div class="customer-actions">' + actions + '</div>' +
         '</div>' +
-        '<div class="customer-body">' +
-          '<div class="customer-name">' + esc(s.username) + ' ' + statusBadge + '</div>' +
-          '<div class="customer-username">' + plat.name + ' • Customer: ' + esc(s.customer_name || '-') + '</div>' +
-          '<div class="customer-stats"><div>' + esc(s.customer_phone || 'No HP tidak ada') + '</div></div>' +
+        '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;">' +
+          '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px;">📸 Bukti Screenshot Profil</div>' +
+          proofThumb +
         '</div>' +
-        '<div class="customer-actions">' + actions + '</div>' +
       '</div>';
     }).join('') + '</div>';
     if (window.lucide) lucide.createIcons();
   }
-
-  window.setSocialFilter = (f) => { socialFilter = f; loadSocials(); };
-
-  window.viewSocialProof = function (url) {
-    const w = window.open('', '_blank');
-    w.document.write('<html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + url + '" style="max-width:100%;max-height:100vh;"></body></html>');
-  };
-
-  window.verifySocial = function (id, approve) {
-    const doVerify = async (reason) => {
-      showLoading('Memverifikasi...');
-      try {
-        const uid = await getUid();
-        await rpc('seller_social_verify', {
-          p_social_id: id,
-          p_seller_id: uid,
-          p_approve: approve,
-          p_reason: reason || null,
-        });
-        KR.toast.success(approve ? 'Akun diverifikasi' : 'Akun ditolak');
-        await loadSocials();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
-    };
-
-    if (approve) {
-      confirmDialog('Setujui Akun?', 'Akun ini akan ditandai sebagai verified.', () => doVerify());
-    } else {
-      const reason = prompt('Alasan penolakan (wajib):');
-      if (!reason || !reason.trim()) return;
-      doVerify(reason.trim());
-    }
-  };
 
   /* ---------- SUBMISSIONS ---------- */
   async function loadSubmissions() {
@@ -381,59 +359,43 @@ window.KR = window.KR || {};
       return;
     }
 
-    el.innerHTML = tabs + '<div class="space-y-2">' + submissions.map(s => {
+    el.innerHTML = tabs + '<div class="space-y-3">' + submissions.map(s => {
       const plat = PLATFORMS[s.platform] || { name: s.platform, icon: 'globe', color: '#64748b' };
+
+      const proofThumb = s.proof_url
+        ? '<img src="' + esc(s.proof_url) + '" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')" ' +
+          'style="width:100%;max-width:320px;height:220px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;margin-top:8px;cursor:pointer;background:#fff;">'
+        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">⚠ Bukti tidak ada</div>';
+
       const actions = s.status === 'pending'
         ? '<button class="btn btn-primary btn-sm" onclick="verifySubmission(\'' + s.id + '\', true)"><i data-lucide="check"></i> Approve +' + fmt(s.reward_amount) + '</button>' +
           '<button class="btn btn-danger btn-sm" onclick="verifySubmission(\'' + s.id + '\', false)"><i data-lucide="x"></i> Tolak</button>'
-        : '<button class="btn btn-secondary btn-sm" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')"><i data-lucide="image"></i> Bukti</button>';
+        : '<button class="btn btn-secondary btn-sm" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')"><i data-lucide="image"></i> Lihat Besar</button>';
 
-      return '<div class="customer-card">' +
-        '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="' + plat.icon + '" class="w-5 h-5"></i>' +
-        '</div>' +
-        '<div class="customer-body">' +
-          '<div class="customer-name">' + esc(s.task_title) + '</div>' +
-          '<div class="customer-username">Target: ' + esc(s.target_username) + '</div>' +
-          '<div class="customer-stats">' +
-            '<div><strong>' + esc(s.customer_name || '-') + '</strong></div>' +
-            '<div>' + fmt(s.reward_amount) + '</div>' +
+      return '<div class="customer-card" style="flex-direction:column;align-items:stretch;">' +
+        '<div style="display:flex;align-items:flex-start;gap:12px;">' +
+          '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+            '<i data-lucide="' + plat.icon + '" class="w-5 h-5"></i>' +
           '</div>' +
-          (s.notes ? '<div style="font-size:.75rem;color:var(--text-3);margin-top:4px;">📝 ' + esc(s.notes) + '</div>' : '') +
+          '<div class="customer-body" style="flex:1;min-width:0;">' +
+            '<div class="customer-name">' + esc(s.task_title) + '</div>' +
+            '<div class="customer-username">Target: ' + esc(s.target_username) + '</div>' +
+            '<div class="customer-stats">' +
+              '<div><strong>' + esc(s.customer_name || '-') + '</strong></div>' +
+              '<div>' + fmt(s.reward_amount) + '</div>' +
+            '</div>' +
+            (s.notes ? '<div style="font-size:.75rem;color:#64748b;margin-top:4px;">📝 ' + esc(s.notes) + '</div>' : '') +
+          '</div>' +
+          '<div class="customer-actions">' + actions + '</div>' +
         '</div>' +
-        '<div class="customer-actions">' + actions + '</div>' +
+        '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;">' +
+          '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px;">📸 Bukti Screenshot Follow</div>' +
+          proofThumb +
+        '</div>' +
       '</div>';
     }).join('') + '</div>';
     if (window.lucide) lucide.createIcons();
   }
-
-  window.setSubmissionFilter = (f) => { submissionFilter = f; loadSubmissions(); };
-
-  window.verifySubmission = function (id, approve) {
-    const doVerify = async (reason) => {
-      showLoading('Memverifikasi...');
-      try {
-        const uid = await getUid();
-        await rpc('seller_submission_verify', {
-          p_submission_id: id,
-          p_seller_id: uid,
-          p_approve: approve,
-          p_reason: reason || null,
-        });
-        KR.toast.success(approve ? 'Disetujui — saldo customer bertambah' : 'Bukti ditolak');
-        await loadSubmissions();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
-    };
-
-    if (approve) {
-      confirmDialog('Setujui Bukti?', 'Saldo customer akan bertambah otomatis.', () => doVerify());
-    } else {
-      const reason = prompt('Alasan penolakan (wajib):');
-      if (!reason || !reason.trim()) return;
-      doVerify(reason.trim());
-    }
-  };
 
   /* ---------- WITHDRAWALS ---------- */
   async function loadWithdrawals() {
