@@ -1399,3 +1399,67 @@ function onPfOnlineChange() {
   detail.classList.toggle('hidden', !el.checked);
 }
 window.onPfOnlineChange = onPfOnlineChange;
+
+/* ==================== APP INSTALL ==================== */
+function updateInstallStatus() {
+  const statusEl = document.getElementById('install-app-status');
+  const statusText = document.getElementById('install-app-status-text');
+  const btn = document.getElementById('install-app-btn');
+  if (!statusEl || !btn) return;
+
+  // Sudah di-standalone mode? (sudah install)
+  if (KR.pwa && KR.pwa.isStandalone && KR.pwa.isStandalone()) {
+    statusEl.className = 'gh-status ok';
+    statusEl.innerHTML = '<i data-lucide="check-circle"></i><span>Aplikasi sudah terinstall di perangkat ini ✅</span>';
+    btn.style.display = 'none';
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  // Deteksi iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  if (isIOS) {
+    statusEl.className = 'gh-status warn';
+    statusEl.innerHTML = '<i data-lucide="alert-triangle"></i><span>iPhone/iPad: tap tombol, ikuti instruksi manual</span>';
+  } else if (isAndroid) {
+    statusEl.className = 'gh-status ok';
+    statusEl.innerHTML = '<i data-lucide="check-circle"></i><span>Siap install — tap tombol di bawah</span>';
+  } else {
+    statusEl.className = 'gh-status warn';
+    statusEl.innerHTML = '<i data-lucide="alert-triangle"></i><span>Buka di Chrome (Android) atau Safari (iPhone)</span>';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function triggerAppInstall() {
+  if (!KR.pwa) {
+    KR.toast.error('PWA module tidak tersedia');
+    return;
+  }
+
+  if (KR.pwa.isStandalone && KR.pwa.isStandalone()) {
+    KR.toast.info('Aplikasi sudah terinstall');
+    return;
+  }
+
+  // Panggil handler PWA (sudah handle iOS/Android/deferred)
+  KR.pwa.triggerInstall();
+
+  // Refresh status setelah 1 detik
+  setTimeout(updateInstallStatus, 1000);
+}
+window.triggerAppInstall = triggerAppInstall;
+window.updateInstallStatus = updateInstallStatus;
+
+// Update status saat init
+window.addEventListener('kasirku:ready', () => {
+  setTimeout(updateInstallStatus, 1200);
+});
+
+// Listen ke event beforeinstallprompt (kalau browser support)
+window.addEventListener('beforeinstallprompt', () => {
+  setTimeout(updateInstallStatus, 500);
+});
