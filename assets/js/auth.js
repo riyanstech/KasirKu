@@ -331,12 +331,16 @@ KR.auth = (function () {
         hideLoginScreen();
         updateBadge();
 
-        try {
-          await pullDataFromCloud();
-        } catch (e) {
-          console.warn('[Init] Pull data failed', e);
-        }
+        // ✅ FIX: Tampilkan UI dulu pakai cache (instant)
         refreshAllViews();
+
+        // ✅ Pull data di background (tidak block UI)
+        pullDataFromCloud()
+          .then(() => {
+            refreshAllViews();
+            console.log('[Auth] Cloud data loaded in background');
+          })
+          .catch(e => console.warn('[Auth] Pull background failed', e));
       } else {
         clearUserCache();
         showLoginScreen();
@@ -346,7 +350,7 @@ KR.auth = (function () {
       showLoginScreen();
     }
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts login (tetap sama)
     document.getElementById('login-email')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('login-password')?.focus();
     });
