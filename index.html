@@ -465,68 +465,6 @@
         <span class="cart-fab-total" id="cart-fab-total"></span>
     </button>
 
-    <!-- ==================== LOGIN SCREEN ==================== -->
-    <div id="login-screen" class="login-screen">
-        <div class="login-card">
-            <div class="login-logo">
-                <div class="logo-box-lg"><i data-lucide="shopping-cart"></i></div>
-            </div>
-            <h1 class="login-title">KasirKu</h1>
-            <p class="login-sub">POINT OF SALE</p>
-
-            <div class="login-tabs">
-                <button class="login-tab active" data-authtab="login" onclick="KR.auth.switchAuthTab('login')">
-                    Masuk
-                </button>
-                <button class="login-tab" data-authtab="register" onclick="KR.auth.switchAuthTab('register')">
-                    Buat Akun
-                </button>
-            </div>
-
-            <div id="auth-panel-login" class="auth-panel active">
-                <div class="field">
-                    <label>Email</label>
-                    <input id="login-email" type="email" class="input" placeholder="nama@email.com" autocomplete="email">
-                </div>
-                <div class="field">
-                    <label>Password</label>
-                    <input id="login-password" type="password" class="input" placeholder="••••••" autocomplete="current-password">
-                </div>
-                <div id="login-status" class="gh-status warn">
-                    <i data-lucide="alert-triangle"></i><span>Siap masuk</span>
-                </div>
-                <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;" onclick="KR.auth.submitLogin()">
-                    <i data-lucide="log-in"></i> Masuk
-                </button>
-            </div>
-
-            <div id="auth-panel-register" class="auth-panel">
-                <div class="field">
-                    <label>Email</label>
-                    <input id="reg-email" type="email" class="input" placeholder="nama@email.com" autocomplete="off">
-                </div>
-                <div class="field">
-                    <label>Password</label>
-                    <input id="reg-password" type="password" class="input" placeholder="minimal 6 karakter">
-                </div>
-                <div class="field">
-                    <label>Konfirmasi Password</label>
-                    <input id="reg-password2" type="password" class="input" placeholder="ulangi password">
-                </div>
-                <div id="register-status" class="gh-status warn">
-                    <i data-lucide="alert-triangle"></i><span>Isi data di atas</span>
-                </div>
-                <button class="btn btn-primary btn-lg" style="width:100%;margin-top:4px;" onclick="KR.auth.submitRegister()">
-                    <i data-lucide="user-plus"></i> Buat Akun
-                </button>
-            </div>
-
-            <p class="login-hint" style="margin-top:16px;">
-                Akun baru otomatis mendapat toko default <strong>Warung Saya</strong>.
-            </p>
-        </div>
-    </div>
-
     <!-- ==================== MODAL PRODUCT ==================== -->
     <div id="modal-product" class="modal">
         <div class="modal-backdrop" onclick="closeModal('modal-product')"></div>
