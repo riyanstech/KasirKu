@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0ea5e9">
-<title>KasirKu — Aplikasi Kasir UMKM Indonesia</title>
-<meta name="description" content="Aplikasi kasir all-in-one untuk UMKM Indonesia. Transaksi cepat, kelola stok otomatis, laporan real-time.">
+<meta name="theme-color" content="#10b981">
+<title>KasirKu — Bikin Warung Lebih Modern</title>
+<meta name="description" content="Aplikasi kasir untuk warung & UMKM Indonesia. Catat penjualan otomatis, kelola stok, terima pesanan online — semua dari satu HP.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@ tailwind.config = {
     extend: {
       fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
       colors: {
-        brand: { 50:'#f0f9ff', 100:'#e0f2fe', 400:'#38bdf8', 500:'#0ea5e9', 600:'#0284c7', 700:'#0369a1' }
+        emerald: { 50:'#ecfdf5', 100:'#d1fae5', 400:'#34d399', 500:'#10b981', 600:'#059669', 700:'#047857', 900:'#064e3b' },
       }
     }
   }
@@ -27,203 +27,219 @@ tailwind.config = {
 <style>
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body { -webkit-font-smoothing: antialiased; }
-  .glass { background: rgba(255,255,255,.08); backdrop-filter: blur(20px); }
 
-  /* ============ ANIMASI SCROLL ============ */
-  .reveal { opacity: 0; transition: all .9s cubic-bezier(.16,1,.3,1); }
+  /* ============ REVEAL ANIMATIONS ============ */
+  .reveal { opacity: 0; transition: all 1s cubic-bezier(.16,1,.3,1); will-change: transform, opacity; }
   .reveal.revealed { opacity: 1; transform: none !important; }
+  .rv-up { transform: translateY(60px); }
+  .rv-left { transform: translateX(-80px); }
+  .rv-right { transform: translateX(80px); }
+  .rv-zoom { transform: scale(.88); }
+  .rv-rotate { transform: rotate(-6deg) scale(.9); }
 
-  .reveal-up    { transform: translateY(60px); }
-  .reveal-left  { transform: translateX(-80px); }
-  .reveal-right { transform: translateX(80px); }
-  .reveal-zoom  { transform: scale(.85); }
+  .d-1 { transition-delay: .1s; }
+  .d-2 { transition-delay: .2s; }
+  .d-3 { transition-delay: .3s; }
+  .d-4 { transition-delay: .4s; }
+  .d-5 { transition-delay: .5s; }
+  .d-6 { transition-delay: .6s; }
+  .d-7 { transition-delay: .7s; }
 
-  /* Delay classes */
-  .d-100 { transition-delay: .1s; }
-  .d-200 { transition-delay: .2s; }
-  .d-300 { transition-delay: .3s; }
-  .d-400 { transition-delay: .4s; }
-  .d-500 { transition-delay: .5s; }
-  .d-600 { transition-delay: .6s; }
+  /* ============ MARQUEE ============ */
+  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  .marquee-track { animation: marquee 30s linear infinite; }
+  .marquee-track:hover { animation-play-state: paused; }
 
-  /* ============ FLOATING ANIMATION ============ */
-  @keyframes float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-20px) rotate(5deg); } }
-  .float { animation: float 5s ease-in-out infinite; }
-  .float-slow { animation: float 7s ease-in-out infinite; }
-  .float-reverse { animation: float 6s ease-in-out infinite reverse; }
+  /* ============ FLOAT ============ */
+  @keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+  .float { animation: floatY 6s ease-in-out infinite; }
+  .float-d1 { animation: floatY 6s ease-in-out infinite 0.5s; }
+  .float-d2 { animation: floatY 7s ease-in-out infinite 1s; }
 
-  /* ============ FADE-IN PAGE LOAD ============ */
-  @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
-  .anim-load { animation: fadeInUp .8s cubic-bezier(.16,1,.3,1) both; }
+  /* ============ GRADIENT TEXT ============ */
+  .grad-text { background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
-  /* ============ GRADIENT SHIMMER ============ */
-  @keyframes shine { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-  .shine { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 50%, #0ea5e9 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
+  /* ============ GLOW ============ */
+  .glow-emerald { box-shadow: 0 0 60px -10px rgba(16,185,129,.6); }
 
-  /* ============ PULSE RING ============ */
-  @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,.5); } 70% { box-shadow: 0 0 0 20px rgba(14,165,233,0); } 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0); } }
-  .pulse-ring { animation: pulseRing 2s infinite; }
+  /* ============ NOISE TEXTURE ============ */
+  .noise::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: .04; pointer-events: none; z-index: 0;
+  }
 
-  /* Blob background */
-  .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; }
+  /* ============ BENTO CARDS ============ */
+  .bento-card { transition: all .4s cubic-bezier(.16,1,.3,1); }
+  .bento-card:hover { transform: translateY(-6px); }
+
+  /* ============ TILT PHONE ============ */
+  .phone-tilt { transform: perspective(1200px) rotateY(-8deg) rotateX(4deg); transition: transform .6s cubic-bezier(.16,1,.3,1); }
+  .phone-tilt:hover { transform: perspective(1200px) rotateY(0) rotateX(0); }
+
+  /* ============ PULSE ============ */
+  @keyframes softPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+  .soft-pulse { animation: softPulse 3s ease-in-out infinite; }
+
+  /* ============ SCROLL INDICATOR ============ */
+  @keyframes scrollBounce { 0%,100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(10px); opacity: .5; } }
+  .scroll-hint { animation: scrollBounce 2s ease-in-out infinite; }
+
+  /* ============ STEP CONNECTOR ============ */
+  .step-line::before { content: ''; position: absolute; left: 50%; top: 100%; width: 2px; height: 60px; background: linear-gradient(180deg, #10b981 0%, transparent 100%); }
 </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased overflow-x-hidden">
+<body class="bg-emerald-50/30 text-slate-900 antialiased overflow-x-hidden">
 
 <!-- ============ NAVBAR ============ -->
-<header id="navbar" class="fixed top-0 left-0 right-0 z-40 transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
+<header id="navbar" class="fixed top-0 left-0 right-0 z-40 transition-all duration-500">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center gap-4">
     <a href="/" class="flex items-center gap-2.5 flex-shrink-0">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 grid place-items-center text-white shadow-lg shadow-sky-500/30">
-        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white shadow-lg shadow-emerald-500/40 rotate-3 hover:rotate-0 transition-transform duration-500">
+        <i data-lucide="shopping-bag" class="w-4 h-4 sm:w-5 sm:h-5"></i>
       </div>
       <div>
-        <div class="font-black text-base leading-none text-white transition-colors" id="nav-brand">KasirKu</div>
-        <div class="text-[9px] font-bold uppercase tracking-widest text-white/70 transition-colors" id="nav-sub">Point of Sale</div>
+        <div class="font-black text-base sm:text-lg leading-none tracking-tight" id="nav-brand">KasirKu</div>
+        <div class="text-[9px] font-extrabold uppercase tracking-[.2em] text-emerald-600 mt-0.5">Modern POS</div>
       </div>
     </a>
 
-    <nav class="hidden md:flex items-center gap-6 ml-8 text-sm font-bold">
-      <a href="#fitur" class="text-white/90 hover:text-white transition nav-link">Fitur</a>
-      <a href="#testimoni" class="text-white/90 hover:text-white transition nav-link">Testimoni</a>
-      <a href="#faq" class="text-white/90 hover:text-white transition nav-link">FAQ</a>
-      <a href="#download" class="text-white/90 hover:text-white transition nav-link">Download</a>
+    <nav class="hidden md:flex items-center gap-1 ml-10 text-sm font-bold">
+      <a href="#fitur" class="px-3.5 py-2 rounded-full hover:bg-emerald-100/60 text-slate-600 hover:text-emerald-700 transition nav-link">Fitur</a>
+      <a href="#cara-kerja" class="px-3.5 py-2 rounded-full hover:bg-emerald-100/60 text-slate-600 hover:text-emerald-700 transition nav-link">Cara Kerja</a>
+      <a href="#testimoni" class="px-3.5 py-2 rounded-full hover:bg-emerald-100/60 text-slate-600 hover:text-emerald-700 transition nav-link">Cerita</a>
+      <a href="#faq" class="px-3.5 py-2 rounded-full hover:bg-emerald-100/60 text-slate-600 hover:text-emerald-700 transition nav-link">FAQ</a>
     </nav>
 
     <div class="ml-auto flex items-center gap-2">
-      <button onclick="openAuth('login')" class="px-4 py-2 rounded-xl text-sm font-bold text-white hover:bg-white/10 transition">
-        Sign In
+      <button onclick="openAuth('login')" class="px-4 py-2 rounded-full text-sm font-bold text-slate-700 hover:bg-emerald-100/70 transition">
+        Masuk
       </button>
-      <button onclick="openAuth('register')" class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-sky-600 hover:bg-white/90 transition shadow-lg shadow-white/20">
-        Sign Up
+      <button onclick="openAuth('register')" class="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-sm font-black bg-gradient-to-br from-emerald-500 to-emerald-700 text-white hover:shadow-xl hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all">
+        Coba Gratis
       </button>
     </div>
   </div>
 </header>
 
 <!-- ============ HERO ============ -->
-<section class="relative min-h-screen bg-gradient-to-br from-sky-400 via-sky-500 to-blue-700 overflow-hidden pt-16">
-  <!-- Blobs -->
-  <div class="blob bg-purple-400 w-72 h-72 top-20 -left-20 float-slow"></div>
-  <div class="blob bg-amber-300 w-64 h-64 bottom-10 right-10 float"></div>
-  <div class="blob bg-cyan-300 w-80 h-80 top-40 right-1/4 float-reverse"></div>
+<section class="relative min-h-[100svh] pt-24 sm:pt-32 pb-16 overflow-hidden">
+  <!-- BG decoration -->
+  <div class="absolute inset-0 -z-10">
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-300/30 rounded-full blur-[120px]"></div>
+    <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-amber-200/40 rounded-full blur-[100px]"></div>
+    <!-- Grid pattern -->
+    <svg class="absolute inset-0 w-full h-full opacity-[.03]" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)"/>
+    </svg>
+  </div>
 
-  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 lg:py-20 grid lg:grid-cols-2 gap-12 items-center">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
 
-    <!-- LEFT -->
-    <div class="text-white">
-      <div class="anim-load inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur text-xs font-bold mb-6 ring-1 ring-white/20">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-        <span>Dipercaya 50.000+ UMKM Indonesia</span>
-      </div>
-
-      <h1 class="anim-load d-100 text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] mb-5">
-        Kelola Bisnis<br>Jadi Lebih Mudah
-        <span class="relative inline-block mt-2">
-          <span class="shine">dengan Kasirku</span>
-          <svg class="absolute -bottom-2 left-0 w-full" height="14" viewBox="0 0 400 14" fill="none" preserveAspectRatio="none">
-            <path d="M2 11C80 2 250 2 398 8" stroke="#fbbf24" stroke-width="5" stroke-linecap="round"/>
-          </svg>
+    <!-- Tag -->
+    <div class="reveal rv-up flex justify-center mb-8">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-emerald-200 shadow-sm">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
-      </h1>
-
-      <p class="anim-load d-200 text-white/85 text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
-        Aplikasi kasir all-in-one untuk UMKM. Transaksi cepat, kelola stok otomatis, laporan real-time. Coba Gratis Sekarang!
-      </p>
-
-      <div class="anim-load d-300 flex flex-wrap gap-3 mb-10">
-        <button onclick="openAuth('register')" class="group inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-sky-600 font-extrabold shadow-2xl shadow-black/20 hover:scale-105 hover:shadow-black/30 transition-all">
-          <i data-lucide="rocket" class="w-5 h-5 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform"></i>
-          Mulai Gratis
-        </button>
-        <button onclick="openAuth('login')" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/15 backdrop-blur font-extrabold ring-1 ring-white/30 hover:bg-white/25 transition">
-          <i data-lucide="log-in" class="w-5 h-5"></i>
-          Masuk
-        </button>
-      </div>
-
-      <div class="anim-load d-400 grid grid-cols-3 gap-4 max-w-md">
-        <div class="reveal reveal-up">
-          <div class="text-2xl sm:text-3xl font-black" data-count="12500">0</div>
-          <div class="text-xs text-white/70 font-bold">Pengguna Aktif</div>
-        </div>
-        <div class="reveal reveal-up d-100">
-          <div class="text-2xl sm:text-3xl font-black">4.9<span class="text-amber-300">★</span></div>
-          <div class="text-xs text-white/70 font-bold">Rating</div>
-        </div>
-        <div class="reveal reveal-up d-200">
-          <div class="text-2xl sm:text-3xl font-black" data-count="250000">0</div>
-          <div class="text-xs text-white/70 font-bold">Transaksi/Hari</div>
-        </div>
+        <span class="text-xs font-bold text-slate-700">Dipakai 12.500+ warung di seluruh Indonesia</span>
       </div>
     </div>
 
-    <!-- RIGHT: Phone Mockup -->
-    <div class="anim-load d-300 relative flex justify-center lg:justify-end">
-      <!-- Decorative shapes -->
-      <div class="hidden lg:block absolute -top-6 -right-6 w-24 h-24 rounded-3xl bg-amber-400 rotate-12 float shadow-2xl shadow-amber-500/40"></div>
-      <div class="hidden lg:block absolute bottom-8 -left-4 w-16 h-16 rounded-2xl bg-purple-400 -rotate-12 float-slow shadow-2xl shadow-purple-500/40"></div>
-      <div class="hidden lg:block absolute top-1/3 -left-12 w-12 h-12 rounded-2xl bg-cyan-300 rotate-45 float shadow-xl"></div>
+    <!-- Headline -->
+    <h1 class="reveal rv-up d-1 text-center text-4xl sm:text-6xl lg:text-7xl font-black leading-[1.02] tracking-tight mb-6 max-w-4xl mx-auto">
+      Ubah warung biasa jadi<br>
+      <span class="grad-text">warung digital</span>
+      <svg class="inline-block ml-2 w-12 h-12 sm:w-16 sm:h-16 text-amber-400 -rotate-12 align-middle" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/>
+      </svg>
+    </h1>
 
-      <div class="relative w-64 sm:w-72 bg-slate-900 rounded-[2.8rem] p-3 shadow-[0_40px_80px_-20px_rgba(0,0,0,.6)] ring-4 ring-white/20 hover:scale-[1.02] transition-transform duration-500">
+    <!-- Subheadline -->
+    <p class="reveal rv-up d-2 text-center text-base sm:text-lg text-slate-600 leading-relaxed mb-10 max-w-2xl mx-auto">
+      Catat setiap penjualan, pantau stok, dan terima pesanan online — semua cukup dari <span class="font-bold text-slate-900">satu HP</span>. Tanpa perlu mesin kasir mahal.
+    </p>
+
+    <!-- CTA -->
+    <div class="reveal rv-up d-3 flex flex-col sm:flex-row justify-center gap-3 mb-14">
+      <button onclick="openAuth('register')" class="group relative inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-black shadow-xl shadow-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all">
+        <i data-lucide="sparkles" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i>
+        Mulai Gratis Sekarang
+        <span class="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-amber-400 text-emerald-900 text-[10px] font-black rotate-12">GRATIS</span>
+      </button>
+      <button onclick="openAuth('login')" class="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-white border-2 border-emerald-200 text-emerald-700 font-black hover:border-emerald-400 hover:bg-emerald-50 transition-all">
+        <i data-lucide="play-circle" class="w-5 h-5"></i>
+        Sudah Punya Akun
+      </button>
+    </div>
+
+    <!-- Phone mockup -->
+    <div class="reveal rv-zoom d-4 flex justify-center relative">
+      <!-- Decorative -->
+      <div class="hidden sm:block absolute -top-8 left-[15%] w-20 h-20 rounded-3xl bg-amber-300 rotate-12 float shadow-xl"></div>
+      <div class="hidden sm:block absolute top-1/3 right-[12%] w-14 h-14 rounded-2xl bg-emerald-400 -rotate-12 float-d1 shadow-xl"></div>
+      <div class="hidden sm:block absolute bottom-20 left-[10%] w-16 h-16 rounded-full bg-teal-400 float-d2 shadow-xl"></div>
+
+      <div class="phone-tilt relative w-64 sm:w-80 bg-slate-900 rounded-[3rem] p-3 shadow-[0_50px_100px_-20px_rgba(6,78,59,.5)] ring-8 ring-slate-900/5">
         <!-- Notch -->
-        <div class="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-900 rounded-b-2xl z-10"></div>
+        <div class="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-slate-900 rounded-b-3xl z-10"></div>
 
-        <div class="bg-white rounded-[2.2rem] overflow-hidden text-slate-900">
-          <div class="bg-gradient-to-br from-sky-500 to-blue-600 text-white px-5 py-5">
+        <div class="bg-emerald-50 rounded-[2.4rem] overflow-hidden">
+          <!-- Header -->
+          <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 text-white px-5 pt-8 pb-5">
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-white/20 grid place-items-center">
-                  <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                </div>
-                <span class="font-black text-sm">KasirKu</span>
+              <div>
+                <div class="text-[10px] text-emerald-100 font-bold uppercase tracking-wider">Warung Bu Sari</div>
+                <div class="text-lg font-black">Halo, Bu Sari! 👋</div>
               </div>
-              <i data-lucide="bell" class="w-4 h-4 opacity-70"></i>
+              <div class="w-9 h-9 rounded-full bg-white/20 grid place-items-center">
+                <i data-lucide="bell" class="w-4 h-4"></i>
+              </div>
             </div>
-            <div class="text-[10px] text-white/80">Selamat Datang! 👋</div>
           </div>
 
-          <div class="p-4 space-y-3">
-            <div class="rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white p-4 shadow-lg shadow-sky-500/30">
-              <div class="text-[10px] font-bold uppercase opacity-90 mb-1">Omzet Hari Ini</div>
-              <div class="text-2xl font-black">Rp 2.450.000</div>
-              <div class="text-[10px] mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 font-bold">
-                <i data-lucide="trending-up" class="w-2.5 h-2.5"></i> +12% vs kemarin
+          <!-- Body -->
+          <div class="px-4 py-4 space-y-3">
+            <div class="rounded-2xl bg-white p-4 shadow-sm border border-emerald-100">
+              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Penjualan Hari Ini</div>
+              <div class="text-2xl font-black text-emerald-600">Rp 847.500</div>
+              <div class="text-[10px] mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">
+                <i data-lucide="arrow-up-right" class="w-2.5 h-2.5"></i> 24 transaksi
               </div>
             </div>
 
-            <div class="grid grid-cols-4 gap-2">
-              <div class="p-2 rounded-xl bg-sky-50 text-center"><i data-lucide="store" class="w-4 h-4 mx-auto text-sky-600"></i></div>
-              <div class="p-2 rounded-xl bg-emerald-50 text-center"><i data-lucide="package" class="w-4 h-4 mx-auto text-emerald-600"></i></div>
-              <div class="p-2 rounded-xl bg-purple-50 text-center"><i data-lucide="bar-chart-3" class="w-4 h-4 mx-auto text-purple-600"></i></div>
-              <div class="p-2 rounded-xl bg-amber-50 text-center"><i data-lucide="users" class="w-4 h-4 mx-auto text-amber-600"></i></div>
-            </div>
-
-            <div class="pt-2 border-t border-slate-100">
-              <div class="flex items-center justify-between text-[10px] text-slate-500 font-bold mb-2">
-                <span>Transaksi Terakhir</span>
-                <span class="text-sky-600">Lihat Semua</span>
-              </div>
-              <div class="space-y-2">
-                <div class="flex items-center justify-between text-[11px]">
-                  <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-lg bg-emerald-100 grid place-items-center"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
-                    <div>
-                      <div class="font-bold">TRX-001</div>
-                      <div class="text-[9px] text-slate-400">2 menit lalu</div>
-                    </div>
-                  </div>
-                  <span class="font-mono font-black text-emerald-600">+Rp 45.000</span>
+            <!-- Products -->
+            <div class="space-y-2">
+              <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Produk Cepat</div>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="aspect-square rounded-xl bg-white border border-emerald-100 grid place-items-center">
+                  <i data-lucide="coffee" class="w-5 h-5 text-amber-600"></i>
                 </div>
-                <div class="flex items-center justify-between text-[11px]">
-                  <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-lg bg-emerald-100 grid place-items-center"><i data-lucide="check" class="w-3 h-3 text-emerald-600"></i></div>
-                    <div>
-                      <div class="font-bold">TRX-002</div>
-                      <div class="text-[9px] text-slate-400">15 menit lalu</div>
-                    </div>
-                  </div>
-                  <span class="font-mono font-black text-emerald-600">+Rp 128.000</span>
+                <div class="aspect-square rounded-xl bg-white border border-emerald-100 grid place-items-center">
+                  <i data-lucide="cookie" class="w-5 h-5 text-orange-500"></i>
+                </div>
+                <div class="aspect-square rounded-xl bg-white border border-emerald-100 grid place-items-center">
+                  <i data-lucide="cigarette" class="w-5 h-5 text-slate-700"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order online -->
+            <div class="rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 p-3 text-white">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-white/25 grid place-items-center">
+                  <i data-lucide="package" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="text-[10px] font-bold opacity-90">Pesanan Online Baru</div>
+                  <div class="text-xs font-black">3 pesanan menunggu</div>
                 </div>
               </div>
             </div>
@@ -231,128 +247,312 @@ tailwind.config = {
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Scroll indicator -->
-  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 animate-bounce">
-    <i data-lucide="chevron-down" class="w-6 h-6"></i>
-  </div>
-</section>
-
-<!-- ============ STATS BAR ============ -->
-<section class="bg-white py-12 border-b border-slate-100">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-    <div class="reveal reveal-up">
-      <div class="text-3xl sm:text-4xl font-black text-sky-600 mb-1" data-count="50000">0</div>
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">UMKM Terdaftar</div>
-    </div>
-    <div class="reveal reveal-up d-100">
-      <div class="text-3xl sm:text-4xl font-black text-sky-600 mb-1" data-count="1200000">0</div>
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Transaksi Diproses</div>
-    </div>
-    <div class="reveal reveal-up d-200">
-      <div class="text-3xl sm:text-4xl font-black text-sky-600 mb-1" data-count="500">0</div>
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kota di Indonesia</div>
-    </div>
-    <div class="reveal reveal-up d-300">
-      <div class="text-3xl sm:text-4xl font-black text-sky-600 mb-1">4.9<span class="text-amber-400">★</span></div>
-      <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Rating Pengguna</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ FITUR ============ -->
-<section id="fitur" class="py-20 sm:py-28 bg-gradient-to-b from-white to-slate-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-
-    <div class="text-center max-w-2xl mx-auto mb-14">
-      <div class="reveal reveal-up inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-[11px] font-extrabold uppercase tracking-wider mb-4">
-        <i data-lucide="zap" class="w-3 h-3"></i> Fitur Lengkap
+    <!-- Scroll hint -->
+    <div class="reveal rv-up d-6 flex justify-center mt-14">
+      <div class="scroll-hint w-8 h-12 rounded-full border-2 border-emerald-300 flex items-start justify-center p-2">
+        <div class="w-1 h-2 rounded-full bg-emerald-500"></div>
       </div>
-      <h2 class="reveal reveal-up d-100 text-3xl sm:text-4xl font-black text-slate-900 mb-3">
-        Semua yang Anda Butuhkan<br><span class="text-sky-600">dalam Satu Aplikasi</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOCIAL PROOF MARQUEE ============ -->
+<section class="py-10 border-y border-emerald-100 bg-white/60 overflow-hidden">
+  <div class="text-center mb-6">
+    <span class="text-xs font-bold text-slate-500 uppercase tracking-[.2em]">Dipercaya oleh warung, toko & kafe di seluruh Indonesia</span>
+  </div>
+  <div class="relative">
+    <div class="flex marquee-track">
+      <div class="flex items-center gap-12 px-6 flex-shrink-0">
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="store" class="w-5 h-5"></i> Warung Sederhana</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="coffee" class="w-5 h-5"></i> Kopi Kita</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="shopping-basket" class="w-5 h-5"></i> Toko Bu Yati</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="utensils" class="w-5 h-5"></i> Bakso Pak Budi</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="cup-soda" class="w-5 h-5"></i> Es Teh Manis</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="croissant" class="w-5 h-5"></i> Roti Bakar 88</div>
+      </div>
+      <div class="flex items-center gap-12 px-6 flex-shrink-0" aria-hidden="true">
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="store" class="w-5 h-5"></i> Warung Sederhana</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="coffee" class="w-5 h-5"></i> Kopi Kita</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="shopping-basket" class="w-5 h-5"></i> Toko Bu Yati</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="utensils" class="w-5 h-5"></i> Bakso Pak Budi</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="cup-soda" class="w-5 h-5"></i> Es Teh Manis</div>
+        <div class="flex items-center gap-2 text-slate-400 font-black text-lg whitespace-nowrap"><i data-lucide="croissant" class="w-5 h-5"></i> Roti Bakar 88</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROBLEM → SOLUTION ============ -->
+<section class="py-20 sm:py-28 bg-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+
+      <!-- Left: Problem -->
+      <div class="reveal rv-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-[11px] font-black uppercase tracking-wider mb-5">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Masalah Lama
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-black leading-tight mb-6 text-slate-900">
+          Capek catat manual<br>di buku tulis?
+        </h2>
+        <ul class="space-y-4">
+          <li class="flex gap-3 items-start">
+            <div class="w-6 h-6 rounded-full bg-red-100 grid place-items-center flex-shrink-0 mt-1">
+              <i data-lucide="x" class="w-3.5 h-3.5 text-red-600"></i>
+            </div>
+            <div>
+              <div class="font-bold text-slate-900">Sering salah hitung</div>
+              <div class="text-sm text-slate-500 mt-0.5">Uang kembalian keliru, stok tidak sinkron</div>
+            </div>
+          </li>
+          <li class="flex gap-3 items-start">
+            <div class="w-6 h-6 rounded-full bg-red-100 grid place-items-center flex-shrink-0 mt-1">
+              <i data-lucide="x" class="w-3.5 h-3.5 text-red-600"></i>
+            </div>
+            <div>
+              <div class="font-bold text-slate-900">Tidak tahu untung rugi</div>
+              <div class="text-sm text-slate-500 mt-0.5">Buku catatan tidak pernah direkap</div>
+            </div>
+          </li>
+          <li class="flex gap-3 items-start">
+            <div class="w-6 h-6 rounded-full bg-red-100 grid place-items-center flex-shrink-0 mt-1">
+              <i data-lucide="x" class="w-3.5 h-3.5 text-red-600"></i>
+            </div>
+            <div>
+              <div class="font-bold text-slate-900">Kalah dari kompetitor</div>
+              <div class="text-sm text-slate-500 mt-0.5">Tetangga sudah terima pesanan online</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right: Solution -->
+      <div class="reveal rv-right d-2 relative">
+        <div class="absolute -inset-4 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-3xl blur-2xl"></div>
+        <div class="relative bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-3xl p-8 text-white shadow-2xl shadow-emerald-500/30">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur text-[11px] font-black uppercase tracking-wider mb-5">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Solusi Modern
+          </div>
+          <h3 class="text-2xl sm:text-3xl font-black leading-tight mb-6">
+            Semuanya otomatis<br>dengan KasirKu
+          </h3>
+          <ul class="space-y-4">
+            <li class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-white/20 grid place-items-center flex-shrink-0 mt-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              </div>
+              <div>
+                <div class="font-bold">Hitung otomatis</div>
+                <div class="text-sm text-white/80 mt-0.5">Total & kembalian anti salah</div>
+              </div>
+            </li>
+            <li class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-white/20 grid place-items-center flex-shrink-0 mt-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              </div>
+              <div>
+                <div class="font-bold">Laporan real-time</div>
+                <div class="text-sm text-white/80 mt-0.5">Tahu untung hari ini dalam 1 detik</div>
+              </div>
+            </li>
+            <li class="flex gap-3 items-start">
+              <div class="w-6 h-6 rounded-full bg-white/20 grid place-items-center flex-shrink-0 mt-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              </div>
+              <div>
+                <div class="font-bold">Terima pesanan online</div>
+                <div class="text-sm text-white/80 mt-0.5">Customer pesan via link, masuk otomatis</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CARA KERJA ============ -->
+<section id="cara-kerja" class="py-20 sm:py-28 bg-emerald-50/50 relative">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="reveal rv-up inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider mb-4">
+        <i data-lucide="route" class="w-3.5 h-3.5"></i> Cara Kerja
+      </div>
+      <h2 class="reveal rv-up d-1 text-3xl sm:text-4xl font-black text-slate-900 mb-4 leading-tight">
+        Siap dipakai<br>dalam 3 menit
       </h2>
-      <p class="reveal reveal-up d-200 text-slate-500">
-        Kasirku hadir dengan fitur lengkap untuk membantu Anda mengelola bisnis dengan lebih efisien dan profesional.
+      <p class="reveal rv-up d-2 text-slate-600">
+        Tidak perlu training, tidak perlu install yang ribet. Cukup 3 langkah sederhana.
       </p>
     </div>
 
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      <!-- Card 1 -->
-      <div class="reveal reveal-up group bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300 hover:-translate-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 grid place-items-center text-white shadow-lg shadow-sky-500/30 mb-4 group-hover:scale-110 transition-transform">
-          <i data-lucide="zap" class="w-7 h-7"></i>
+    <div class="grid md:grid-cols-3 gap-8 relative">
+      <!-- Step 1 -->
+      <div class="reveal rv-up relative">
+        <div class="step-line absolute left-8 top-20 hidden md:block"></div>
+        <div class="relative bg-white rounded-3xl p-6 border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500 h-full">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white text-2xl font-black shadow-lg shadow-emerald-500/30 mb-5">
+            1
+          </div>
+          <h3 class="text-lg font-black text-slate-900 mb-2">Daftar Gratis</h3>
+          <p class="text-sm text-slate-500 leading-relaxed">Bikin akun pakai email. Toko kamu langsung jadi dalam hitungan detik.</p>
+          <div class="mt-5 flex items-center gap-2 text-xs font-bold text-emerald-600">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i> 30 detik
+          </div>
         </div>
-        <h3 class="font-black text-lg text-slate-900 mb-2">Transaksi Super Cepat</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">UI intuitif dengan grid produk & pencarian instan. Proses transaksi kurang dari 10 detik!</p>
       </div>
 
-      <!-- Card 2 -->
-      <div class="reveal reveal-up d-100 group bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 grid place-items-center text-white shadow-lg shadow-emerald-500/30 mb-4 group-hover:scale-110 transition-transform">
-          <i data-lucide="credit-card" class="w-7 h-7"></i>
+      <!-- Step 2 -->
+      <div class="reveal rv-up d-2 relative">
+        <div class="step-line absolute left-8 top-20 hidden md:block"></div>
+        <div class="relative bg-white rounded-3xl p-6 border-2 border-emerald-100 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-500 h-full">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white text-2xl font-black shadow-lg shadow-emerald-500/30 mb-5">
+            2
+          </div>
+          <h3 class="text-lg font-black text-slate-900 mb-2">Tambah Produk</h3>
+          <p class="text-sm text-slate-500 leading-relaxed">Masukkan produk, harga, dan stok. Bisa foto langsung atau scan barcode.</p>
+          <div class="mt-5 flex items-center gap-2 text-xs font-bold text-emerald-600">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i> 1 menit
+          </div>
         </div>
-        <h3 class="font-black text-lg text-slate-900 mb-2">Multi Metode Pembayaran</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Terima pembayaran dengan berbagai cara: Tunai, QRIS, Debit, dan E-Wallet.</p>
       </div>
 
-      <!-- Card 3 -->
-      <div class="reveal reveal-up d-200 group bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-purple-300 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 hover:-translate-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-violet-600 grid place-items-center text-white shadow-lg shadow-purple-500/30 mb-4 group-hover:scale-110 transition-transform">
-          <i data-lucide="package" class="w-7 h-7"></i>
+      <!-- Step 3 -->
+      <div class="reveal rv-up d-4 relative">
+        <div class="relative bg-gradient-to-br from-emerald-500 to-emerald-700 text-white rounded-3xl p-6 border-2 border-emerald-500 shadow-2xl shadow-emerald-500/30 h-full">
+          <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur grid place-items-center text-white text-2xl font-black shadow-lg mb-5">
+            3
+          </div>
+          <h3 class="text-lg font-black mb-2">Mulai Jualan! 🎉</h3>
+          <p class="text-sm text-white/90 leading-relaxed">Transaksi pertama langsung bisa. Laporan otomatis tercatat.</p>
+          <div class="mt-5 flex items-center gap-2 text-xs font-bold text-amber-300">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Siap jualan
+          </div>
         </div>
-        <h3 class="font-black text-lg text-slate-900 mb-2">Manajemen Stok Otomatis</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Stok berkurang otomatis setiap transaksi. Tidak perlu input manual lagi!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FITUR (BENTO GRID) ============ -->
+<section id="fitur" class="py-20 sm:py-28 bg-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="reveal rv-up inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider mb-4">
+        <i data-lucide="wand-2" class="w-3.5 h-3.5"></i> Fitur Andalan
+      </div>
+      <h2 class="reveal rv-up d-1 text-3xl sm:text-4xl font-black text-slate-900 mb-4 leading-tight">
+        Semua yang kamu butuhkan<br>untuk <span class="grad-text">jualan lebih pintar</span>
+      </h2>
+      <p class="reveal rv-up d-2 text-slate-600">
+        Tidak usah beli software mahal. KasirKu punya fitur kelas enterprise, gratis untuk UMKM.
+      </p>
+    </div>
+
+    <!-- Bento Grid -->
+    <div class="grid md:grid-cols-6 gap-4">
+
+      <!-- Big feature: Transaksi Kilat -->
+      <div class="reveal rv-left md:col-span-4 bento-card bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-3xl p-8 border-2 border-emerald-100 overflow-hidden relative group">
+        <div class="relative z-10">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white shadow-lg shadow-emerald-500/30 mb-5 group-hover:scale-110 transition-transform">
+            <i data-lucide="zap" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-2xl font-black text-slate-900 mb-2">Transaksi 5 detik</h3>
+          <p class="text-sm text-slate-600 leading-relaxed max-w-md">
+            Cukup ketuk produk, total langsung keluar. Tidak perlu kalkulator lagi.
+          </p>
+        </div>
+        <div class="absolute -right-8 -bottom-8 opacity-20 group-hover:opacity-30 transition-opacity">
+          <i data-lucide="zap" class="w-48 h-48 text-emerald-600"></i>
+        </div>
       </div>
 
-      <!-- Card 4 -->
-      <div class="reveal reveal-up group bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-amber-300 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 hover:-translate-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 grid place-items-center text-white shadow-lg shadow-amber-500/30 mb-4 group-hover:scale-110 transition-transform">
-          <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+      <!-- Small: Stok -->
+      <div class="reveal rv-right d-1 md:col-span-2 bento-card bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-3xl p-6 border-2 border-amber-100">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 grid place-items-center text-white shadow-lg shadow-amber-500/30 mb-4">
+          <i data-lucide="package" class="w-6 h-6"></i>
         </div>
-        <h3 class="font-black text-lg text-slate-900 mb-2">Laporan & Analisis</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Dashboard real-time dengan insight bisnis lengkap. Export ke Excel/PDF.</p>
+        <h3 class="text-lg font-black text-slate-900 mb-1.5">Stok Otomatis</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Stok berkurang sendiri tiap ada penjualan.</p>
       </div>
 
-      <!-- Card 5 -->
-      <div class="reveal reveal-up d-100 group bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-500/10 transition-all duration-300 hover:-translate-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-600 grid place-items-center text-white shadow-lg shadow-pink-500/30 mb-4 group-hover:scale-110 transition-transform">
-          <i data-lucide="printer" class="w-7 h-7"></i>
+      <!-- Small: Laporan -->
+      <div class="reveal rv-left d-2 md:col-span-2 bento-card bg-gradient-to-br from-sky-50 to-sky-100/50 rounded-3xl p-6 border-2 border-sky-100">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 grid place-items-center text-white shadow-lg shadow-sky-500/30 mb-4">
+          <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
         </div>
-        <h3 class="font-black text-lg text-slate-900 mb-2">Cetak Struk Instan</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Koneksi ke printer thermal Bluetooth. Struk profesional dalam hitungan detik!</p>
+        <h3 class="text-lg font-black text-slate-900 mb-1.5">Laporan Instan</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Tahu untung-rugi per hari, minggu, bulan.</p>
       </div>
 
-      <!-- Card 6 -->
-      <div class="reveal reveal-up d-200 group bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-cyan-300 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 hover:-translate-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-600 grid place-items-center text-white shadow-lg shadow-cyan-500/30 mb-4 group-hover:scale-110 transition-transform">
-          <i data-lucide="wifi-off" class="w-7 h-7"></i>
+      <!-- Big feature: Order online -->
+      <div class="reveal rv-right d-3 md:col-span-4 bento-card bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white overflow-hidden relative group">
+        <div class="relative z-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-5">
+            <i data-lucide="star" class="w-3 h-3"></i> Paling Diminati
+          </div>
+          <h3 class="text-2xl font-black mb-2">Link Toko Online</h3>
+          <p class="text-sm text-slate-300 leading-relaxed max-w-md">
+            Share link ke customer. Mereka pesan sendiri, kamu terima notifikasi langsung. Pembayaran bisa transfer atau COD.
+          </p>
         </div>
-        <h3 class="font-black text-lg text-slate-900 mb-2">Mode Offline</h3>
-        <p class="text-sm text-slate-500 leading-relaxed">Tetap bisa transaksi tanpa internet. Data sync otomatis saat online!</p>
+        <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-amber-400/20 blur-2xl group-hover:bg-amber-400/30 transition-colors"></div>
+      </div>
+
+      <!-- Small: Cetak Struk -->
+      <div class="reveal rv-up d-4 md:col-span-2 bento-card bg-gradient-to-br from-rose-50 to-rose-100/50 rounded-3xl p-6 border-2 border-rose-100">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-600 grid place-items-center text-white shadow-lg shadow-rose-500/30 mb-4">
+          <i data-lucide="printer" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-900 mb-1.5">Struk Digital</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Kirim struk via WhatsApp, hemat kertas.</p>
+      </div>
+
+      <!-- Small: Multi perangkat -->
+      <div class="reveal rv-up d-5 md:col-span-3 bento-card bg-gradient-to-br from-violet-50 to-violet-100/50 rounded-3xl p-6 border-2 border-violet-100">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 grid place-items-center text-white shadow-lg shadow-violet-500/30 mb-4">
+          <i data-lucide="smartphone" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-900 mb-1.5">Install di HP</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Bisa di-install seperti aplikasi. Buka dari layar utama, tanpa perlu browser.</p>
+      </div>
+
+      <!-- Small: Bebas internet -->
+      <div class="reveal rv-up d-6 md:col-span-3 bento-card bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-3xl p-6 border-2 border-teal-100">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-600 grid place-items-center text-white shadow-lg shadow-teal-500/30 mb-4">
+          <i data-lucide="wifi-off" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-900 mb-1.5">Jalan Tanpa Internet</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Tetap bisa transaksi. Data sync otomatis saat online kembali.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============ TESTIMONI ============ -->
-<section id="testimoni" class="py-20 sm:py-28 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-    <div class="text-center max-w-2xl mx-auto mb-14">
-      <div class="reveal reveal-up inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-extrabold uppercase tracking-wider mb-4">
-        <i data-lucide="star" class="w-3 h-3"></i> Testimoni
+<section id="testimoni" class="py-20 sm:py-28 bg-gradient-to-b from-white to-emerald-50/50">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+    <div class="text-center max-w-2xl mx-auto mb-16">
+      <div class="reveal rv-up inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-black uppercase tracking-wider mb-4">
+        <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Cerita Pengguna
       </div>
-      <h2 class="reveal reveal-up d-100 text-3xl sm:text-4xl font-black text-slate-900 mb-3">
-        Apa Kata Mereka?
+      <h2 class="reveal rv-up d-1 text-3xl sm:text-4xl font-black text-slate-900 mb-4 leading-tight">
+        Mereka sudah merasakan<br>bedanya
       </h2>
-      <p class="reveal reveal-up d-200 text-slate-500">
-        Ribuan pemilik usaha sudah merasakan manfaat Kasirku
+      <p class="reveal rv-up d-2 text-slate-600">
+        Bukan kami yang bilang — ini yang mereka rasakan setelah pakai KasirKu.
       </p>
     </div>
 
     <div class="grid md:grid-cols-3 gap-6">
+
       <!-- Testimoni 1 -->
-      <div class="reveal reveal-left bg-gradient-to-br from-slate-50 to-white rounded-2xl p-6 border-2 border-slate-100 hover:border-sky-200 hover:shadow-xl transition-all">
+      <div class="reveal rv-left bg-white rounded-3xl p-6 border-2 border-slate-100 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/5 transition-all duration-500">
         <div class="flex gap-0.5 mb-4">
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
@@ -360,20 +560,20 @@ tailwind.config = {
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
         </div>
-        <p class="text-slate-700 leading-relaxed mb-5 text-sm">
-          "Sejak pakai Kasirku, omzet naik 30%! Sekarang bisa pantau penjualan dari rumah. Laporan otomatis sangat membantu."
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">
+          "Dulu tiap malam harus ngitung manual, sekarang tinggal buka HP. Angka untung rugi langsung kelihatan. Alhamdulillah."
         </p>
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 grid place-items-center text-white font-black">BS</div>
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 grid place-items-center text-white font-black text-sm">SR</div>
           <div>
-            <div class="font-bold text-slate-900 text-sm">Budi Santoso</div>
-            <div class="text-xs text-slate-500">Pemilik Warung Makan Sederhana</div>
+            <div class="font-black text-slate-900 text-sm">Bu Sari</div>
+            <div class="text-xs text-slate-500">Warung Sembako, Solo</div>
           </div>
         </div>
       </div>
 
       <!-- Testimoni 2 -->
-      <div class="reveal reveal-up d-200 bg-gradient-to-br from-slate-50 to-white rounded-2xl p-6 border-2 border-slate-100 hover:border-emerald-200 hover:shadow-xl transition-all">
+      <div class="reveal rv-up d-2 bg-white rounded-3xl p-6 border-2 border-slate-100 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/5 transition-all duration-500 md:-translate-y-4">
         <div class="flex gap-0.5 mb-4">
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
@@ -381,20 +581,20 @@ tailwind.config = {
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
         </div>
-        <p class="text-slate-700 leading-relaxed mb-5 text-sm">
-          "Aplikasi kasir paling mudah yang pernah saya pakai. Karyawan baru langsung bisa pakai tanpa training lama!"
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">
+          "Yang paling juara itu link toko online-nya. Customer kantor pada pesan siang, saya tinggal siapin. Omzet naik hampir 2x lipat."
         </p>
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-pink-400 to-rose-600 grid place-items-center text-white font-black">SA</div>
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 grid place-items-center text-white font-black text-sm">BP</div>
           <div>
-            <div class="font-bold text-slate-900 text-sm">Siti Aminah</div>
-            <div class="text-xs text-slate-500">Owner Kopi Kenangan Jiwa</div>
+            <div class="font-black text-slate-900 text-sm">Pak Budi</div>
+            <div class="text-xs text-slate-500">Kafe Kopi Kita, Bandung</div>
           </div>
         </div>
       </div>
 
       <!-- Testimoni 3 -->
-      <div class="reveal reveal-right d-300 bg-gradient-to-br from-slate-50 to-white rounded-2xl p-6 border-2 border-slate-100 hover:border-purple-200 hover:shadow-xl transition-all">
+      <div class="reveal rv-right d-3 bg-white rounded-3xl p-6 border-2 border-slate-100 hover:border-emerald-200 hover:shadow-2xl hover:shadow-emerald-500/5 transition-all duration-500">
         <div class="flex gap-0.5 mb-4">
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
@@ -402,14 +602,14 @@ tailwind.config = {
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
           <i data-lucide="star" class="w-4 h-4 fill-amber-400 text-amber-400"></i>
         </div>
-        <p class="text-slate-700 leading-relaxed mb-5 text-sm">
-          "Fitur offline-nya luar biasa! Di daerah saya sinyal sering hilang, tapi transaksi tetap lancar jaya."
+        <p class="text-slate-700 leading-relaxed mb-6 text-sm">
+          "Karyawan baru langsung bisa pakai tanpa saya ajarin lama. Interface-nya ramah banget, kayak main game aja."
         </p>
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 grid place-items-center text-white font-black">AR</div>
+        <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 grid place-items-center text-white font-black text-sm">RY</div>
           <div>
-            <div class="font-bold text-slate-900 text-sm">Ahmad Rizki</div>
-            <div class="text-xs text-slate-500">Pemilik Toko Kelontong</div>
+            <div class="font-black text-slate-900 text-sm">Mas Riyan</div>
+            <div class="text-xs text-slate-500">Toko Roti 88, Surabaya</div>
           </div>
         </div>
       </div>
@@ -418,160 +618,159 @@ tailwind.config = {
 </section>
 
 <!-- ============ FAQ ============ -->
-<section id="faq" class="py-20 sm:py-28 bg-gradient-to-b from-slate-50 to-white">
+<section id="faq" class="py-20 sm:py-28 bg-white">
   <div class="max-w-3xl mx-auto px-4 sm:px-6">
     <div class="text-center mb-14">
-      <div class="reveal reveal-up inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-extrabold uppercase tracking-wider mb-4">
-        <i data-lucide="help-circle" class="w-3 h-3"></i> FAQ
+      <div class="reveal rv-up inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider mb-4">
+        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i> FAQ
       </div>
-      <h2 class="reveal reveal-up d-100 text-3xl sm:text-4xl font-black text-slate-900 mb-3">
-        Pertanyaan yang Sering Diajukan
+      <h2 class="reveal rv-up d-1 text-3xl sm:text-4xl font-black text-slate-900 mb-4 leading-tight">
+        Masih ada pertanyaan?
       </h2>
-      <p class="reveal reveal-up d-200 text-slate-500">
-        Masih ragu? Temukan jawabannya di sini
+      <p class="reveal rv-up d-2 text-slate-600">
+        Beberapa pertanyaan yang paling sering ditanyakan
       </p>
     </div>
 
     <div class="space-y-3">
-      <!-- FAQ 1 -->
-      <div class="reveal reveal-up bg-white rounded-2xl border-2 border-slate-100 overflow-hidden">
-        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-slate-50 transition">
-          <span class="font-bold text-slate-900">Apakah Kasirku gratis?</span>
-          <i data-lucide="chevron-down" class="w-5 h-5 text-sky-600 transition-transform flex-shrink-0"></i>
+      <div class="reveal rv-up bg-white rounded-2xl border-2 border-slate-100 overflow-hidden hover:border-emerald-200 transition">
+        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left">
+          <span class="font-black text-slate-900">KasirKu benar-benar gratis?</span>
+          <i data-lucide="plus" class="w-5 h-5 text-emerald-600 transition-transform flex-shrink-0"></i>
         </button>
         <div class="faq-content hidden px-5 pb-5 text-slate-600 text-sm leading-relaxed">
-          Ya! Kasirku 100% gratis untuk semua fitur dasar. Tidak ada biaya tersembunyi, tidak ada iklan. Cocok untuk UMKM yang baru memulai.
+          Iya, 100% gratis. Semua fitur — mulai dari transaksi, laporan, sampai link toko online — bisa dipakai tanpa bayar sepeser pun. Tidak ada iklan, tidak ada batasan jumlah transaksi.
         </div>
       </div>
 
-      <!-- FAQ 2 -->
-      <div class="reveal reveal-up d-100 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden">
-        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-slate-50 transition">
-          <span class="font-bold text-slate-900">Apakah data saya aman?</span>
-          <i data-lucide="chevron-down" class="w-5 h-5 text-sky-600 transition-transform flex-shrink-0"></i>
+      <div class="reveal rv-up d-1 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden hover:border-emerald-200 transition">
+        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left">
+          <span class="font-black text-slate-900">Data saya aman tidak?</span>
+          <i data-lucide="plus" class="w-5 h-5 text-emerald-600 transition-transform flex-shrink-0"></i>
         </button>
         <div class="faq-content hidden px-5 pb-5 text-slate-600 text-sm leading-relaxed">
-          Sangat aman. Semua data tersimpan di cloud dengan enkripsi tingkat enterprise (Supabase). Hanya Anda yang bisa mengakses data toko Anda.
+          Sangat aman. Semua data disimpan di cloud dengan enkripsi tingkat bank. Hanya kamu yang bisa akses data tokomu — bahkan tim KasirKu sendiri tidak bisa lihat isi penjualanmu.
         </div>
       </div>
 
-      <!-- FAQ 3 -->
-      <div class="reveal reveal-up d-200 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden">
-        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-slate-50 transition">
-          <span class="font-bold text-slate-900">Bisa dipakai tanpa internet?</span>
-          <i data-lucide="chevron-down" class="w-5 h-5 text-sky-600 transition-transform flex-shrink-0"></i>
+      <div class="reveal rv-up d-2 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden hover:border-emerald-200 transition">
+        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left">
+          <span class="font-black text-slate-900">Butuh HP Android versi berapa?</span>
+          <i data-lucide="plus" class="w-5 h-5 text-emerald-600 transition-transform flex-shrink-0"></i>
         </button>
         <div class="faq-content hidden px-5 pb-5 text-slate-600 text-sm leading-relaxed">
-          Bisa! Kasirku punya mode offline. Transaksi tetap bisa dilakukan tanpa internet, dan akan otomatis sync saat koneksi kembali.
+          KasirKu jalan di browser — jadi bisa dipakai di HP Android 5.0+, iPhone, bahkan laptop. Kalau di-install sebagai aplikasi, butuh Android 7.0 atau lebih baru.
         </div>
       </div>
 
-      <!-- FAQ 4 -->
-      <div class="reveal reveal-up d-300 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden">
-        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-slate-50 transition">
-          <span class="font-bold text-slate-900">Bagaimana cara install di HP?</span>
-          <i data-lucide="chevron-down" class="w-5 h-5 text-sky-600 transition-transform flex-shrink-0"></i>
+      <div class="reveal rv-up d-3 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden hover:border-emerald-200 transition">
+        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left">
+          <span class="font-black text-slate-900">Kalau internet mati, masih bisa jualan?</span>
+          <i data-lucide="plus" class="w-5 h-5 text-emerald-600 transition-transform flex-shrink-0"></i>
         </button>
         <div class="faq-content hidden px-5 pb-5 text-slate-600 text-sm leading-relaxed">
-          Kasirku adalah PWA — bisa di-install dari browser. Di Chrome Android: menu ⋮ → "Install app". Di iPhone Safari: Share → "Add to Home Screen".
+          Bisa. KasirKu punya mode offline. Transaksi tetap tercatat di HP, dan akan otomatis dikirim ke cloud begitu internet kembali menyala.
         </div>
       </div>
 
-      <!-- FAQ 5 -->
-      <div class="reveal reveal-up d-400 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden">
-        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-slate-50 transition">
-          <span class="font-bold text-slate-900">Bisa untuk berapa toko?</span>
-          <i data-lucide="chevron-down" class="w-5 h-5 text-sky-600 transition-transform flex-shrink-0"></i>
+      <div class="reveal rv-up d-4 bg-white rounded-2xl border-2 border-slate-100 overflow-hidden hover:border-emerald-200 transition">
+        <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between gap-4 p-5 text-left">
+          <span class="font-black text-slate-900">Bisa untuk lebih dari satu toko?</span>
+          <i data-lucide="plus" class="w-5 h-5 text-emerald-600 transition-transform flex-shrink-0"></i>
         </button>
         <div class="faq-content hidden px-5 pb-5 text-slate-600 text-sm leading-relaxed">
-          Satu akun untuk satu toko. Kalau Anda punya beberapa cabang, bisa daftar akun terpisah untuk masing-masing cabang.
+          Satu akun untuk satu toko. Kalau punya beberapa cabang, bisa daftar akun terpisah untuk masing-masing — datanya tidak akan tercampur.
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ DOWNLOAD CTA ============ -->
-<section id="download" class="relative py-20 sm:py-28 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 overflow-hidden">
-  <div class="blob bg-amber-300 w-72 h-72 -top-20 -left-20 float"></div>
-  <div class="blob bg-purple-400 w-80 h-80 -bottom-20 -right-20 float-slow"></div>
+<!-- ============ FINAL CTA ============ -->
+<section class="py-20 sm:py-28 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900"></div>
+  <div class="absolute inset-0 noise opacity-30"></div>
+  <div class="absolute top-10 left-10 w-72 h-72 rounded-full bg-emerald-400/20 blur-3xl float"></div>
+  <div class="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-amber-300/10 blur-3xl float-d2"></div>
 
   <div class="relative max-w-3xl mx-auto px-4 sm:px-6 text-center text-white">
-    <div class="reveal reveal-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur text-xs font-bold mb-6 ring-1 ring-white/20">
-      <i data-lucide="download" class="w-3.5 h-3.5"></i>
-      <span>Sudah didownload 50.000+ kali!</span>
+    <div class="reveal rv-zoom inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur text-xs font-black mb-6 border border-white/20">
+      <i data-lucide="party-popper" class="w-3.5 h-3.5 text-amber-300"></i>
+      <span>Gratis selamanya. Serius.</span>
     </div>
 
-    <h2 class="reveal reveal-up d-100 text-3xl sm:text-5xl font-black mb-4 leading-tight">
-      Siap Tingkatkan<br>Bisnis Anda?
+    <h2 class="reveal rv-up d-1 text-3xl sm:text-5xl font-black leading-tight mb-5">
+      Saatnya warungmu<br>
+      <span class="text-amber-300">naik kelas</span>
     </h2>
 
-    <p class="reveal reveal-up d-200 text-white/85 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-      Download Kasirku sekarang dan rasakan kemudahan mengelola bisnis langsung dari genggaman Anda.
+    <p class="reveal rv-up d-2 text-white/80 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+      Gabung bersama 12.500+ pemilik usaha yang sudah tinggalkan cara lama. Daftar sekarang — tidak butuh kartu kredit.
     </p>
 
-    <div class="reveal reveal-zoom d-300 flex justify-center">
-      <button onclick="openAuth('register')" class="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-white text-sky-600 font-black text-lg shadow-2xl shadow-black/30 hover:scale-105 transition-all pulse-ring">
-        <i data-lucide="download" class="w-6 h-6 group-hover:translate-y-0.5 transition-transform"></i>
-        <div class="text-left">
-          <div class="text-[10px] font-bold opacity-70 uppercase tracking-wider">Download Gratis</div>
-          <div class="leading-none">Daftar Sekarang</div>
-        </div>
+    <div class="reveal rv-up d-3 flex flex-col sm:flex-row justify-center gap-3">
+      <button onclick="openAuth('register')" class="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white text-emerald-700 font-black shadow-2xl shadow-black/30 hover:scale-105 transition-transform soft-pulse">
+        <i data-lucide="rocket" class="w-5 h-5 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform"></i>
+        Daftar Sekarang, Gratis
+      </button>
+      <button onclick="openAuth('login')" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/10 backdrop-blur border border-white/20 font-black hover:bg-white/20 transition">
+        <i data-lucide="log-in" class="w-5 h-5"></i>
+        Sudah Punya Akun
       </button>
     </div>
 
-    <div class="reveal reveal-up d-400 flex flex-wrap justify-center gap-4 sm:gap-6 mt-10 text-xs text-white/70 font-bold">
-      <div class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> Android 7.0+</div>
-      <div class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> Ukuran kecil</div>
-      <div class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> Update gratis</div>
-      <div class="flex items-center gap-1.5"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-300"></i> Tanpa iklan</div>
+    <div class="reveal rv-up d-4 flex flex-wrap justify-center gap-6 mt-10 text-xs text-white/60 font-bold">
+      <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-emerald-300"></i> Tanpa kartu kredit</div>
+      <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-emerald-300"></i> Setup 3 menit</div>
+      <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4 text-emerald-300"></i> Support Bahasa Indonesia</div>
     </div>
   </div>
 </section>
 
 <!-- ============ FOOTER ============ -->
-<footer class="bg-slate-900 text-slate-400 py-14">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-    <div class="grid md:grid-cols-4 gap-8 mb-10">
+<footer class="bg-slate-950 text-slate-400 py-16">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="grid md:grid-cols-4 gap-10 mb-12">
       <div class="md:col-span-2">
-        <div class="flex items-center gap-2.5 mb-4">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 grid place-items-center text-white">
-            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+        <div class="flex items-center gap-2.5 mb-5">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
           </div>
           <div>
-            <div class="font-black text-white leading-none">KasirKu</div>
-            <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">Point of Sale</div>
+            <div class="font-black text-white text-lg leading-none">KasirKu</div>
+            <div class="text-[9px] font-extrabold uppercase tracking-[.2em] text-emerald-400 mt-1">Modern POS</div>
           </div>
         </div>
-        <p class="text-sm leading-relaxed max-w-md">
-          Aplikasi kasir Android terbaik untuk UMKM Indonesia. Gratis, mudah, dan powerful.
+        <p class="text-sm leading-relaxed max-w-sm">
+          Bikin setiap warung, toko, dan kafe di Indonesia bisa jualan lebih pintar — tanpa harus jadi ahli teknologi.
         </p>
       </div>
 
       <div>
-        <h4 class="font-bold text-white mb-4">Produk</h4>
-        <ul class="space-y-2 text-sm">
-          <li><a href="#fitur" class="hover:text-sky-400 transition">Fitur</a></li>
-          <li><a href="#testimoni" class="hover:text-sky-400 transition">Testimoni</a></li>
-          <li><a href="#faq" class="hover:text-sky-400 transition">FAQ</a></li>
+        <h4 class="font-black text-white mb-4 text-sm uppercase tracking-wider">Produk</h4>
+        <ul class="space-y-3 text-sm">
+          <li><a href="#fitur" class="hover:text-emerald-400 transition">Fitur</a></li>
+          <li><a href="#cara-kerja" class="hover:text-emerald-400 transition">Cara Kerja</a></li>
+          <li><a href="#testimoni" class="hover:text-emerald-400 transition">Cerita Pengguna</a></li>
+          <li><a href="#faq" class="hover:text-emerald-400 transition">FAQ</a></li>
         </ul>
       </div>
 
       <div>
-        <h4 class="font-bold text-white mb-4">Kontak</h4>
-        <ul class="space-y-2 text-sm">
-          <li class="flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4"></i> support@kasirku.id</li>
-          <li class="flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> Tangerang, Indonesia</li>
+        <h4 class="font-black text-white mb-4 text-sm uppercase tracking-wider">Hubungi</h4>
+        <ul class="space-y-3 text-sm">
+          <li class="flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> support@kasirku.id</li>
+          <li class="flex items-center gap-2"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-400"></i> WhatsApp Support</li>
         </ul>
       </div>
     </div>
 
-    <div class="border-t border-slate-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
-      <p class="text-xs">© 2026 KasirKu. All rights reserved.</p>
-      <div class="flex gap-3">
-        <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-sky-500 grid place-items-center transition"><i data-lucide="instagram" class="w-4 h-4"></i></a>
-        <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-sky-500 grid place-items-center transition"><i data-lucide="facebook" class="w-4 h-4"></i></a>
-        <a href="#" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-sky-500 grid place-items-center transition"><i data-lucide="message-circle" class="w-4 h-4"></i></a>
+    <div class="border-t border-slate-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+      <p>© 2026 KasirKu. Dibuat dengan ❤️ untuk UMKM Indonesia.</p>
+      <div class="flex gap-2">
+        <a href="#" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-emerald-500 grid place-items-center transition-colors"><i data-lucide="instagram" class="w-4 h-4"></i></a>
+        <a href="#" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-emerald-500 grid place-items-center transition-colors"><i data-lucide="facebook" class="w-4 h-4"></i></a>
+        <a href="#" class="w-9 h-9 rounded-xl bg-slate-900 hover:bg-emerald-500 grid place-items-center transition-colors"><i data-lucide="youtube" class="w-4 h-4"></i></a>
       </div>
     </div>
   </div>
@@ -581,16 +780,16 @@ tailwind.config = {
 <div id="auth-modal" class="fixed inset-0 z-[60] hidden">
   <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md" onclick="closeAuth()"></div>
   <div class="relative h-full flex items-center justify-center p-4 overflow-y-auto">
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden anim-load">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
       <div class="px-6 pt-6 pb-4">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 grid place-items-center text-white">
-              <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 grid place-items-center text-white">
+              <i data-lucide="shopping-bag" class="w-5 h-5"></i>
             </div>
             <div>
               <div class="font-black text-slate-900 leading-none">KasirKu</div>
-              <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Point of Sale</div>
+              <div class="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest mt-0.5">Modern POS</div>
             </div>
           </div>
           <button onclick="closeAuth()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center text-slate-500">
@@ -600,61 +799,46 @@ tailwind.config = {
 
         <div class="flex gap-1 p-1 bg-slate-100 rounded-xl">
           <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition">Masuk</button>
-          <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition">Buat Akun</button>
+          <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition">Daftar</button>
         </div>
       </div>
 
       <div id="panel-login" class="px-6 pb-6 space-y-4">
         <div>
-          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
-          <input id="login-email" type="email" autocomplete="email" placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
+          <input id="login-email" type="email" autocomplete="email" placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all">
         </div>
         <div>
-          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Password</label>
-          <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Password</label>
+          <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all">
         </div>
         <div id="login-status" class="hidden px-3 py-2 rounded-lg text-xs font-bold"></div>
-        <button id="login-btn" onclick="handleLogin()" class="w-full py-3.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-extrabold shadow-lg shadow-sky-500/30 hover:brightness-110 transition active:scale-[.98]">
+        <button id="login-btn" onclick="handleLogin()" class="w-full py-3.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-black shadow-lg shadow-emerald-500/30 hover:brightness-110 transition active:scale-[.98]">
           <i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Masuk
         </button>
-        <p class="text-center text-xs text-slate-500">
-          Belum punya akun?
-          <button onclick="switchTab('register')" class="font-bold text-sky-600 hover:underline">Daftar gratis</button>
-        </p>
       </div>
 
       <div id="panel-register" class="px-6 pb-6 space-y-4 hidden">
         <div>
-          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
-          <input id="reg-email" type="email" autocomplete="off" placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Email</label>
+          <input id="reg-email" type="email" autocomplete="off" placeholder="nama@email.com" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all">
         </div>
         <div>
-          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Password</label>
-          <input id="reg-password" type="password" placeholder="min 6 karakter" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Password</label>
+          <input id="reg-password" type="password" placeholder="min 6 karakter" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all">
         </div>
         <div>
-          <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Konfirmasi Password</label>
-          <input id="reg-password2" type="password" placeholder="ulangi password" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none text-sm transition-all">
+          <label class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Konfirmasi Password</label>
+          <input id="reg-password2" type="password" placeholder="ulangi password" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-sm transition-all">
         </div>
         <div id="register-status" class="hidden px-3 py-2 rounded-lg text-xs font-bold"></div>
-        <button id="register-btn" onclick="handleRegister()" class="w-full py-3.5 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white font-extrabold shadow-lg shadow-sky-500/30 hover:brightness-110 transition active:scale-[.98]">
-          <i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Buat Akun
+        <button id="register-btn" onclick="handleRegister()" class="w-full py-3.5 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white font-black shadow-lg shadow-emerald-500/30 hover:brightness-110 transition active:scale-[.98]">
+          <i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Buat Akun Gratis
         </button>
         <p class="text-center text-[11px] text-slate-500 leading-relaxed">
-          Akun baru otomatis mendapat toko default <strong class="text-sky-600">Warung Saya</strong>
+          Akun baru otomatis dapat toko default <strong class="text-emerald-600">Warung Saya</strong>
         </p>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Loading overlay -->
-<div id="loading" class="fixed inset-0 z-[100] hidden">
-  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
-  <div class="relative h-full grid place-items-center">
-    <div class="bg-white rounded-2xl p-6 text-center shadow-2xl">
-      <div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
-      <p class="mt-3 text-sm font-bold text-slate-700">Memproses...</p>
     </div>
   </div>
 </div>
@@ -666,13 +850,7 @@ tailwind.config = {
 const SUPABASE_URL = 'https://tfgemkitmnuqiiclepqw.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_eO-jDODnzgSKvujTRT5nZw_BJy36AA0';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    storage: window.localStorage,
-    storageKey: 'kasirku-auth-token',
-    autoRefreshToken: true,
-    detectSessionInUrl: false,
-  },
+  auth: { persistSession: true, storage: window.localStorage, storageKey: 'kasirku-auth-token', autoRefreshToken: true, detectSessionInUrl: false }
 });
 
 const $ = (id) => document.getElementById(id);
@@ -680,16 +858,11 @@ const $ = (id) => document.getElementById(id);
 function toast(msg, type = 'info') {
   const c = $('toasts');
   const d = document.createElement('div');
-  const colors = { error: 'bg-red-500', success: 'bg-emerald-500', info: 'bg-sky-500' };
+  const colors = { error: 'bg-red-500', success: 'bg-emerald-500', info: 'bg-emerald-600' };
   d.className = 'pointer-events-auto px-4 py-3 rounded-2xl shadow-xl text-sm font-bold text-white ' + (colors[type] || colors.info);
   d.textContent = msg;
   c.appendChild(d);
-  setTimeout(() => {
-    d.style.transition = 'all .3s';
-    d.style.opacity = '0';
-    d.style.transform = 'translateY(-10px)';
-    setTimeout(() => d.remove(), 300);
-  }, 3200);
+  setTimeout(() => { d.style.transition='all .3s'; d.style.opacity='0'; d.style.transform='translateY(-10px)'; setTimeout(() => d.remove(), 300); }, 3200);
 }
 
 function setStatus(id, type, msg) {
@@ -701,7 +874,6 @@ function setStatus(id, type, msg) {
   el.classList.remove('hidden');
 }
 
-/* ============ AUTH MODAL ============ */
 function openAuth(tab) {
   $('auth-modal').classList.remove('hidden');
   switchTab(tab || 'login');
@@ -715,7 +887,7 @@ function switchTab(tab) {
   const isLogin = tab === 'login';
   $('panel-login').classList.toggle('hidden', !isLogin);
   $('panel-register').classList.toggle('hidden', isLogin);
-  const activeCls = 'bg-white shadow text-sky-600';
+  const activeCls = 'bg-white shadow text-emerald-600';
   const inactiveCls = 'text-slate-500';
   $('tab-login').className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition ' + (isLogin ? activeCls : inactiveCls);
   $('tab-register').className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition ' + (!isLogin ? activeCls : inactiveCls);
@@ -741,16 +913,12 @@ async function handleLogin() {
     const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
 
     localStorage.setItem('kasir:authCache', JSON.stringify({
-      loggedIn: true,
-      userId: user.id,
-      email: user.email,
+      loggedIn: true, userId: user.id, email: user.email,
       username: profile?.username || email.split('@')[0],
-      role: profile?.role || 'admin',
-      loginAt: Date.now(),
+      role: profile?.role || 'admin', loginAt: Date.now(),
     }));
 
-    setStatus('login-status', 'ok', '✅ Berhasil masuk! Mengalihkan...');
-    toast('Selamat datang!', 'success');
+    setStatus('login-status', 'ok', '✅ Berhasil! Mengalihkan...');
     setTimeout(() => { location.href = '/dashboard'; }, 400);
   } catch (e) {
     setStatus('login-status', 'error', e.message || 'Gagal login');
@@ -780,131 +948,59 @@ async function handleRegister() {
     await sb.auth.signUp({ email, password, options: { data: { username, store_name: 'Warung Saya' } } });
     setStatus('register-status', 'ok', '✅ Akun dibuat! Silakan login.');
     toast('Akun berhasil dibuat!', 'success');
-    setTimeout(() => {
-      switchTab('login');
-      $('login-email').value = email;
-      $('login-password').focus();
-    }, 1200);
+    setTimeout(() => { switchTab('login'); $('login-email').value = email; $('login-password').focus(); }, 1200);
   } catch (e) {
     setStatus('register-status', 'error', e.message || 'Gagal daftar');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Buat Akun';
+    btn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Buat Akun Gratis';
     if (window.lucide) lucide.createIcons();
   }
 }
 window.handleRegister = handleRegister;
 
-/* ============ AUTO REDIRECT KALAU SUDAH LOGIN ============ */
 (async function checkAlreadyLoggedIn() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       localStorage.setItem('kasir:authCache', JSON.stringify({
-        loggedIn: true,
-        userId: session.user.id,
-        email: session.user.email,
-        username: session.user.email.split('@')[0],
-        role: 'admin',
-        loginAt: Date.now(),
+        loggedIn: true, userId: session.user.id, email: session.user.email,
+        username: session.user.email.split('@')[0], role: 'admin', loginAt: Date.now(),
       }));
       location.href = '/dashboard';
     }
-  } catch (e) { console.warn('[Login page] Session check failed', e); }
+  } catch (e) {}
 })();
 
-/* ============ FAQ TOGGLE ============ */
 function toggleFaq(btn) {
   const content = btn.nextElementSibling;
   const icon = btn.querySelector('i');
   const isOpen = !content.classList.contains('hidden');
-
-  // Close all
   document.querySelectorAll('.faq-content').forEach(el => el.classList.add('hidden'));
-  document.querySelectorAll('[onclick="toggleFaq(this)"] i').forEach(el => el.style.transform = '');
-
+  document.querySelectorAll('[onclick="toggleFaq(this)"] i').forEach(el => { el.style.transform = ''; el.setAttribute('data-lucide', 'plus'); });
   if (!isOpen) {
     content.classList.remove('hidden');
-    icon.style.transform = 'rotate(180deg)';
+    icon.style.transform = 'rotate(45deg)';
   }
+  if (window.lucide) lucide.createIcons();
 }
 window.toggleFaq = toggleFaq;
 
-/* ============ SCROLL REVEAL ANIMATION ============ */
+/* Reveal observer */
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('revealed');
-      revealObserver.unobserve(entry.target);
-    }
+    if (entry.isIntersecting) { entry.target.classList.add('revealed'); revealObserver.unobserve(entry.target); }
   });
-}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
-
+}, { threshold: 0.08, rootMargin: '0px 0px -80px 0px' });
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-/* ============ COUNTER ANIMATION ============ */
-function animateCount(el) {
-  const target = Number(el.dataset.count);
-  if (!target) return;
-  const duration = 2000;
-  const start = performance.now();
-  const startVal = 0;
-
-  function update(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(startVal + (target - startVal) * eased);
-    if (target >= 1000000) {
-      el.textContent = (current / 1000000).toFixed(1) + ' Juta+';
-    } else if (target >= 1000) {
-      el.textContent = Math.round(current / 1000) + ' Ribu+';
-    } else {
-      el.textContent = current.toLocaleString('id-ID') + '+';
-    }
-    if (progress < 1) requestAnimationFrame(update);
-  }
-  requestAnimationFrame(update);
-}
-
-const counterObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      animateCount(entry.target);
-      counterObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.5 });
-
-document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
-
-/* ============ NAVBAR SCROLL ============ */
+/* Navbar scroll */
 window.addEventListener('scroll', () => {
   const nav = $('navbar');
-  const brand = $('nav-brand');
-  const sub = $('nav-sub');
-  const links = document.querySelectorAll('.nav-link');
-
-  if (window.scrollY > 40) {
-    nav.classList.add('bg-white/95', 'backdrop-blur-xl', 'shadow-md');
-    brand.classList.remove('text-white');
-    brand.classList.add('text-slate-900');
-    sub.classList.remove('text-white/70');
-    sub.classList.add('text-slate-400');
-    links.forEach(l => {
-      l.classList.remove('text-white/90', 'hover:text-white');
-      l.classList.add('text-slate-600', 'hover:text-sky-600');
-    });
+  if (window.scrollY > 30) {
+    nav.classList.add('bg-white/90', 'backdrop-blur-xl', 'shadow-sm', 'border-b', 'border-emerald-100');
   } else {
-    nav.classList.remove('bg-white/95', 'backdrop-blur-xl', 'shadow-md');
-    brand.classList.add('text-white');
-    brand.classList.remove('text-slate-900');
-    sub.classList.add('text-white/70');
-    sub.classList.remove('text-slate-400');
-    links.forEach(l => {
-      l.classList.add('text-white/90', 'hover:text-white');
-      l.classList.remove('text-slate-600', 'hover:text-sky-600');
-    });
+    nav.classList.remove('bg-white/90', 'backdrop-blur-xl', 'shadow-sm', 'border-b', 'border-emerald-100');
   }
 });
 
