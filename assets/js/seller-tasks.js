@@ -24,13 +24,13 @@ window.KR = window.KR || {};
   })[c]);
   const parse = (d) => { if (typeof d === 'string') { try { return JSON.parse(d); } catch { return null; } } return d; };
 
-  const PLATFORMS = {
-    tiktok:    { name: 'TikTok', icon: 'music-2', color: '#000000' },
-    instagram: { name: 'Instagram', icon: 'instagram', color: '#E1306C' },
-    youtube:   { name: 'YouTube', icon: 'youtube', color: '#FF0000' },
-    facebook:  { name: 'Facebook', icon: 'facebook', color: '#1877F2' },
-    twitter:   { name: 'X / Twitter', icon: 'twitter', color: '#000000' },
-  };
+   const PLATFORMS = {
+     tiktok:    { name: 'TikTok',      icon: 'music-2',      color: '#000000', placeholder: '@username' },
+     instagram: { name: 'Instagram',   icon: 'camera',       color: '#E1306C', placeholder: '@username' },
+     youtube:   { name: 'YouTube',     icon: 'play-circle',  color: '#FF0000', placeholder: '@channel' },
+     facebook:  { name: 'Facebook',    icon: 'thumbs-up',    color: '#1877F2', placeholder: 'username' },
+     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
+   };
 
   async function rpc(fn, params) {
     const { data, error } = await KR.sb.client.rpc(fn, params);
