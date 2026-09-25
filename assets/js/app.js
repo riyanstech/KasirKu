@@ -67,6 +67,7 @@ function showTab(tabId, btn) {
   if (tabId === 'pesanan' && typeof loadOrders === 'function') loadOrders();
   if (tabId === 'laporan') renderReport();
   if (tabId === 'customer' && typeof loadCustomers === 'function') loadCustomers();
+  if (tabId === 'tugas' && typeof loadTaskTab === 'function') loadTaskTab();
   if (tabId === 'pengaturan') loadSettings();
 
   if (window.lucide) {
