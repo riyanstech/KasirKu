@@ -150,11 +150,16 @@ KR.pwa = (function () {
     console.log('[PWA] Init — standalone:', isStandalone(), 'iOS:', isIOS());
   }
 
+  function canInstall() {
+    return !!deferredPrompt;
+  }
+
   return {
     init,
     isStandalone,
     isIOS,
     isAndroid,
+    canInstall,
     triggerInstall,
     showBanner,
     hideBanner,
