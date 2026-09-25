@@ -18,6 +18,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[c]);
+  const fmt = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 
   function toast(msg, type = 'info') {
     if (window.__customerToast) return window.__customerToast(msg, type);
@@ -37,12 +38,16 @@
 
   function saveSession(session) {
     const data = { ...session, seller_id: state.sellerId, saved_at: Date.now() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('[CustomerAuth] Save session failed', e);
+    }
     state.session = data;
   }
 
   function clearSession() {
-    localStorage.removeItem(STORAGE_KEY);
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
     state.session = null;
   }
 
@@ -58,10 +63,11 @@
 
   function getGuestToken() {
     const key = GUEST_TOKEN_KEY + state.sellerId;
-    let token = localStorage.getItem(key);
+    let token = null;
+    try { token = localStorage.getItem(key); } catch (e) {}
     if (!token) {
       token = 'g_' + genUUID();
-      localStorage.setItem(key, token);
+      try { localStorage.setItem(key, token); } catch (e) {}
     }
     return token;
   }
@@ -83,8 +89,9 @@
       p_phone: phone || null,
       p_address: address || null,
     });
-    saveSession(data);
-    return data;
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    saveSession(parsed);
+    return parsed;
   }
 
   async function login(username, password) {
@@ -93,8 +100,9 @@
       p_username: username,
       p_password: password,
     });
-    saveSession(data);
-    return data;
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    saveSession(parsed);
+    return parsed;
   }
 
   async function guest(name, phone, address) {
@@ -106,8 +114,9 @@
       p_phone: phone || null,
       p_address: address || null,
     });
-    saveSession(data);
-    return data;
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    saveSession(parsed);
+    return parsed;
   }
 
   async function updateProfile({ name, phone, address }) {
@@ -118,13 +127,15 @@
       p_phone: phone || null,
       p_address: address || null,
     });
-    saveSession({ ...state.session, ...data });
-    return data;
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    saveSession({ ...state.session, ...parsed });
+    return parsed;
   }
 
   function logout() {
     clearSession();
     renderHeaderUI();
+    renderMyOrdersButton();
   }
 
   /* ---------- HEADER UI ---------- */
@@ -144,7 +155,19 @@
     } else {
       btn.innerHTML = `<i data-lucide="user" class="w-5 h-5 text-slate-500"></i>`;
       btn.title = 'Masuk / Daftar';
-      btn.onclick = () => openAuthModal('login');
+      btn.onclick = function () { openAuthModal('login'); };
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderMyOrdersButton() {
+    const btn = $('my-orders-header-btn');
+    if (!btn) return;
+    if (state.session) {
+      btn.classList.remove('hidden');
+      btn.onclick = openMyOrders;
+    } else {
+      btn.classList.add('hidden');
     }
     if (window.lucide) lucide.createIcons();
   }
@@ -190,7 +213,7 @@
               </div>
               <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
                 <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Total Belanja</div>
-                <div class="font-mono font-black text-sm text-emerald-600">Rp ${Math.round(Number(s.total_spent) || 0).toLocaleString('id-ID')}</div>
+                <div class="font-mono font-black text-sm text-emerald-600">${fmt(s.total_spent)}</div>
               </div>
             </div>
 
@@ -225,15 +248,16 @@
   }
 
   async function saveProfileSheet() {
-    const name = $('cs-name')?.value.trim();
-    const phone = $('cs-phone')?.value.trim();
-    const address = $('cs-address')?.value.trim();
+    const name = $('cs-name') ? $('cs-name').value.trim() : '';
+    const phone = $('cs-phone') ? $('cs-phone').value.trim() : '';
+    const address = $('cs-address') ? $('cs-address').value.trim() : '';
     if (!name) return toast('Nama wajib diisi', 'error');
 
     try {
       await updateProfile({ name, phone, address });
       toast('Profil tersimpan', 'success');
-      $('customer-profile-sheet')?.remove();
+      const sheet = $('customer-profile-sheet');
+      if (sheet) sheet.remove();
       renderHeaderUI();
     } catch (e) {
       toast('Gagal: ' + e.message, 'error');
@@ -250,7 +274,8 @@
   }
 
   function closeAuthModal() {
-    $('auth-modal')?.classList.add('hidden');
+    const modal = $('auth-modal');
+    if (modal) modal.classList.add('hidden');
   }
 
   function switchAuthTab(tab) {
@@ -264,20 +289,21 @@
   }
 
   async function handleLogin() {
-    const u = $('ca-login-username')?.value.trim();
-    const p = $('ca-login-password')?.value;
+    const u = $('ca-login-username') ? $('ca-login-username').value.trim() : '';
+    const p = $('ca-login-password') ? $('ca-login-password').value : '';
     if (!u || !p) return toast('Isi username & password', 'error');
 
     const btn = $('ca-login-btn');
-    const orig = btn?.innerHTML;
+    const orig = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
 
     try {
-      await login(u, p);
+      const session = await login(u, p);
       closeAuthModal();
       renderHeaderUI();
-      toast(`Selamat datang, ${state.session.name}!`, 'success');
-      setTimeout(() => location.reload(), 500);
+      renderMyOrdersButton();
+      toast('Selamat datang, ' + (session.name || 'Customer') + '!', 'success');
+      setTimeout(function () { location.reload(); }, 500);
     } catch (e) {
       toast(e.message, 'error');
       if (btn) { btn.disabled = false; btn.innerHTML = orig; }
@@ -285,11 +311,11 @@
   }
 
   async function handleRegister() {
-    const u = $('ca-reg-username')?.value.trim();
-    const p = $('ca-reg-password')?.value;
-    const p2 = $('ca-reg-password2')?.value;
-    const n = $('ca-reg-name')?.value.trim();
-    const ph = $('ca-reg-phone')?.value.trim();
+    const u = $('ca-reg-username') ? $('ca-reg-username').value.trim() : '';
+    const p = $('ca-reg-password') ? $('ca-reg-password').value : '';
+    const p2 = $('ca-reg-password2') ? $('ca-reg-password2').value : '';
+    const n = $('ca-reg-name') ? $('ca-reg-name').value.trim() : '';
+    const ph = $('ca-reg-phone') ? $('ca-reg-phone').value.trim() : '';
 
     if (!u || u.length < 3) return toast('Username minimal 3 karakter', 'error');
     if (!/^[a-z0-9_]+$/i.test(u)) return toast('Username hanya huruf, angka, underscore', 'error');
@@ -298,15 +324,16 @@
     if (!n) return toast('Nama wajib diisi', 'error');
 
     const btn = $('ca-reg-btn');
-    const orig = btn?.innerHTML;
+    const orig = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Mendaftar...'; }
 
     try {
       await register(u, p, n, ph, null);
       closeAuthModal();
       renderHeaderUI();
-      toast(`Akun dibuat! Selamat datang, ${n}!`, 'success');
-      setTimeout(() => location.reload(), 500);
+      renderMyOrdersButton();
+      toast('Akun dibuat! Selamat datang, ' + n + '!', 'success');
+      setTimeout(function () { location.reload(); }, 500);
     } catch (e) {
       toast(e.message, 'error');
       if (btn) { btn.disabled = false; btn.innerHTML = orig; }
@@ -314,19 +341,20 @@
   }
 
   async function handleGuest() {
-    const n = $('ca-guest-name')?.value.trim();
+    const n = $('ca-guest-name') ? $('ca-guest-name').value.trim() : '';
     if (!n) return toast('Nama wajib diisi', 'error');
 
     const btn = $('ca-guest-btn');
-    const orig = btn?.innerHTML;
+    const orig = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Memproses...'; }
 
     try {
       await guest(n, null, null);
       closeAuthModal();
       renderHeaderUI();
+      renderMyOrdersButton();
       toast('Lanjut sebagai tamu', 'success');
-      setTimeout(() => location.reload(), 500);
+      setTimeout(function () { location.reload(); }, 500);
     } catch (e) {
       toast(e.message, 'error');
       if (btn) { btn.disabled = false; btn.innerHTML = orig; }
@@ -337,7 +365,7 @@
     if (!confirm('Keluar dari akun?')) return;
     logout();
     toast('Logout berhasil');
-    setTimeout(() => location.reload(), 400);
+    setTimeout(function () { location.reload(); }, 400);
   }
 
   /* ---------- AUTOFILL CHECKOUT ---------- */
@@ -352,23 +380,13 @@
     if (addrEl && !addrEl.value) addrEl.value = state.session.address || '';
   }
 
-     /* ---------- MY ORDERS ---------- */
-  async function loadMyOrders() {
-    if (!state.session) return { orders: [], stats: null };
-    try {
-      const [ordersRes, statsRes] = await Promise.all([
-        rpc('customer_my_orders', { p_customer_id: state.session.id }),
-        rpc('customer_my_stats', { p_customer_id: state.session.id }),
-      ]);
-      const parse = (d) => typeof d === 'string' ? JSON.parse(d) : d;
-      return {
-        orders: (ordersRes || []).map(parse).filter(Boolean),
-        stats: parse(statsRes) || {},
-      };
-    } catch (e) {
-      console.error('[MyOrders]', e);
-      return { orders: [], stats: null, error: e.message };
-    }
+  /* ---------- MY ORDERS ---------- */
+  function formatDateID(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    return pad(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
   async function openMyOrders() {
@@ -409,163 +427,135 @@
     document.body.appendChild(sheet);
     if (window.lucide) lucide.createIcons();
 
-    const { orders, stats, error } = await loadMyOrders();
-    const content = $('my-orders-content');
-    if (!content) return;
+    try {
+      const ordersPromise = rpc('customer_my_orders', { p_customer_id: state.session.id });
+      const statsPromise = rpc('customer_my_stats', { p_customer_id: state.session.id });
+      const results = await Promise.all([ordersPromise, statsPromise]);
+      const parse = function (d) { return typeof d === 'string' ? JSON.parse(d) : d; };
+      const orders = (results[0] || []).map(parse).filter(Boolean);
+      const stats = parse(results[1]) || {};
 
-    if (error) {
-      content.innerHTML = `<div class="py-12 text-center">
-        <div class="w-16 h-16 mx-auto rounded-2xl bg-red-50 text-red-500 grid place-items-center mb-3">
-          <i data-lucide="alert-circle" class="w-8 h-8"></i>
-        </div>
-        <div class="font-extrabold text-slate-800 mb-1">Gagal memuat</div>
-        <p class="text-sm text-slate-500">${esc(error)}</p>
-      </div>`;
+      const content = $('my-orders-content');
+      if (!content) return;
+
+      if (!orders.length) {
+        content.innerHTML = '<div class="py-16 text-center">' +
+          '<div class="w-20 h-20 mx-auto rounded-3xl bg-slate-100 grid place-items-center mb-4">' +
+            '<i data-lucide="package-open" class="w-10 h-10 text-slate-400"></i>' +
+          '</div>' +
+          '<h3 class="font-extrabold text-slate-800 mb-1.5">Belum ada pesanan</h3>' +
+          '<p class="text-slate-500 text-sm max-w-xs mx-auto">Yuk mulai belanja, pesanan kamu akan muncul di sini</p>' +
+        '</div>';
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      const statHtml = '<div class="grid grid-cols-3 gap-2 mb-4">' +
+        '<div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">' +
+          '<div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Total</div>' +
+          '<div class="font-mono font-black text-lg text-emerald-600">' + (stats.total_orders || 0) + '</div>' +
+        '</div>' +
+        '<div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">' +
+          '<div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 mb-1">Proses</div>' +
+          '<div class="font-mono font-black text-lg text-amber-600">' + ((stats.pending || 0) + (stats.verified || 0)) + '</div>' +
+        '</div>' +
+        '<div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">' +
+          '<div class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 mb-1">Selesai</div>' +
+          '<div class="font-mono font-black text-lg text-emerald-600">' + (stats.done || 0) + '</div>' +
+        '</div>' +
+      '</div>';
+
+      const cardsHtml = orders.map(function (o) {
+        const statusMap = {
+          pending:   { label: 'Menunggu Verifikasi', color: 'amber',   icon: 'clock' },
+          verified:  { label: 'Sedang Diproses',     color: 'blue',    icon: 'loader' },
+          done:      { label: 'Selesai',             color: 'emerald', icon: 'check-circle' },
+          cancelled: { label: 'Dibatalkan',          color: 'red',     icon: 'x-circle' },
+        };
+        const s = statusMap[o.status] || statusMap.pending;
+        const methodMap = { digital: 'Digital', delivery: 'Dikirim', pickup: 'Ambil', cod: 'COD' };
+        const method = methodMap[o.delivery_method] || 'Digital';
+        const code = o.order_code ? '#' + o.order_code : '#' + String(o.id).slice(0, 6).toUpperCase();
+        const created = formatDateID(o.created_at);
+        const items = (Array.isArray(o.items) && o.items.length) ? o.items : [];
+        const itemCount = items.length || 1;
+
+        const itemPreview = items.slice(0, 3).map(function (it) {
+          return '<div class="flex items-center justify-between gap-2 text-xs">' +
+            '<span class="text-slate-600 flex-1 min-w-0 truncate">' + it.qty + '× ' + esc(it.name) + '</span>' +
+            '<span class="font-mono font-bold text-slate-800 whitespace-nowrap">' + fmt((it.price || 0) * (it.qty || 1)) + '</span>' +
+          '</div>';
+        }).join('');
+        const moreItems = itemCount > 3
+          ? '<div class="text-[11px] text-slate-500 italic mt-1">+' + (itemCount - 3) + ' item lainnya</div>'
+          : '';
+
+        const colorMap = {
+          amber:   { bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700',   icon: 'bg-amber-500' },
+          blue:    { bg: 'bg-blue-50',    border: 'border-blue-200',    text: 'text-blue-700',    icon: 'bg-blue-500' },
+          emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: 'bg-emerald-500' },
+          red:     { bg: 'bg-red-50',     border: 'border-red-200',     text: 'text-red-700',     icon: 'bg-red-500' },
+        }[s.color];
+
+        return '<div class="rounded-2xl border-2 ' + colorMap.border + ' ' + colorMap.bg + ' overflow-hidden">' +
+          '<div class="p-4">' +
+            '<div class="flex items-start justify-between gap-3 mb-3">' +
+              '<div class="flex items-center gap-2.5 min-w-0">' +
+                '<div class="w-9 h-9 rounded-xl ' + colorMap.icon + ' text-white grid place-items-center flex-shrink-0 shadow-md">' +
+                  '<i data-lucide="' + s.icon + '" class="w-4 h-4"></i>' +
+                '</div>' +
+                '<div class="min-w-0">' +
+                  '<div class="text-[10px] font-extrabold uppercase tracking-widest ' + colorMap.text + '">' + s.label + '</div>' +
+                  '<div class="font-mono text-xs text-slate-600 mt-0.5">' + code + '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="text-right flex-shrink-0">' +
+                '<div class="font-mono font-black text-base text-slate-800">' + fmt(o.product_price) + '</div>' +
+                '<div class="text-[10px] text-slate-500 mt-0.5">' + itemCount + ' item</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="space-y-1.5 p-3 rounded-xl bg-white/60 border border-white">' +
+              itemPreview + moreItems +
+            '</div>' +
+            '<div class="flex items-center justify-between mt-3 pt-3 border-t border-dashed ' + colorMap.border + '">' +
+              '<div class="flex items-center gap-3 text-[11px] text-slate-600">' +
+                '<span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>' + created + '</span>' +
+                '<span class="inline-flex items-center gap-1"><i data-lucide="truck" class="w-3 h-3"></i>' + method + '</span>' +
+              '</div>' +
+            '</div>' +
+            (o.notes ? '<div class="mt-2 p-2 rounded-lg bg-white/60 border border-white text-[11px] text-slate-600"><i data-lucide="message-square" class="w-3 h-3 inline mr-1"></i>' + esc(o.notes) + '</div>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      content.innerHTML = statHtml + '<div class="space-y-3">' + cardsHtml + '</div>';
       if (window.lucide) lucide.createIcons();
-      return;
+    } catch (e) {
+      console.error('[MyOrders]', e);
+      const content = $('my-orders-content');
+      if (content) {
+        content.innerHTML = '<div class="py-12 text-center">' +
+          '<div class="w-16 h-16 mx-auto rounded-2xl bg-red-50 text-red-500 grid place-items-center mb-3">' +
+            '<i data-lucide="alert-circle" class="w-8 h-8"></i>' +
+          '</div>' +
+          '<div class="font-extrabold text-slate-800 mb-1">Gagal memuat</div>' +
+          '<p class="text-sm text-slate-500">' + esc(e.message || 'Unknown') + '</p>' +
+        '</div>';
+        if (window.lucide) lucide.createIcons();
+      }
     }
-
-    if (!orders.length) {
-      content.innerHTML = `<div class="py-16 text-center">
-        <div class="w-20 h-20 mx-auto rounded-3xl bg-slate-100 grid place-items-center mb-4">
-          <i data-lucide="package-open" class="w-10 h-10 text-slate-400"></i>
-        </div>
-        <h3 class="font-extrabold text-slate-800 mb-1.5">Belum ada pesanan</h3>
-        <p class="text-slate-500 text-sm max-w-xs mx-auto">Yuk mulai belanja, pesanan kamu akan muncul di sini</p>
-        <button onclick="document.getElementById('my-orders-sheet').remove()" class="mt-5 px-6 py-3 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold text-sm shadow-lg shadow-primary-500/30">
-          Mulai Belanja
-        </button>
-      </div>`;
-      if (window.lucide) lucide.createIcons();
-      return;
-    }
-
-    // Stats mini
-    const statHtml = stats ? `
-      <div class="grid grid-cols-3 gap-2 mb-4">
-        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
-          <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Total</div>
-          <div class="font-mono font-black text-lg text-emerald-600">${stats.total_orders || 0}</div>
-        </div>
-        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">
-          <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 mb-1">Proses</div>
-          <div class="font-mono font-black text-lg text-amber-600">${(stats.pending || 0) + (stats.verified || 0)}</div>
-        </div>
-        <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-          <div class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 mb-1">Selesai</div>
-          <div class="font-mono font-black text-lg text-emerald-600">${stats.done || 0}</div>
-        </div>
-      </div>` : '';
-
-    const orderCardsHtml = orders.map(o => renderOrderCardCustomer(o)).join('');
-    content.innerHTML = statHtml + '<div class="space-y-3">' + orderCardsHtml + '</div>';
-    if (window.lucide) lucide.createIcons();
   }
-
-  function renderOrderCardCustomer(o) {
-    const statusMap = {
-      pending:   { label: 'Menunggu Verifikasi', color: 'amber',   icon: 'clock' },
-      verified:  { label: 'Sedang Diproses',     color: 'blue',    icon: 'loader' },
-      done:      { label: 'Selesai',             color: 'emerald', icon: 'check-circle' },
-      cancelled: { label: 'Dibatalkan',          color: 'red',     icon: 'x-circle' },
-    };
-    const s = statusMap[o.status] || statusMap.pending;
-    const methodMap = {
-      digital: 'Digital', delivery: 'Dikirim', pickup: 'Ambil', cod: 'COD'
-    };
-    const method = methodMap[o.delivery_method] || 'Digital';
-    const code = o.order_code ? '#' + o.order_code : '#' + String(o.id).slice(0, 6).toUpperCase();
-    const created = formatDateID(o.created_at);
-    const items = Array.isArray(o.items) && o.items.length ? o.items : [];
-    const itemCount = items.length || 1;
-
-    const itemPreview = items.slice(0, 2).map(it =>
-      `<div class="flex items-center justify-between gap-2 text-xs">
-        <span class="text-slate-600 flex-1 min-w-0 truncate">${it.qty}× ${esc(it.name)}</span>
-        <span class="font-mono font-bold text-slate-800 whitespace-nowrap">${fmt((it.price || 0) * (it.qty || 1))}</span>
-      </div>`
-    ).join('');
-    const moreItems = itemCount > 2 ? `<div class="text-[11px] text-slate-500 italic mt-1">+${itemCount - 2} item lainnya</div>` : '';
-
-    const colorMap = {
-      amber:   { bg: 'bg-amber-50',   border: 'border-amber-200',   text: 'text-amber-700',   icon: 'bg-amber-500' },
-      blue:    { bg: 'bg-blue-50',    border: 'border-blue-200',    text: 'text-blue-700',    icon: 'bg-blue-500' },
-      emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: 'bg-emerald-500' },
-      red:     { bg: 'bg-red-50',     border: 'border-red-200',     text: 'text-red-700',     icon: 'bg-red-500' },
-    }[s.color] || { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-700', icon: 'bg-slate-500' };
-
-    return `
-      <div class="rounded-2xl border-2 ${colorMap.border} ${colorMap.bg} overflow-hidden">
-        <div class="p-4">
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-9 h-9 rounded-xl ${colorMap.icon} text-white grid place-items-center flex-shrink-0 shadow-md">
-                <i data-lucide="${s.icon}" class="w-4 h-4"></i>
-              </div>
-              <div class="min-w-0">
-                <div class="text-[10px] font-extrabold uppercase tracking-widest ${colorMap.text}">${s.label}</div>
-                <div class="font-mono text-xs text-slate-600 mt-0.5">${code}</div>
-              </div>
-            </div>
-            <div class="text-right flex-shrink-0">
-              <div class="font-mono font-black text-base text-slate-800">${fmt(o.product_price)}</div>
-              <div class="text-[10px] text-slate-500 mt-0.5">${itemCount} item</div>
-            </div>
-          </div>
-          <div class="space-y-1.5 p-3 rounded-xl bg-white/60 border border-white">
-            ${itemPreview}
-            ${moreItems}
-          </div>
-          <div class="flex items-center justify-between mt-3 pt-3 border-t border-dashed ${colorMap.border}">
-            <div class="flex items-center gap-3 text-[11px] text-slate-600">
-              <span class="inline-flex items-center gap-1">
-                <i data-lucide="calendar" class="w-3 h-3"></i>${created}
-              </span>
-              <span class="inline-flex items-center gap-1">
-                <i data-lucide="truck" class="w-3 h-3"></i>${method}
-              </span>
-            </div>
-          </div>
-          ${o.notes ? `<div class="mt-2 p-2 rounded-lg bg-white/60 border border-white text-[11px] text-slate-600">
-            <i data-lucide="message-square" class="w-3 h-3 inline mr-1"></i>${esc(o.notes)}
-          </div>` : ''}
-        </div>
-      </div>
-    `;
-  }
-
-  function formatDateID(ts) {
-    if (!ts) return '—';
-    const d = new Date(ts);
-    const pad = n => String(n).padStart(2, '0');
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    return `${pad(d.getDate())} ${months[d.getMonth()]} ${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
-
-  function fmt(n) {
-    return 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
-  }
-
-   function renderMyOrdersButton() {
-     const btn = $('my-orders-header-btn');
-     if (!btn) return;
-     // Tombol hanya muncul kalau login (member atau guest — biar guest yang order pakai akun guest juga bisa lihat)
-     if (state.session) {
-       btn.classList.remove('hidden');
-       btn.onclick = openMyOrders;
-     } else {
-       btn.classList.add('hidden');
-     }
-     if (window.lucide) lucide.createIcons();
-   }
 
   /* ---------- INIT ---------- */
   function init(sellerId, supabaseClient) {
     state.sellerId = sellerId;
     state.sb = supabaseClient;
     state.session = loadSession();
-    renderHeaderUI();
 
+    renderHeaderUI();
+    renderMyOrdersButton();
+
+    // Hook proceedToCheckout untuk autofill
     if (typeof window.proceedToCheckout === 'function' && !window.proceedToCheckout._hooked) {
       const orig = window.proceedToCheckout;
       window.proceedToCheckout = function () {
@@ -575,29 +565,32 @@
       window.proceedToCheckout._hooked = true;
     }
 
+    // Auto-show modal login kalau belum login
     if (!state.session) {
-      setTimeout(() => openAuthModal('login'), 600);
+      setTimeout(function () { openAuthModal('login'); }, 600);
     }
 
+    // Expose API global
     window.CustomerAuth = {
-      state,
-      openAuthModal,
-      closeAuthModal,
-      switchAuthTab,
-      handleLogin,
-      handleRegister,
-      handleGuest,
-      handleLogout,
-      saveProfileSheet,
-      autofillCheckout,
-      getSession: () => state.session,
-      updateProfile,
+      state: state,
+      openAuthModal: openAuthModal,
+      closeAuthModal: closeAuthModal,
+      switchAuthTab: switchAuthTab,
+      handleLogin: handleLogin,
+      handleRegister: handleRegister,
+      handleGuest: handleGuest,
+      handleLogout: handleLogout,
+      saveProfileSheet: saveProfileSheet,
+      autofillCheckout: autofillCheckout,
+      openMyOrders: openMyOrders,
+      getSession: function () { return state.session; },
+      updateProfile: updateProfile,
     };
   }
 
   window.KRCustomer = {
-    init,
-    getSession: () => state.session,
-    updateProfile,
+    init: init,
+    getSession: function () { return state.session; },
+    updateProfile: updateProfile,
   };
 })();
