@@ -10,7 +10,21 @@ if (typeof supabase === 'undefined') {
   console.error('[Supabase] SDK belum dimuat!');
 }
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    storage: window.localStorage,
+    storageKey: 'kasirku-auth-token',
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    flowType: 'pkce',
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+});
 window.supabaseClient = supabaseClient;
 
 KR.sb = (function () {
