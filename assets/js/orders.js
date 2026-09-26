@@ -257,8 +257,8 @@ window.KR = window.KR || {};
     }
   }
 
-  async function refreshOrders() {
-    const btn = event?.target;
+  async function refreshOrders(evt) {
+  const btn = evt?.target;
     if (btn) {
       const orig = btn.innerHTML;
       btn.disabled = true;
