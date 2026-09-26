@@ -7,6 +7,8 @@ const CACHE_VERSION = 'kasirku-' + Date.now();
 const ASSETS = [
   './',
   './index.html',
+  './dashboard.html',
+  './order.html',
   './manifest.json',
   './assets/css/style.css',
   './assets/js/supabase.js',
@@ -15,6 +17,10 @@ const ASSETS = [
   './assets/js/vision.js',
   './assets/js/pos.js',
   './assets/js/orders.js',
+  './assets/js/customers-admin.js',
+  './assets/js/customer-auth.js',
+  './assets/js/customer-tasks.js',
+  './assets/js/seller-tasks.js',
   './assets/js/pwa.js',
   './assets/js/app.js',
 ];
