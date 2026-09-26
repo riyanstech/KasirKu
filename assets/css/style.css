@@ -3804,4 +3804,25 @@ body {
   height: 0 !important;
   width: 0 !important;
 }
+
+/* ============================================================
+   SPINNER ANIMATION — untuk tombol refresh & loading
+   ============================================================ */
+@keyframes krSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Tombol refresh disabled state */
+.btn[disabled] {
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+/* Icon spin di dalam tombol */
+.btn svg[data-lucide="loader-circle"],
+.btn .kr-spin {
+  animation: krSpin 1s linear infinite;
+  transform-origin: center;
+}
 /* ==================== END OF FILE ==================== */
