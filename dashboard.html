@@ -542,6 +542,140 @@
                 </div>
             </section>
         </main>
+            
+
+        <!-- ==================== MOBILE BOTTOM NAV ==================== -->
+        <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+            <div class="bn-inner-mobile">
+                <button class="bn-item-mobile active" data-tab="kasir" onclick="switchMobileTab('kasir')">
+                    <i data-lucide="store"></i>
+                    <span>Kasir</span>
+                </button>
+                <button class="bn-item-mobile" data-tab="produk" onclick="switchMobileTab('produk')">
+                    <i data-lucide="package"></i>
+                    <span>Produk</span>
+                </button>
+                <button class="bn-item-mobile" data-tab="transaksi" onclick="switchMobileTab('transaksi')">
+                    <i data-lucide="receipt-text"></i>
+                    <span>Transaksi</span>
+                </button>
+                <button class="bn-item-mobile" data-tab="pesanan" onclick="switchMobileTab('pesanan')">
+                    <i data-lucide="inbox"></i>
+                    <span>Pesanan</span>
+                    <span id="orders-badge-bn" class="nav-badge hidden">0</span>
+                </button>
+                <button class="bn-item-mobile" onclick="openMobileMenu()">
+                    <i data-lucide="menu"></i>
+                    <span>Lainnya</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ==================== MOBILE MENU DRAWER ==================== -->
+    <div id="mobile-menu-drawer" class="mobile-menu-drawer">
+        <div class="mm-backdrop" onclick="closeMobileMenu()"></div>
+        <div class="mm-panel">
+            <!-- Head -->
+            <div class="mm-head">
+                <div class="mm-head-inner">
+                    <div class="mm-logo">
+                        <i data-lucide="shopping-cart"></i>
+                    </div>
+                    <div class="mm-head-text">
+                        <div class="mm-head-title">KasirKu</div>
+                        <div class="mm-head-sub">Point of Sale</div>
+                    </div>
+                    <button class="mm-close" onclick="closeMobileMenu()" aria-label="Tutup menu">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Card -->
+            <div class="mm-user-card">
+                <div class="mm-user-avatar" id="mm-user-avatar">?</div>
+                <div class="mm-user-info">
+                    <div class="mm-user-name" id="mm-user-name">Memuat...</div>
+                    <div class="mm-user-role" id="mm-user-role">Admin</div>
+                </div>
+            </div>
+
+            <!-- Menu List -->
+            <div class="mm-menu">
+                <div class="mm-section-label">Menu Utama</div>
+
+                <button class="mm-item active" data-menu-tab="kasir" onclick="switchMobileTab('kasir'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="store"></i></div>
+                    <span class="mm-item-label">Kasir</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="produk" onclick="switchMobileTab('produk'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="package"></i></div>
+                    <span class="mm-item-label">Produk</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="transaksi" onclick="switchMobileTab('transaksi'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="receipt-text"></i></div>
+                    <span class="mm-item-label">Transaksi</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="pesanan" onclick="switchMobileTab('pesanan'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="inbox"></i></div>
+                    <span class="mm-item-label">Pesanan</span>
+                    <span id="orders-badge-mm" class="mm-item-badge hidden">0</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <div class="mm-section-label">Lainnya</div>
+
+                <button class="mm-item" data-menu-tab="laporan" onclick="switchMobileTab('laporan'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="mm-item-label">Laporan</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="tugas" onclick="switchMobileTab('tugas'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="gift"></i></div>
+                    <span class="mm-item-label">Tugas Berhadiah</span>
+                    <span id="tasks-badge-mm" class="mm-item-badge hidden">0</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="customer" onclick="switchMobileTab('customer'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="users"></i></div>
+                    <span class="mm-item-label">Customer</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="kasbon" onclick="switchMobileTab('kasbon'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="hand-coins"></i></div>
+                    <span class="mm-item-label">Kasbon</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="pengaturan" onclick="switchMobileTab('pengaturan'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="settings"></i></div>
+                    <span class="mm-item-label">Pengaturan</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="mm-footer">
+                <button class="mm-footer-btn" onclick="toggleTheme(); closeMobileMenu();">
+                    <i data-lucide="sun-moon"></i>
+                    <span>Ganti Tema</span>
+                </button>
+                <button class="mm-footer-btn danger" onclick="KR.auth.logout(); closeMobileMenu();">
+                    <i data-lucide="log-out"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- ==================== FLOATING CART BUTTON (FAB) ==================== -->
