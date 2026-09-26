@@ -1,6 +1,6 @@
 /* ==========================================
-   KasirKu — Kasbon / Hutang Piutang (v3 — Full)
-   Group by customer, Detail sheet, Items, Export PDF, Manual Form
+   KasirKu — Kasbon / Hutang Piutang (v4 — Final)
+   Group by customer, Detail sheet, Items, Export PDF, Manual Form, Delete
    ========================================== */
 window.KR = window.KR || {};
 
@@ -12,8 +12,20 @@ KR.kasbon = (function () {
   const fmtRaw = (n) => Math.round(Number(n) || 0).toLocaleString('id-ID');
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+  // Sanitize untuk PDF — hapus emoji & karakter yang tidak didukung font Helvetica
+  function sanitizePDF(text) {
+    return String(text || '')
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')   // emoji
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')     // misc symbols
+      .replace(/[\u{1F000}-\u{1F2FF}]/gu, '')   // mahjong/domino
+      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')     // variation selectors
+      .replace(/[^\x00-\x7F\u00A0-\u024F\u2018\u2019\u201C\u201D\u2013\u2014]/g, '')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+  }
+
   let list = [];
-  let paymentsByKasbon = {};  // { kasbon_id: [payments] }
+  let paymentsByKasbon = {};
   let filter = 'active';
   let searchQuery = '';
 
@@ -45,7 +57,6 @@ KR.kasbon = (function () {
     try {
       const user = await KR.sb.getUser();
 
-      // 1. Fetch semua kasbon
       const { data: kasbonData, error: kErr } = await KR.sb.client
         .from('kasbon')
         .select('*')
@@ -54,7 +65,6 @@ KR.kasbon = (function () {
       if (kErr) throw kErr;
       list = kasbonData || [];
 
-      // 2. Fetch semua payments (untuk detail & PDF)
       paymentsByKasbon = {};
       if (list.length > 0) {
         const kasbonIds = list.map(k => k.id);
@@ -81,7 +91,7 @@ KR.kasbon = (function () {
   }
 
   /* ==========================================
-     GROUPING BY CUSTOMER
+     GROUPING
      ========================================== */
   function groupByCustomer() {
     const groups = {};
@@ -201,10 +211,11 @@ KR.kasbon = (function () {
       const initial = (g.name || '?')[0].toUpperCase();
       const percent = g.totalAmount > 0 ? Math.round((g.totalPaid / g.totalAmount) * 100) : 0;
       const allPaid = g.activeCount === 0;
+      const safeName = esc(g.name).replace(/'/g, "\\'");
 
       return `
         <div class="kasbon-customer-card">
-          <div class="kcc-head" onclick="openCustomerDetail('${esc(g.name).replace(/'/g, "\\'")}')">
+          <div class="kcc-head" onclick="openCustomerDetail('${safeName}')">
             <div class="kcc-avatar ${allPaid ? 'paid' : ''}">${esc(initial)}</div>
             <div class="kcc-info">
               <div class="kcc-name">
@@ -232,15 +243,18 @@ KR.kasbon = (function () {
           ` : ''}
 
           <div class="kcc-actions">
-            <button class="kcc-btn" onclick="event.stopPropagation(); openCustomerDetail('${esc(g.name).replace(/'/g, "\\'")}')">
+            <button class="kcc-btn" onclick="event.stopPropagation(); openCustomerDetail('${safeName}')">
               <i data-lucide="list"></i> Detail
             </button>
-            <button class="kcc-btn primary" onclick="event.stopPropagation(); exportCustomerPDF('${esc(g.name).replace(/'/g, "\\'")}')">
+            <button class="kcc-btn primary" onclick="event.stopPropagation(); exportCustomerPDF('${safeName}')">
               <i data-lucide="file-down"></i> PDF
             </button>
-            ${g.phone ? `<button class="kcc-btn wa" onclick="event.stopPropagation(); waKasbon('${esc(g.phone)}')">
+            ${g.phone ? `<button class="kcc-btn wa" onclick="event.stopPropagation(); waKasbon('${esc(g.phone)}')" title="Chat WA">
               <i data-lucide="message-circle"></i>
             </button>` : ''}
+            <button class="kcc-btn danger" onclick="event.stopPropagation(); deleteCustomerKasbons('${safeName}', ${g.kasbons.length})" title="Hapus semua kasbon customer ini">
+              <i data-lucide="trash-2"></i>
+            </button>
           </div>
         </div>
       `;
@@ -259,7 +273,7 @@ KR.kasbon = (function () {
     const existing = $('kasbon-detail-sheet');
     if (existing) existing.remove();
 
-    // Build events timeline (kasbon + payments)
+    // Build events
     const events = [];
     g.kasbons.forEach(k => {
       events.push({
@@ -288,9 +302,7 @@ KR.kasbon = (function () {
     events.sort((a, b) => a.date - b.date);
 
     let runningBalance = 0;
-
     const safeName = esc(g.name).replace(/'/g, "\\'");
-    const safePhone = g.phone ? esc(g.phone) : '';
 
     const sheet = document.createElement('div');
     sheet.id = 'kasbon-detail-sheet';
@@ -312,7 +324,7 @@ KR.kasbon = (function () {
 
         <!-- Body -->
         <div class="kds-body">
-          <!-- Summary Cards -->
+          <!-- Summary -->
           <div class="kds-summary">
             <div class="kds-sum-item">
               <div class="kds-sum-label">Total Kasbon</div>
@@ -351,8 +363,8 @@ KR.kasbon = (function () {
                     <div class="kds-event-row1">
                       <span class="kds-event-type">
                         ${isKasbon ? 'Kasbon' : 'Bayar'}
-                        ${isPaid ? '<span style="font-size:.6rem;background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:6px;margin-left:5px;">LUNAS</span>' : ''}
-                        ${isPartial ? '<span style="font-size:.6rem;background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:6px;margin-left:5px;">DICICIL</span>' : ''}
+                        ${isPaid ? '<span class="kds-event-tag paid">LUNAS</span>' : ''}
+                        ${isPartial ? '<span class="kds-event-tag partial">DICICIL</span>' : ''}
                       </span>
                       <span class="kds-event-date">${formatDateTimeID(e.date)}</span>
                     </div>
@@ -380,6 +392,11 @@ KR.kasbon = (function () {
                     ${isKasbon && !isPaid ? `
                       <button class="kds-pay-btn" onclick="event.stopPropagation(); openKasbonPay('${e.kasbon_id}')" title="Bayar / Cicil">
                         <i data-lucide="banknote"></i> Bayar
+                      </button>
+                    ` : ''}
+                    ${isKasbon ? `
+                      <button class="kds-del-btn" onclick="event.stopPropagation(); deleteSingleKasbon('${e.kasbon_id}', '${esc(g.name).replace(/'/g, "\\'")}')" title="Hapus kasbon ini">
+                        <i data-lucide="trash-2"></i>
                       </button>
                     ` : ''}
                   </div>
@@ -427,7 +444,7 @@ KR.kasbon = (function () {
   };
 
   /* ==========================================
-     EXPORT PDF PER CUSTOMER
+     EXPORT PDF
      ========================================== */
   async function exportCustomerPDF(customerName) {
     const jspdfNS = window.jspdf || window.jsPDF;
@@ -443,16 +460,14 @@ KR.kasbon = (function () {
     KR.toast.info('Menyiapkan PDF...');
 
     try {
-      // Build events
       const events = [];
       g.kasbons.forEach(k => {
         events.push({
           date: new Date(k.created_at),
           type: 'kasbon',
           amount: Number(k.amount),
-          description: k.note || 'Kasbon baru',
+          description: k.note || '',
           due_date: k.due_date,
-          created_at_raw: k.created_at,
           items: Array.isArray(k.items) ? k.items : [],
         });
         const payments = paymentsByKasbon[k.id] || [];
@@ -473,21 +488,21 @@ KR.kasbon = (function () {
       const margin = 14;
       const storeSettings = KR.store.getSettings();
 
-      /* ---------- HEADER ---------- */
+      /* HEADER */
       doc.setFillColor(16, 185, 129);
       doc.rect(0, 0, pageW, 32, 'F');
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(255, 255, 255);
-      doc.text(storeSettings.storeName || 'KasirKu', margin, 14);
+      doc.text(sanitizePDF(storeSettings.storeName) || 'KasirKu', margin, 14);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(220, 255, 240);
       let yHead = 20;
-      if (storeSettings.storeAddress) { doc.text(storeSettings.storeAddress, margin, yHead); yHead += 4; }
-      if (storeSettings.storePhone) { doc.text('Telp: ' + storeSettings.storePhone, margin, yHead); }
+      if (storeSettings.storeAddress) { doc.text(sanitizePDF(storeSettings.storeAddress), margin, yHead); yHead += 4; }
+      if (storeSettings.storePhone) { doc.text('Telp: ' + sanitizePDF(storeSettings.storePhone), margin, yHead); }
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
@@ -498,7 +513,7 @@ KR.kasbon = (function () {
       doc.setLineWidth(0.6);
       doc.line(margin, 49, pageW - margin, 49);
 
-      /* ---------- CUSTOMER INFO ---------- */
+      /* CUSTOMER INFO */
       let y = 58;
 
       doc.setFillColor(240, 253, 244);
@@ -513,9 +528,9 @@ KR.kasbon = (function () {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(15, 23, 42);
       doc.setFontSize(11);
-      doc.text(g.name || '-', margin + 50, y + 7);
+      doc.text(sanitizePDF(g.name) || '-', margin + 50, y + 7);
       doc.setFontSize(10);
-      doc.text(g.phone || '-', margin + 50, y + 17);
+      doc.text(sanitizePDF(g.phone) || '-', margin + 50, y + 17);
 
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
@@ -524,7 +539,7 @@ KR.kasbon = (function () {
 
       y += 34;
 
-      /* ---------- SUMMARY ---------- */
+      /* SUMMARY */
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
@@ -552,14 +567,13 @@ KR.kasbon = (function () {
 
       y = doc.lastAutoTable.finalY + 8;
 
-      /* ---------- DETAIL TRANSAKSI ---------- */
+      /* DETAIL */
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
       doc.setTextColor(15, 23, 42);
       doc.text('Riwayat Transaksi', margin, y);
       y += 4;
 
-      // Build table rows
       let saldo = 0;
       const rows = events.map(e => {
         if (e.type === 'kasbon') saldo += e.amount;
@@ -568,15 +582,23 @@ KR.kasbon = (function () {
         const dateStr = formatDateID(e.date);
         const type = e.type === 'kasbon' ? 'Kasbon' : 'Bayar';
 
-        // Keterangan: pakai items kalau ada
-        let ket;
-        if (e.type === 'kasbon' && e.items && e.items.length > 0) {
-          ket = e.items.map(it => `• ${it.qty}× ${it.name} @${fmtRaw(it.price)}`).join('\n');
-          if (e.description && e.description !== 'Kasbon baru' && !e.description.startsWith('•')) {
-            ket += '\n📝 ' + e.description;
+        let ket = '';
+        if (e.type === 'kasbon') {
+          // Items dulu
+          if (e.items && e.items.length > 0) {
+            ket = e.items.map(it =>
+              '- ' + sanitizePDF(it.name) + ' (' + it.qty + 'x ' + fmtRaw(it.price) + ')'
+            ).join('\n');
           }
+          // Tambah note manual HANYA kalau ada & beda dari "Kasbon baru"
+          const manualNote = sanitizePDF(e.description || '');
+          if (manualNote && manualNote !== 'Kasbon baru' && manualNote !== 'Kasbon') {
+            ket = ket ? ket + '\nCatatan: ' + manualNote : 'Catatan: ' + manualNote;
+          }
+          if (!ket) ket = 'Kasbon';
         } else {
-          ket = e.description + (e.type === 'payment' && e.method ? ' (' + e.method + ')' : '');
+          ket = sanitizePDF(e.description || 'Pembayaran');
+          if (e.method) ket += ' (' + sanitizePDF(e.method) + ')';
         }
 
         const debit = e.type === 'kasbon' ? fmtRaw(e.amount) : '-';
@@ -596,6 +618,7 @@ KR.kasbon = (function () {
           lineWidth: 0.1,
           valign: 'top',
           overflow: 'linebreak',
+          font: 'helvetica',
         },
         headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 8 },
         columnStyles: {
@@ -612,7 +635,7 @@ KR.kasbon = (function () {
 
       y = doc.lastAutoTable.finalY + 8;
 
-      /* ---------- FINAL TOTAL ---------- */
+      /* FINAL TOTAL */
       if (y > 250) { doc.addPage(); y = 20; }
 
       const totalBoxW = pageW - margin * 2;
@@ -636,7 +659,7 @@ KR.kasbon = (function () {
       doc.text('SISA HUTANG:', pageW - margin - 5, y + 15, { align: 'right' });
       doc.text(fmt(g.remaining), pageW - margin - 5, y + 22, { align: 'right' });
 
-      /* ---------- FOOTER ---------- */
+      /* FOOTER */
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -644,7 +667,7 @@ KR.kasbon = (function () {
         doc.setTextColor(140);
         doc.setFont('helvetica', 'italic');
         doc.text(
-          'Dokumen ini dicetak otomatis oleh KasirKu POS © ' + new Date().getFullYear(),
+          'Dokumen ini dicetak otomatis oleh KasirKu POS (c) ' + new Date().getFullYear(),
           pageW / 2, doc.internal.pageSize.getHeight() - 8,
           { align: 'center' }
         );
@@ -657,12 +680,12 @@ KR.kasbon = (function () {
         );
       }
 
-      /* ---------- SAVE ---------- */
+      /* SAVE */
       const safeName = (g.name || 'Customer').replace(/[^a-zA-Z0-9]/g, '_');
       const dateStr = new Date().toISOString().slice(0, 10);
       doc.save(`Kasbon_${safeName}_${dateStr}.pdf`);
 
-      KR.toast.success('PDF berhasil diunduh ✅');
+      KR.toast.success('PDF berhasil diunduh');
     } catch (e) {
       console.error('[ExportKasbonPDF]', e);
       KR.toast.error('Gagal export PDF: ' + (e.message || 'Unknown'));
@@ -752,7 +775,6 @@ KR.kasbon = (function () {
     if (amount <= 0) return KR.toast.error('Jumlah harus > 0');
     if (amount > remaining) return KR.toast.error('Melebihi sisa (' + fmt(remaining) + ')');
 
-    // Simpan nama customer & status sheet terbuka
     const customerName = k.customer_name;
     const wasDetailOpen = !!$('kasbon-detail-sheet');
 
@@ -764,10 +786,9 @@ KR.kasbon = (function () {
       });
       if (error) throw error;
 
-      KR.toast.success('Pembayaran dicatat ✅');
+      KR.toast.success('Pembayaran dicatat');
       $('kasbon-pay-modal')?.remove();
 
-      // Close detail sheet kalau terbuka
       if (wasDetailOpen) {
         const sheet = $('kasbon-detail-sheet');
         if (sheet) sheet.remove();
@@ -776,7 +797,6 @@ KR.kasbon = (function () {
 
       await loadKasbon();
 
-      // Buka ulang detail sheet kalau sebelumnya terbuka
       if (wasDetailOpen) {
         setTimeout(() => openCustomerDetail(customerName), 250);
       }
@@ -794,18 +814,13 @@ KR.kasbon = (function () {
   async function createKasbon({ customerName, customerPhone, amount, note, dueDate, items }) {
     const user = await KR.sb.getUser();
 
-    // Auto-generate note dari items kalau note kosong
-    let finalNote = note;
-    if (!finalNote && items && items.length > 0) {
-      finalNote = items.map(i => `${i.qty}× ${i.name}`).join(', ');
-    }
-
+    // TIDAK auto-generate note (biar tidak duplikat dengan items di PDF)
     const { data, error } = await KR.sb.client.from('kasbon').insert({
       user_id: user.id,
       customer_name: customerName,
       customer_phone: customerPhone || null,
       amount,
-      note: finalNote || null,
+      note: note || null,
       due_date: dueDate || null,
       items: items || [],
       status: 'unpaid',
@@ -815,13 +830,71 @@ KR.kasbon = (function () {
   }
 
   /* ==========================================
+     DELETE — SINGLE KASBON
+     ========================================== */
+  window.deleteSingleKasbon = function (id, customerName) {
+    const k = list.find(x => x.id === id);
+    if (!k) return;
+    confirmDialog(
+      'Hapus Kasbon Ini?',
+      `Kasbon tanggal ${formatDateID(new Date(k.created_at))} senilai ${fmt(k.amount)} akan dihapus permanen.`,
+      async () => {
+        showLoading('Menghapus...');
+        try {
+          const { error } = await KR.sb.client.from('kasbon').delete().eq('id', id);
+          if (error) throw error;
+          KR.toast.success('Kasbon dihapus');
+
+          // Refresh detail sheet
+          const sheet = $('kasbon-detail-sheet');
+          if (sheet) sheet.remove();
+          document.body.style.overflow = '';
+          await loadKasbon();
+          setTimeout(() => openCustomerDetail(customerName), 250);
+        } catch (e) {
+          KR.toast.error('Gagal: ' + e.message);
+        } finally {
+          hideLoading();
+        }
+      }
+    );
+  };
+
+  /* ==========================================
+     DELETE — ALL KASBON FOR CUSTOMER
+     ========================================== */
+  window.deleteCustomerKasbons = function (customerName, count) {
+    confirmDialog(
+      'Hapus Semua Kasbon ' + customerName + '?',
+      'Semua ' + count + ' kasbon customer ini akan dihapus permanen beserta riwayat pembayarannya. Tindakan ini tidak bisa dibatalkan.',
+      async () => {
+        showLoading('Menghapus...');
+        try {
+          const user = await KR.sb.getUser();
+          const { error } = await KR.sb.client
+            .from('kasbon')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('customer_name', customerName);
+          if (error) throw error;
+          KR.toast.success('Semua kasbon ' + customerName + ' dihapus');
+          await loadKasbon();
+        } catch (e) {
+          KR.toast.error('Gagal: ' + e.message);
+        } finally {
+          hideLoading();
+        }
+      }
+    );
+  };
+
+  /* ==========================================
      MANUAL FORM
      ========================================== */
   function openManualKasbonForm() {
     const existing = $('kasbon-manual-modal');
     if (existing) existing.remove();
 
-    // Datalist dari customer yang sudah ada
     const existingCustomers = [...new Set(list.map(k => k.customer_name).filter(Boolean))];
 
     const modal = document.createElement('div');
@@ -856,7 +929,7 @@ KR.kasbon = (function () {
           </div>
           <div class="field">
             <label>Keterangan <span class="req">*</span></label>
-            <textarea id="km-note" class="textarea" rows="3" placeholder="Detail barang:&#10;2× Indomie Goreng @3.000&#10;1× Sabun Nuvo @4.000"></textarea>
+            <textarea id="km-note" class="textarea" rows="3" placeholder="Detail barang:&#10;2x Indomie Goreng @3.000&#10;1x Sabun Nuvo @4.000"></textarea>
           </div>
         </div>
         <div class="modal-foot">
@@ -893,7 +966,7 @@ KR.kasbon = (function () {
         dueDate,
         items: [],
       });
-      KR.toast.success('Kasbon dicatat ✅');
+      KR.toast.success('Kasbon dicatat');
       $('kasbon-manual-modal')?.remove();
       await loadKasbon();
     } catch (e) {
@@ -905,28 +978,7 @@ KR.kasbon = (function () {
   }
 
   /* ==========================================
-     DELETE
-     ========================================== */
-  function deleteKasbon(id) {
-    const k = list.find(x => x.id === id);
-    if (!k) return;
-    confirmDialog('Hapus Kasbon?', `Kasbon "${k.customer_name}" (${fmt(k.amount)}) akan dihapus permanen.`, async () => {
-      showLoading('Menghapus...');
-      try {
-        const { error } = await KR.sb.client.from('kasbon').delete().eq('id', id);
-        if (error) throw error;
-        KR.toast.success('Kasbon dihapus');
-        await loadKasbon();
-      } catch (e) {
-        KR.toast.error('Gagal: ' + e.message);
-      } finally {
-        hideLoading();
-      }
-    });
-  }
-
-  /* ==========================================
-     WHATSAPP HELPER
+     WHATSAPP
      ========================================== */
   function waKasbon(phone) {
     let p = String(phone).replace(/[^\d]/g, '');
@@ -943,7 +995,6 @@ KR.kasbon = (function () {
   window.setKasbonSearch = (q) => { searchQuery = (q || '').trim(); renderKasbon(); };
   window.openKasbonPay = openKasbonPay;
   window.submitKasbonPay = submitKasbonPay;
-  window.deleteKasbon = deleteKasbon;
   window.waKasbon = waKasbon;
   window.openCustomerDetail = openCustomerDetail;
   window.exportCustomerPDF = exportCustomerPDF;
