@@ -4913,5 +4913,197 @@
 
   })();
   </script>
+
+  <!-- ============================================================
+     PATCH v5.3 — Menu Favorit (mobile) + Menu Hadiah (desktop) 
+     + Modal "Login Dulu Yuk" yang informatif
+     ============================================================ -->
+
+<!-- MODAL: Login Hint -->
+<div id="login-hint-modal" class="sheet hidden" style="align-items:center; padding:24px; z-index:130;">
+  <div class="sheet-bg" onclick="closeLoginHint()"></div>
+  <div class="confirm-card" style="max-width:360px;">
+    <div class="confirm-icon-wrap">
+      <div class="confirm-icon-ring" style="background:radial-gradient(circle, rgba(16,185,129,.30), transparent 70%);"></div>
+      <div class="confirm-icon" style="background:linear-gradient(135deg, #ecfdf5, #d1fae5); border-color:#a7f3d0; color:#047857;">
+        <i data-lucide="user-circle"></i>
+      </div>
+    </div>
+    <h3 class="confirm-title" id="login-hint-title">Login Dulu Yuk</h3>
+    <p class="confirm-desc" id="login-hint-desc">
+      Fitur ini butuh akun untuk menyimpan data kamu. Gratis, cuma butuh 10 detik.
+    </p>
+    <div class="confirm-actions" style="flex-direction:column; gap:8px;">
+      <button class="confirm-btn" style="background:linear-gradient(135deg,#10b981,#059669); color:#fff; box-shadow:0 8px 20px -6px rgba(16,185,129,.5);"
+              onclick="closeLoginHint(); if(window.CustomerAuth?.openAuthModal) CustomerAuth.openAuthModal('register');">
+        <i data-lucide="user-plus"></i>
+        <span>Daftar Gratis</span>
+      </button>
+      <button class="confirm-btn confirm-btn-cancel"
+              onclick="closeLoginHint(); if(window.CustomerAuth?.openAuthModal) CustomerAuth.openAuthModal('login');">
+        <i data-lucide="log-in"></i>
+        <span>Sudah Punya Akun</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ============================================================
+     1. Modal "Login Hint" yang informatif
+     ============================================================ */
+  let _lastHintAt = 0;
+  const HINT_COOLDOWN = 3000; // jangan spam
+
+  window.showLoginHint = function(feature) {
+    const now = Date.now();
+    if (now - _lastHintAt < HINT_COOLDOWN) return;
+    _lastHintAt = now;
+
+    const titleEl = document.getElementById('login-hint-title');
+    const descEl = document.getElementById('login-hint-desc');
+
+    if (feature === 'tasks') {
+      if (titleEl) titleEl.textContent = 'Login untuk Tugas Berhadiah';
+      if (descEl) descEl.textContent = 'Kumpulkan saldo dengan menyelesaikan tugas! Login dulu biar reward kamu tercatat aman.';
+    } else if (feature === 'orders') {
+      if (titleEl) titleEl.textContent = 'Login untuk Lihat Pesanan';
+      if (descEl) descEl.textContent = 'Riwayat & status pesanan kamu akan tampil di sini. Login dulu biar kami bisa lacak pesananmu.';
+    } else {
+      if (titleEl) titleEl.textContent = 'Login Dulu Yuk';
+      if (descEl) descEl.textContent = 'Fitur ini butuh akun untuk menyimpan data kamu. Gratis kok, cuma butuh 10 detik.';
+    }
+
+    document.getElementById('login-hint-modal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  };
+
+  window.closeLoginHint = function() {
+    document.getElementById('login-hint-modal').classList.add('hidden');
+  };
+
+  /* ============================================================
+     2. Override bnSwitch (mobile bottom nav)
+     ============================================================ */
+  const _origBnSwitch = window.bnSwitch;
+  window.bnSwitch = function(tab) {
+    // Cek login dulu untuk Tugas & Pesanan
+    if (tab === 'tasks' || tab === 'orders') {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session) {
+        window.showLoginHint(tab);
+        // Reset active state ke home (biar tidak "nyangkut")
+        document.querySelectorAll('.bn-item').forEach(b => {
+          b.classList.toggle('active', b.dataset.bn === 'home');
+        });
+        return;
+      }
+    }
+
+    // Favorit (baru di mobile)
+    if (tab === 'fav') {
+      document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'fav'));
+      // sbNavClick sudah handle toggle showFavoritesOnly = true
+      if (window.sbNavClick) window.sbNavClick('fav');
+      return;
+    }
+
+    // Fallback ke behavior asli
+    if (typeof _origBnSwitch === 'function') _origBnSwitch(tab);
+  };
+
+  /* ============================================================
+     3. Override dtNavClick (desktop header nav)
+     ============================================================ */
+  const _origDtNavClick = window.dtNavClick;
+  window.dtNavClick = function(tab) {
+    if (tab === 'tasks') {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session) {
+        window.showLoginHint('tasks');
+        return;
+      }
+      document.querySelectorAll('.dt-nav-item').forEach(b => b.classList.toggle('active', b.dataset.dtNav === 'tasks'));
+      if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet();
+      return;
+    }
+    if (typeof _origDtNavClick === 'function') _origDtNavClick(tab);
+  };
+
+  /* ============================================================
+     4. Tambah menu di DOM setelah halaman load
+     ============================================================ */
+  function injectNewMenus() {
+    // --- A. Mobile bottom nav: ganti "Kategori" jadi "Favorit" ---
+    // (Kategori sudah ada di sticky tab horizontal, jadi aman diganti)
+    const catBtn = document.querySelector('.bn-inner .bn-item[data-bn="cat"]');
+    if (catBtn) {
+      catBtn.setAttribute('data-bn', 'fav');
+      catBtn.setAttribute('onclick', "bnSwitch('fav')");
+      catBtn.innerHTML = '<i data-lucide="heart"></i><span>Favorit</span>';
+    }
+
+    // --- B. Desktop header: tambah menu "Hadiah" sebelum profile ---
+    const dtNav = document.querySelector('.dt-nav-links');
+    if (dtNav && !dtNav.querySelector('[data-dt-nav="tasks"]')) {
+      const tasksBtn = document.createElement('button');
+      tasksBtn.className = 'dt-nav-item';
+      tasksBtn.setAttribute('data-dt-nav', 'tasks');
+      tasksBtn.setAttribute('onclick', "dtNavClick('tasks')");
+      tasksBtn.innerHTML = '<i data-lucide="gift"></i><span>Hadiah</span>';
+
+      const profileBtn = dtNav.querySelector('.dt-profile');
+      if (profileBtn) {
+        dtNav.insertBefore(tasksBtn, profileBtn);
+      } else {
+        dtNav.appendChild(tasksBtn);
+      }
+    }
+
+    // --- C. Desktop sidebar: tambah "Tugas Berhadiah" setelah Favorit ---
+    const sidebar = document.getElementById('dt-sidebar');
+    if (sidebar && !sidebar.querySelector('[data-sb="tasks"]')) {
+      const favItem = sidebar.querySelector('[data-sb="fav"]');
+      const tasksItem = document.createElement('button');
+      tasksItem.className = 'sb-item';
+      tasksItem.setAttribute('data-sb', 'tasks');
+      tasksItem.setAttribute('onclick', "dtSidebarTasks()");
+      tasksItem.innerHTML = '<i data-lucide="gift"></i><span>Tugas Berhadiah</span>';
+
+      if (favItem && favItem.nextSibling) {
+        sidebar.insertBefore(tasksItem, favItem.nextSibling);
+      } else if (favItem) {
+        sidebar.appendChild(tasksItem);
+      } else {
+        sidebar.appendChild(tasksItem);
+      }
+    }
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Handler khusus untuk sidebar Tugas
+  window.dtSidebarTasks = function() {
+    const session = window.KRCustomer?.getSession?.();
+    if (!session) {
+      window.showLoginHint('tasks');
+      return;
+    }
+    document.querySelectorAll('.sb-item').forEach(b => b.classList.toggle('active', b.dataset.sb === 'tasks'));
+    if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet();
+  };
+
+  // Run after DOM ready (delay kecil untuk jaga-jaga kalau ada dynamic content)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(injectNewMenus, 300));
+  } else {
+    setTimeout(injectNewMenus, 300);
+  }
+
+})();
+</script>
 </body>
 </html>
