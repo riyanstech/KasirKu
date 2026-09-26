@@ -290,8 +290,16 @@ async function submitCheckout() {
     KR.toast.error('Uang diterima kurang dari total');
     return;
   }
-  const method = methodEl.value;
-  const change = paid - t.total;
+
+   const method = methodEl.value;
+   const change = paid - t.total;
+   
+   // Handle Kasbon — minta data customer dulu
+   let kasbonData = null;
+   if (method === 'Kasbon') {
+     kasbonData = await askKasbonCustomer(t.total);
+     if (!kasbonData) return; // user batal
+   }
 
   const trx = {
     id: 'TRX-' + Date.now().toString(36).toUpperCase(),
@@ -341,6 +349,23 @@ async function submitCheckout() {
 
     // 3. Cache transaksi lokal (untuk tampilan)
     KR.store.addTransaction(trx);
+
+   // Simpan kasbon ke cloud
+   if (method === 'Kasbon' && kasbonData && KR.kasbon) {
+     try {
+       await KR.kasbon.createKasbon({
+         customerName: kasbonData.name,
+         customerPhone: kasbonData.phone,
+         amount: t.total,
+         note: kasbonData.note,
+         dueDate: kasbonData.dueDate,
+       });
+       KR.toast.success('Kasbon dicatat untuk ' + kasbonData.name);
+     } catch (e) {
+       console.error('[Kasbon]', e);
+       KR.toast.warn('Transaksi oke, tapi kasbon gagal disimpan: ' + e.message);
+     }
+   }
 
     // 4. Bersihkan cart
     cart = [];
@@ -1078,6 +1103,71 @@ if (document.readyState === 'loading') {
 
 /* ==================== EXPOSE ==================== */
 window.getCart = getCart;
+/* ==================== KASBON CUSTOMER MODAL ==================== */
+async function askKasbonCustomer(total) {
+  return new Promise((resolve) => {
+    const existing = document.getElementById('kasbon-customer-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'kasbon-customer-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <div class="modal-card modal-card-sm">
+        <div class="modal-head">
+          <h3><i data-lucide="user-plus"></i> Kasbon — Data Customer</h3>
+          <button class="icon-btn" data-action="cancel"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div style="padding:12px;background:var(--warning-soft);border-radius:10px;margin-bottom:14px;">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;color:#92400e;margin-bottom:4px;">Total Kasbon</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:800;color:#92400e;">${formatRupiah(total)}</div>
+          </div>
+          <div class="field">
+            <label>Nama Customer <span class="req">*</span></label>
+            <input id="kc-name" class="input" placeholder="Contoh: Bu Sari">
+          </div>
+          <div class="field">
+            <label>No. HP / WhatsApp</label>
+            <input id="kc-phone" class="input" placeholder="08123456789">
+          </div>
+          <div class="field">
+            <label>Jatuh Tempo (opsional)</label>
+            <input id="kc-due" type="date" class="input">
+          </div>
+          <div class="field">
+            <label>Catatan</label>
+            <input id="kc-note" class="input" placeholder="Contoh: Janji bayar minggu depan">
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-action="cancel">Batal</button>
+          <button class="btn btn-primary" data-action="ok"><i data-lucide="check"></i> Simpan Kasbon</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => document.getElementById('kc-name')?.focus(), 200);
+
+    modal.querySelectorAll('[data-action="cancel"]').forEach(b => {
+      b.addEventListener('click', () => { modal.remove(); resolve(null); });
+    });
+    modal.querySelector('[data-action="ok"]').addEventListener('click', () => {
+      const name = document.getElementById('kc-name').value.trim();
+      if (!name) { KR.toast.error('Nama customer wajib'); return; }
+      resolve({
+        name,
+        phone: document.getElementById('kc-phone').value.trim() || null,
+        dueDate: document.getElementById('kc-due').value || null,
+        note: document.getElementById('kc-note').value.trim() || null,
+      });
+      modal.remove();
+    });
+  });
+}
+window.askKasbonCustomer = askKasbonCustomer;
 window.addToCart = addToCart;
 window.changeQty = changeQty;
 window.removeFromCart = removeFromCart;
