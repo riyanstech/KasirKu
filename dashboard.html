@@ -721,14 +721,21 @@
                     <label>Nama Produk <span class="req">*</span></label>
                     <input id="pf-name" class="input" placeholder="Contoh: Indomie Goreng">
                 </div>
+
                 <div class="field">
-                    <label>SKU / Kode Barang <span class="req">*</span></label>
+                    <label>
+                        SKU / Kode Barang
+                        <span style="color:var(--text-3);font-weight:600;font-size:.65rem;text-transform:none;letter-spacing:0;margin-left:4px;">(opsional)</span>
+                    </label>
                     <div class="input-with-btn">
-                        <input id="pf-sku" class="input" placeholder="Ketik atau scan barcode..." oninput="onSkuChange()">
+                        <input id="pf-sku" class="input" placeholder="Ketik atau scan barcode... (kosongkan kalau tidak ada)" oninput="onSkuChange()">
                         <button type="button" class="input-scan-btn" onclick="openSkuScanner()" title="Scan SKU">
                             <i data-lucide="scan-line"></i>
                         </button>
                     </div>
+                    <p style="font-size:.7rem;color:var(--text-3);margin-top:4px;line-height:1.4;">
+                        💡 Kosongkan jika produk tidak punya SKU (telur, tepung, produk digital, dll)
+                    </p>
                 </div>
                 <div class="field-grid">
                     <div class="field">
