@@ -78,25 +78,26 @@ KR.sb = (function () {
     if (error) throw error;
     return data || [];
   }
-  async function insertProduct(p) {
-    const user = await getUser();
-    if (!user) throw new Error('Belum login');
-    const { data, error } = await client.from('products').insert({
-      user_id: user.id,
-      name: p.name,
-      sku: p.sku || null,
-      cost: p.cost || 0,
-      price: p.price || 0,
-      stock: p.stock || 0,
-      category: p.category || null,
-      image_url: p.image || null,
-      is_online: p.is_online === true,
-      needs_address: p.needs_address === true,
-      online_price: p.online_price != null ? Number(p.online_price) : null,
-    }).select().single();
-    if (error) throw error;
-    return data;
-  }
+   async function insertProduct(p) {
+       const user = await getUser();
+       if (!user) throw new Error('Belum login');
+       const { data, error } = await client.from('products').insert({
+         user_id: user.id,
+         name: p.name,
+         sku: p.sku || null,
+         cost: p.cost || 0,
+         price: p.price || 0,
+         stock: p.stock || 0,
+         category: p.category || null,
+         unit: p.unit || null,
+         image_url: p.image || null,
+         is_online: p.is_online === true,
+         needs_address: p.needs_address === true,
+         online_price: p.online_price != null ? Number(p.online_price) : null,
+       }).select().single();
+       if (error) throw error;
+       return data;
+     }
   async function updateProductDb(id, updates) {
     const payload = { updated_at: new Date().toISOString() };
     if (updates.name !== undefined) payload.name = updates.name;
