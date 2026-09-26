@@ -351,6 +351,13 @@ async function submitCheckout() {
     closeModal('modal-checkout');
     showReceipt(trx);
     KR.toast.success('Transaksi berhasil!');
+   // Auto-print ke thermal (kalau diaktifkan)
+   if (KR.thermal?.getSettings().autoPrint && KR.thermal.isConnected()) {
+     setTimeout(async () => {
+       try { await KR.thermal.printReceipt(trx); KR.toast.success('Auto-print ✅'); }
+       catch (e) { KR.toast.warn('Auto-print gagal: ' + e.message); }
+     }, 500);
+   }
   } catch (e) {
     console.error('[Checkout]', e);
     KR.toast.error('Gagal: ' + (e.message || 'Unknown'));
