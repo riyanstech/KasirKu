@@ -446,6 +446,52 @@
                       </button>
                     </div>
 
+                    <div class="settings-card">
+                        <h3><i data-lucide="printer"></i> Printer Thermal Bluetooth</h3>
+                        <p class="settings-desc">Cetak struk ke printer thermal 58mm/80mm via Bluetooth (BLE).</p>
+                    
+                        <div id="thermal-status" class="gh-status warn">
+                            <i data-lucide="bluetooth-off"></i><span>Belum terhubung</span>
+                        </div>
+                    
+                        <div class="field">
+                            <label>Ukuran Kertas</label>
+                            <select id="thermal-paper" class="select" onchange="saveThermalSettings()">
+                                <option value="58">58 mm (32 karakter)</option>
+                                <option value="80">80 mm (48 karakter)</option>
+                            </select>
+                        </div>
+                    
+                        <label class="toggle-row">
+                            <input type="checkbox" id="thermal-auto" onchange="saveThermalSettings()">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Auto-print setelah transaksi</span>
+                        </label>
+                    
+                        <label class="toggle-row">
+                            <input type="checkbox" id="thermal-cut" onchange="saveThermalSettings()">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Auto-cut kertas setelah cetak</span>
+                        </label>
+                    
+                        <div class="btn-row" style="margin-top:12px">
+                            <button id="thermal-connect-btn" class="btn btn-primary" onclick="thermalConnect()">
+                                <i data-lucide="bluetooth"></i> Hubungkan Printer
+                            </button>
+                            <button id="thermal-test-btn" class="btn btn-secondary hidden" onclick="thermalTestPrint()">
+                                <i data-lucide="printer"></i> Test Print
+                            </button>
+                            <button id="thermal-disconnect-btn" class="btn btn-ghost hidden" onclick="thermalDisconnect()">
+                                <i data-lucide="x"></i> Putuskan
+                            </button>
+                        </div>
+                    
+                        <p class="settings-desc" style="margin-top:12px;font-size:.75rem;line-height:1.5">
+                            💡 <strong>Wajib Web Bluetooth</strong> — Chrome Android / Chrome Desktop / Edge. iOS Safari belum support.<br>
+                            Printer harus yang support <strong>BLE</strong> (bukan Bluetooth Classic). Cek contoh: <em>XP-P323B, Goojprt PT-210, RPP02N</em>.
+                        </p>
+                    </div>
+
                     <div class="settings-card danger">
                         <h3><i data-lucide="alert-octagon"></i> Zona Bahaya</h3>
                         <p class="settings-desc">Reset cache lokal. Data cloud tetap aman & akan diambil ulang saat reload.</p>
@@ -687,17 +733,19 @@
             <div class="modal-body">
                 <div id="receipt-paper" class="receipt-paper"></div>
             </div>
-            <div class="modal-foot no-print">
-                <button class="btn btn-ghost" onclick="closeModal('modal-receipt')">Tutup</button>
-                <button class="btn btn-secondary" onclick="shareReceipt()">
-                    <i data-lucide="share-2"></i> Bagikan
-                </button>
-                <button class="btn btn-primary" onclick="printReceipt()">
-                    <i data-lucide="printer"></i> Cetak
-                </button>
-            </div>
+
+        <div class="modal-foot no-print">
+            <button class="btn btn-ghost" onclick="closeModal('modal-receipt')">Tutup</button>
+            <button class="btn btn-secondary" onclick="shareReceipt()">
+                <i data-lucide="share-2"></i> Bagikan
+            </button>
+            <button id="thermal-print-btn" class="btn btn-secondary" onclick="printThermalReceipt()" title="Cetak ke printer thermal Bluetooth">
+                <i data-lucide="bluetooth"></i> Bluetooth
+            </button>
+            <button class="btn btn-primary" onclick="printReceipt()">
+                <i data-lucide="printer"></i> Cetak
+            </button>
         </div>
-    </div>
 
     <!-- ==================== MODAL CONFIRM ==================== -->
     <div id="modal-confirm" class="modal">
@@ -823,6 +871,8 @@
         '/assets/js/core.js',
         '/assets/js/auth.js',
         '/assets/js/vision.js',
+        '/assets/js/thermal.js',
+        '/assets/js/sync.js',         // ← TAMBAH INI
         '/assets/js/pos.js',
         '/assets/js/orders.js',
         '/assets/js/customers-admin.js',
