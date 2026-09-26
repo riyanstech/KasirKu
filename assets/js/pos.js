@@ -527,15 +527,35 @@ function openCheckout() {
   const totalEl = document.getElementById('co-total');
   const paidEl = document.getElementById('co-paid');
   const changeEl = document.getElementById('co-change');
+  const methodEl = document.getElementById('co-method');
+
   if (totalEl) totalEl.textContent = formatRupiah(t.total);
-  if (paidEl) paidEl.value = '';
+
+  // Reset dropdown ke Cash setiap buka
+  if (methodEl) methodEl.value = 'Cash';
+
+  if (paidEl) {
+    paidEl.value = '';
+    paidEl.disabled = false;
+    paidEl.style.opacity = '';
+    paidEl.style.cursor = '';
+  }
   if (changeEl) {
     changeEl.textContent = formatRupiah(0);
     changeEl.classList.remove('negative');
+    changeEl.style.color = '';
   }
 
+  // Reset label ke default
+  if (paidEl) {
+    const labelEl = paidEl.closest('.field')?.querySelector('label');
+    if (labelEl) labelEl.textContent = 'Uang Diterima';
+  }
+
+  // Rebuild quick cash
   const quickCash = document.getElementById('co-quick-cash');
   if (quickCash) {
+    quickCash.style.display = '';
     const suggestions = [...new Set([
       t.total,
       Math.ceil(t.total / 5000) * 5000,
@@ -548,9 +568,79 @@ function openCheckout() {
     ).join('');
   }
 
+  // Bind listener untuk dropdown metode (sekali saja)
+  if (methodEl && !methodEl._bound) {
+    methodEl._bound = true;
+    methodEl.addEventListener('change', onCheckoutMethodChange);
+  }
+
   openModal('modal-checkout');
-  setTimeout(() => document.getElementById('co-paid')?.focus(), 200);
+  setTimeout(() => {
+    if (methodEl && methodEl.value !== 'Kasbon') {
+      document.getElementById('co-paid')?.focus();
+    }
+  }, 200);
 }
+
+/* ==================== CHECKOUT METHOD HANDLER ==================== */
+function onCheckoutMethodChange() {
+  const methodEl = document.getElementById('co-method');
+  const paidEl = document.getElementById('co-paid');
+  const changeEl = document.getElementById('co-change');
+  const quickCash = document.getElementById('co-quick-cash');
+  const t = getCartTotals();
+
+  if (!methodEl || !paidEl) return;
+
+  const isKasbon = methodEl.value === 'Kasbon';
+
+  if (isKasbon) {
+    // ============ MODE KASBON ============
+    paidEl.value = '0';
+    paidEl.disabled = true;
+    paidEl.style.opacity = '.5';
+    paidEl.style.cursor = 'not-allowed';
+
+    if (changeEl) {
+      changeEl.textContent = 'Bayar nanti';
+      changeEl.style.color = '#f59e0b';
+      changeEl.classList.remove('negative');
+    }
+
+    if (quickCash) quickCash.style.display = 'none';
+
+    // Update label
+    const labelEl = paidEl.closest('.field')?.querySelector('label');
+    if (labelEl) {
+      labelEl.innerHTML = 'Uang Diterima <span style="color:#f59e0b;font-weight:800;font-size:.7rem;">— Bayar nanti (Kasbon)</span>';
+    }
+
+    // Toast info sekali
+    if (window.KR?.toast) KR.toast.info('Mode Kasbon — pelanggan bayar nanti', 2500);
+
+  } else {
+    // ============ MODE NORMAL ============
+    paidEl.disabled = false;
+    paidEl.style.opacity = '';
+    paidEl.style.cursor = '';
+    paidEl.value = '';
+
+    if (changeEl) {
+      changeEl.textContent = formatRupiah(0);
+      changeEl.style.color = '';
+      changeEl.classList.remove('negative');
+    }
+
+    if (quickCash) quickCash.style.display = '';
+
+    // Update label
+    const labelEl = paidEl.closest('.field')?.querySelector('label');
+    if (labelEl) labelEl.textContent = 'Uang Diterima';
+
+    setTimeout(() => paidEl.focus(), 150);
+  }
+}
+window.onCheckoutMethodChange = onCheckoutMethodChange;
 
 function setCash(n) {
   const el = document.getElementById('co-paid');
@@ -576,21 +666,27 @@ async function submitCheckout() {
   const paidEl = document.getElementById('co-paid');
   const methodEl = document.getElementById('co-method');
   if (!paidEl || !methodEl) return;
-  const paid = Number(paidEl.value) || 0;
-  if (paid < t.total) {
+
+  const method = methodEl.value;
+  const isKasbon = method === 'Kasbon';
+
+  // Untuk Kasbon: paid = 0, change = 0
+  // Untuk metode lain: ambil dari input
+  const paid = isKasbon ? 0 : (Number(paidEl.value) || 0);
+  const change = isKasbon ? 0 : (paid - t.total);
+
+  // Validasi uang diterima — SKIP kalau Kasbon
+  if (!isKasbon && paid < t.total) {
     KR.toast.error('Uang diterima kurang dari total');
     return;
   }
 
-   const method = methodEl.value;
-   const change = paid - t.total;
-   
-   // Handle Kasbon — minta data customer dulu
-   let kasbonData = null;
-   if (method === 'Kasbon') {
-     kasbonData = await askKasbonCustomer(t.total);
-     if (!kasbonData) return; // user batal
-   }
+  // Handle Kasbon — minta data customer dulu
+  let kasbonData = null;
+  if (isKasbon) {
+    kasbonData = await askKasbonCustomer(t.total);
+    if (!kasbonData) return; // user batal
+  }
 
   const trx = {
     id: 'TRX-' + Date.now().toString(36).toUpperCase(),
