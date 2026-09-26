@@ -151,28 +151,6 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- SUMMARY ---------- */
-  async function loadSummary() {
-    const s = getSession();
-    if (!s) return;
-    try {
-      const data = await rpc('customer_rewards_summary', { p_customer_id: s.id });
-      const sum = parse(data) || {};
-      const balEl = $('task-balance');
-      const earnedEl = $('task-earned');
-      const progEl = $('task-progress');
-      if (balEl) balEl.textContent = fmt(sum.balance || 0);
-      if (earnedEl) earnedEl.textContent = 'Total earned: ' + fmt(sum.total_earned || 0);
-      if (progEl) {
-        const app = sum.approved_count || 0;
-        const total = app + (sum.pending_count || 0);
-        progEl.textContent = app + '/' + total;
-      }
-    } catch (e) {
-      console.warn('[Summary]', e);
-    }
-  }
-
   /* ---------- TASKS TAB ---------- */
    async function loadTasks() {
      const s = getSession();
