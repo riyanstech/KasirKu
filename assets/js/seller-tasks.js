@@ -659,10 +659,50 @@ function _buildProofThumb(url) {
      if (tab === 'withdrawals') loadWithdrawals();
    };
 
-  async function loadTaskTab() {
-    switchTaskTab(mainTab);
+async function loadTaskTab(evt) {
+  // Ambil tombol refresh (dari event atau via ID)
+  const btn = evt?.target?.closest('button') || document.getElementById('task-refresh-btn');
+  const orig = btn ? btn.innerHTML : null;
+
+  // Feedback visual: disable + spinner
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '.7';
+    btn.style.cursor = 'wait';
+    btn.innerHTML = '<i data-lucide="loader-circle" style="animation:krSpin 1s linear infinite;"></i> Memuat...';
+    if (window.lucide) lucide.createIcons();
   }
-  window.loadTaskTab = loadTaskTab;
+
+  try {
+    // Reset semua data state — biar benar-benar fresh
+    tasks = [];
+    socials = [];
+    submissions = [];
+    withdrawals = [];
+
+    // Reload tab yang sedang aktif
+    switchTaskTab(mainTab);
+
+    // Delay minimal 400ms biar loading state kelihatan
+    await new Promise(r => setTimeout(r, 400));
+
+    // Toast feedback
+    if (KR.toast) KR.toast.success('🔄 Data diperbarui');
+  } catch (e) {
+    console.error('[Refresh Tasks]', e);
+    if (KR.toast) KR.toast.error('Gagal refresh: ' + (e.message || 'Unknown'));
+  } finally {
+    // Kembalikan tombol ke semula
+    if (btn && orig) {
+      btn.disabled = false;
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      btn.innerHTML = orig;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+}
+window.loadTaskTab = loadTaskTab;
 
   window.addEventListener('kasirku:ready', () => {
     setTimeout(() => {
