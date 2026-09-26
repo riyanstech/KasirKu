@@ -1,6 +1,6 @@
 /* ==========================================
-   KasirKu — Kasbon / Hutang Piutang (v2)
-   + Group by customer, Detail view, Export PDF
+   KasirKu — Kasbon / Hutang Piutang (v3 — Full)
+   Group by customer, Detail sheet, Items, Export PDF, Manual Form
    ========================================== */
 window.KR = window.KR || {};
 
@@ -16,6 +16,20 @@ KR.kasbon = (function () {
   let paymentsByKasbon = {};  // { kasbon_id: [payments] }
   let filter = 'active';
   let searchQuery = '';
+
+  /* ==========================================
+     DATE HELPERS
+     ========================================== */
+  function formatDateID(d) {
+    const pad = n => String(n).padStart(2, '0');
+    const bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    return `${pad(d.getDate())} ${bln[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  function formatDateTimeID(d) {
+    const pad = n => String(n).padStart(2, '0');
+    const bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    return `${pad(d.getDate())} ${bln[d.getMonth()]} ${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   /* ==========================================
      LOAD DATA
@@ -67,7 +81,7 @@ KR.kasbon = (function () {
   }
 
   /* ==========================================
-     GROUPING
+     GROUPING BY CUSTOMER
      ========================================== */
   function groupByCustomer() {
     const groups = {};
@@ -126,7 +140,7 @@ KR.kasbon = (function () {
   }
 
   /* ==========================================
-     RENDER MAIN LIST (GROUPED)
+     RENDER MAIN LIST
      ========================================== */
   function renderKasbon() {
     const listEl = $('kasbon-list');
@@ -190,7 +204,7 @@ KR.kasbon = (function () {
 
       return `
         <div class="kasbon-customer-card">
-          <div class="kcc-head" onclick="openCustomerDetail('${esc(g.name)}')">
+          <div class="kcc-head" onclick="openCustomerDetail('${esc(g.name).replace(/'/g, "\\'")}')">
             <div class="kcc-avatar ${allPaid ? 'paid' : ''}">${esc(initial)}</div>
             <div class="kcc-info">
               <div class="kcc-name">
@@ -218,10 +232,10 @@ KR.kasbon = (function () {
           ` : ''}
 
           <div class="kcc-actions">
-            <button class="kcc-btn" onclick="event.stopPropagation(); openCustomerDetail('${esc(g.name)}')">
+            <button class="kcc-btn" onclick="event.stopPropagation(); openCustomerDetail('${esc(g.name).replace(/'/g, "\\'")}')">
               <i data-lucide="list"></i> Detail
             </button>
-            <button class="kcc-btn primary" onclick="event.stopPropagation(); exportCustomerPDF('${esc(g.name)}')">
+            <button class="kcc-btn primary" onclick="event.stopPropagation(); exportCustomerPDF('${esc(g.name).replace(/'/g, "\\'")}')">
               <i data-lucide="file-down"></i> PDF
             </button>
             ${g.phone ? `<button class="kcc-btn wa" onclick="event.stopPropagation(); waKasbon('${esc(g.phone)}')">
@@ -245,7 +259,7 @@ KR.kasbon = (function () {
     const existing = $('kasbon-detail-sheet');
     if (existing) existing.remove();
 
-    // Build events timeline
+    // Build events timeline (kasbon + payments)
     const events = [];
     g.kasbons.forEach(k => {
       events.push({
@@ -257,6 +271,7 @@ KR.kasbon = (function () {
         kasbon_id: k.id,
         status: k.status,
         paid_amount: Number(k.paid_amount),
+        items: Array.isArray(k.items) ? k.items : [],
       });
       const payments = paymentsByKasbon[k.id] || [];
       payments.forEach(p => {
@@ -273,6 +288,9 @@ KR.kasbon = (function () {
     events.sort((a, b) => a.date - b.date);
 
     let runningBalance = 0;
+
+    const safeName = esc(g.name).replace(/'/g, "\\'");
+    const safePhone = g.phone ? esc(g.phone) : '';
 
     const sheet = document.createElement('div');
     sheet.id = 'kasbon-detail-sheet';
@@ -320,6 +338,10 @@ KR.kasbon = (function () {
               if (e.type === 'kasbon') runningBalance += e.amount;
               else runningBalance -= e.amount;
               const isKasbon = e.type === 'kasbon';
+              const isPaid = isKasbon && e.status === 'paid';
+              const isPartial = isKasbon && e.status === 'partial';
+              const hasItems = isKasbon && e.items && e.items.length > 0;
+
               return `
                 <div class="kds-event ${isKasbon ? 'kasbon' : 'payment'}">
                   <div class="kds-event-icon">
@@ -327,16 +349,39 @@ KR.kasbon = (function () {
                   </div>
                   <div class="kds-event-body">
                     <div class="kds-event-row1">
-                      <span class="kds-event-type">${isKasbon ? 'Kasbon' : 'Bayar'}</span>
+                      <span class="kds-event-type">
+                        ${isKasbon ? 'Kasbon' : 'Bayar'}
+                        ${isPaid ? '<span style="font-size:.6rem;background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:6px;margin-left:5px;">LUNAS</span>' : ''}
+                        ${isPartial ? '<span style="font-size:.6rem;background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:6px;margin-left:5px;">DICICIL</span>' : ''}
+                      </span>
                       <span class="kds-event-date">${formatDateTimeID(e.date)}</span>
                     </div>
-                    <div class="kds-event-desc">${esc(e.description)}</div>
+
+                    ${hasItems ? `
+                      <div class="kds-event-items">
+                        ${e.items.map(it => `
+                          <div class="kds-item-line">
+                            <span class="kds-item-name">${esc(it.name)}</span>
+                            <span class="kds-item-qty">${it.qty}×</span>
+                            <span class="kds-item-price">${fmt((it.price || 0) * (it.qty || 1))}</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : `
+                      <div class="kds-event-desc">${esc(e.description)}</div>
+                    `}
+
                     ${!isKasbon && e.method ? `<div class="kds-event-method">via ${esc(e.method)}</div>` : ''}
                     ${isKasbon && e.due_date ? `<div class="kds-event-method">Jatuh tempo: ${formatDateID(new Date(e.due_date))}</div>` : ''}
                   </div>
                   <div class="kds-event-amount ${isKasbon ? 'debit' : 'credit'}">
                     <div class="kds-amt-main">${isKasbon ? '+' : '-'}${fmt(e.amount)}</div>
                     <div class="kds-amt-saldo">Saldo ${fmt(runningBalance)}</div>
+                    ${isKasbon && !isPaid ? `
+                      <button class="kds-pay-btn" onclick="event.stopPropagation(); openKasbonPay('${e.kasbon_id}')" title="Bayar / Cicil">
+                        <i data-lucide="banknote"></i> Bayar
+                      </button>
+                    ` : ''}
                   </div>
                 </div>
               `;
@@ -364,7 +409,7 @@ KR.kasbon = (function () {
           <button class="kds-btn ghost" onclick="closeKasbonDetail()">
             <i data-lucide="x"></i> Tutup
           </button>
-          <button class="kds-btn primary" onclick="exportCustomerPDF('${esc(g.name)}')">
+          <button class="kds-btn primary" onclick="exportCustomerPDF('${safeName}')">
             <i data-lucide="file-down"></i> Download PDF
           </button>
         </div>
@@ -408,6 +453,7 @@ KR.kasbon = (function () {
           description: k.note || 'Kasbon baru',
           due_date: k.due_date,
           created_at_raw: k.created_at,
+          items: Array.isArray(k.items) ? k.items : [],
         });
         const payments = paymentsByKasbon[k.id] || [];
         payments.forEach(p => {
@@ -428,7 +474,6 @@ KR.kasbon = (function () {
       const storeSettings = KR.store.getSettings();
 
       /* ---------- HEADER ---------- */
-      // Green header box
       doc.setFillColor(16, 185, 129);
       doc.rect(0, 0, pageW, 32, 'F');
 
@@ -444,7 +489,6 @@ KR.kasbon = (function () {
       if (storeSettings.storeAddress) { doc.text(storeSettings.storeAddress, margin, yHead); yHead += 4; }
       if (storeSettings.storePhone) { doc.text('Telp: ' + storeSettings.storePhone, margin, yHead); }
 
-      // Title
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
       doc.setTextColor(15, 23, 42);
@@ -473,7 +517,6 @@ KR.kasbon = (function () {
       doc.setFontSize(10);
       doc.text(g.phone || '-', margin + 50, y + 17);
 
-      // Tanggal cetak
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
       doc.setTextColor(100);
@@ -524,7 +567,18 @@ KR.kasbon = (function () {
 
         const dateStr = formatDateID(e.date);
         const type = e.type === 'kasbon' ? 'Kasbon' : 'Bayar';
-        const ket = e.description + (e.type === 'payment' && e.method ? ' (' + e.method + ')' : '');
+
+        // Keterangan: pakai items kalau ada
+        let ket;
+        if (e.type === 'kasbon' && e.items && e.items.length > 0) {
+          ket = e.items.map(it => `• ${it.qty}× ${it.name} @${fmtRaw(it.price)}`).join('\n');
+          if (e.description && e.description !== 'Kasbon baru' && !e.description.startsWith('•')) {
+            ket += '\n📝 ' + e.description;
+          }
+        } else {
+          ket = e.description + (e.type === 'payment' && e.method ? ' (' + e.method + ')' : '');
+        }
+
         const debit = e.type === 'kasbon' ? fmtRaw(e.amount) : '-';
         const kredit = e.type === 'payment' ? fmtRaw(e.amount) : '-';
         return [dateStr, type, ket, debit, kredit, fmtRaw(saldo)];
@@ -535,15 +589,22 @@ KR.kasbon = (function () {
         head: [['Tanggal', 'Jenis', 'Keterangan', 'Kasbon (Rp)', 'Bayar (Rp)', 'Saldo (Rp)']],
         body: rows,
         theme: 'striped',
-        styles: { fontSize: 8, cellPadding: 2, lineColor: [220, 230, 225], lineWidth: 0.1 },
-        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 8.5 },
+        styles: {
+          fontSize: 7.5,
+          cellPadding: 2,
+          lineColor: [220, 230, 225],
+          lineWidth: 0.1,
+          valign: 'top',
+          overflow: 'linebreak',
+        },
+        headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 8 },
         columnStyles: {
-          0: { cellWidth: 26, halign: 'center' },
-          1: { cellWidth: 16, halign: 'center' },
-          2: { cellWidth: 'auto' },
-          3: { cellWidth: 26, halign: 'right' },
-          4: { cellWidth: 26, halign: 'right' },
-          5: { cellWidth: 26, halign: 'right', fontStyle: 'bold' },
+          0: { cellWidth: 20, halign: 'center', fontSize: 7 },
+          1: { cellWidth: 14, halign: 'center', fontSize: 7 },
+          2: { cellWidth: 'auto', fontSize: 7.5 },
+          3: { cellWidth: 22, halign: 'right', fontSize: 7 },
+          4: { cellWidth: 22, halign: 'right', fontSize: 7 },
+          5: { cellWidth: 22, halign: 'right', fontStyle: 'bold', fontSize: 7 },
         },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         margin: { left: margin, right: margin },
@@ -609,21 +670,7 @@ KR.kasbon = (function () {
   }
 
   /* ==========================================
-     HELPERS — DATE FORMAT
-     ========================================== */
-  function formatDateID(d) {
-    const pad = n => String(n).padStart(2, '0');
-    const bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    return `${pad(d.getDate())} ${bln[d.getMonth()]} ${d.getFullYear()}`;
-  }
-  function formatDateTimeID(d) {
-    const pad = n => String(n).padStart(2, '0');
-    const bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    return `${pad(d.getDate())} ${bln[d.getMonth()]} ${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
-
-  /* ==========================================
-     PAYMENT MODAL (existing)
+     PAYMENT MODAL
      ========================================== */
   function openKasbonPay(id) {
     const k = list.find(x => x.id === id);
@@ -652,10 +699,12 @@ KR.kasbon = (function () {
               <span style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--danger);font-size:1.1rem;">${fmt(remaining)}</span>
             </div>
           </div>
+
           <div class="field">
             <label>Jumlah Bayar</label>
             <input id="kp-amount" type="number" class="input input-lg" value="${remaining}" min="1" max="${remaining}">
           </div>
+
           <div class="quick-cash" id="kp-quick">
             <button onclick="document.getElementById('kp-amount').value=${remaining}">Lunas</button>
             <button onclick="document.getElementById('kp-amount').value=${Math.round(remaining/2)}">Setengah</button>
@@ -663,6 +712,7 @@ KR.kasbon = (function () {
             <button onclick="document.getElementById('kp-amount').value=50000">50rb</button>
             <button onclick="document.getElementById('kp-amount').value=100000">100rb</button>
           </div>
+
           <div class="field">
             <label>Metode</label>
             <select id="kp-method" class="select">
@@ -672,6 +722,7 @@ KR.kasbon = (function () {
               <option value="E-Wallet">E-Wallet</option>
             </select>
           </div>
+
           <div class="field">
             <label>Catatan (opsional)</label>
             <input id="kp-note" class="input" placeholder="Cicilan ke-1...">
@@ -687,6 +738,7 @@ KR.kasbon = (function () {
     `;
     document.body.appendChild(modal);
     if (window.lucide) lucide.createIcons();
+    setTimeout(() => $('kp-amount')?.focus(), 200);
   }
 
   async function submitKasbonPay(id) {
@@ -700,6 +752,10 @@ KR.kasbon = (function () {
     if (amount <= 0) return KR.toast.error('Jumlah harus > 0');
     if (amount > remaining) return KR.toast.error('Melebihi sisa (' + fmt(remaining) + ')');
 
+    // Simpan nama customer & status sheet terbuka
+    const customerName = k.customer_name;
+    const wasDetailOpen = !!$('kasbon-detail-sheet');
+
     showLoading('Menyimpan...');
     try {
       const user = await KR.sb.getUser();
@@ -707,15 +763,23 @@ KR.kasbon = (function () {
         kasbon_id: id, user_id: user.id, amount, method, note,
       });
       if (error) throw error;
+
       KR.toast.success('Pembayaran dicatat ✅');
       $('kasbon-pay-modal')?.remove();
-      // Refresh detail sheet kalau terbuka
-      const detailSheet = $('kasbon-detail-sheet');
-      const openName = detailSheet ? k.customer_name : null;
-      if (detailSheet) detailSheet.remove();
-      document.body.style.overflow = '';
+
+      // Close detail sheet kalau terbuka
+      if (wasDetailOpen) {
+        const sheet = $('kasbon-detail-sheet');
+        if (sheet) sheet.remove();
+        document.body.style.overflow = '';
+      }
+
       await loadKasbon();
-      if (openName) openCustomerDetail(openName);
+
+      // Buka ulang detail sheet kalau sebelumnya terbuka
+      if (wasDetailOpen) {
+        setTimeout(() => openCustomerDetail(customerName), 250);
+      }
     } catch (e) {
       console.error(e);
       KR.toast.error('Gagal: ' + e.message);
@@ -724,21 +788,125 @@ KR.kasbon = (function () {
     }
   }
 
-  async function createKasbon({ customerName, customerPhone, amount, note, dueDate }) {
+  /* ==========================================
+     CREATE KASBON
+     ========================================== */
+  async function createKasbon({ customerName, customerPhone, amount, note, dueDate, items }) {
     const user = await KR.sb.getUser();
+
+    // Auto-generate note dari items kalau note kosong
+    let finalNote = note;
+    if (!finalNote && items && items.length > 0) {
+      finalNote = items.map(i => `${i.qty}× ${i.name}`).join(', ');
+    }
+
     const { data, error } = await KR.sb.client.from('kasbon').insert({
       user_id: user.id,
       customer_name: customerName,
       customer_phone: customerPhone || null,
       amount,
-      note: note || null,
+      note: finalNote || null,
       due_date: dueDate || null,
+      items: items || [],
       status: 'unpaid',
     }).select().single();
     if (error) throw error;
     return data;
   }
 
+  /* ==========================================
+     MANUAL FORM
+     ========================================== */
+  function openManualKasbonForm() {
+    const existing = $('kasbon-manual-modal');
+    if (existing) existing.remove();
+
+    // Datalist dari customer yang sudah ada
+    const existingCustomers = [...new Set(list.map(k => k.customer_name).filter(Boolean))];
+
+    const modal = document.createElement('div');
+    modal.id = 'kasbon-manual-modal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="modal-backdrop" onclick="this.parentNode.remove()"></div>
+      <div class="modal-card modal-card-sm">
+        <div class="modal-head">
+          <h3><i data-lucide="plus-circle"></i> Kasbon Baru</h3>
+          <button class="icon-btn" onclick="this.closest('.modal').remove()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>Nama Customer <span class="req">*</span></label>
+            <input id="km-name" class="input" placeholder="Contoh: Bu Sari" list="km-customer-list">
+            <datalist id="km-customer-list">
+              ${existingCustomers.map(n => `<option value="${esc(n)}">`).join('')}
+            </datalist>
+          </div>
+          <div class="field">
+            <label>No. HP / WhatsApp</label>
+            <input id="km-phone" class="input" placeholder="08123456789">
+          </div>
+          <div class="field">
+            <label>Jumlah (Rp) <span class="req">*</span></label>
+            <input id="km-amount" type="number" class="input input-lg" placeholder="0" min="1">
+          </div>
+          <div class="field">
+            <label>Jatuh Tempo (opsional)</label>
+            <input id="km-due" type="date" class="input">
+          </div>
+          <div class="field">
+            <label>Keterangan <span class="req">*</span></label>
+            <textarea id="km-note" class="textarea" rows="3" placeholder="Detail barang:&#10;2× Indomie Goreng @3.000&#10;1× Sabun Nuvo @4.000"></textarea>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="this.closest('.modal').remove()">Batal</button>
+          <button class="btn btn-primary" onclick="submitManualKasbon()">
+            <i data-lucide="check"></i> Simpan
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => $('km-name')?.focus(), 200);
+  }
+
+  async function submitManualKasbon() {
+    const name = $('km-name')?.value.trim();
+    const phone = $('km-phone')?.value.trim();
+    const amount = Number($('km-amount')?.value);
+    const dueDate = $('km-due')?.value || null;
+    const note = $('km-note')?.value.trim();
+
+    if (!name) return KR.toast.error('Nama customer wajib');
+    if (!amount || amount <= 0) return KR.toast.error('Jumlah harus > 0');
+    if (!note) return KR.toast.error('Keterangan wajib diisi');
+
+    showLoading('Menyimpan...');
+    try {
+      await createKasbon({
+        customerName: name,
+        customerPhone: phone || null,
+        amount,
+        note,
+        dueDate,
+        items: [],
+      });
+      KR.toast.success('Kasbon dicatat ✅');
+      $('kasbon-manual-modal')?.remove();
+      await loadKasbon();
+    } catch (e) {
+      console.error(e);
+      KR.toast.error('Gagal: ' + e.message);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  /* ==========================================
+     DELETE
+     ========================================== */
   function deleteKasbon(id) {
     const k = list.find(x => x.id === id);
     if (!k) return;
@@ -757,6 +925,9 @@ KR.kasbon = (function () {
     });
   }
 
+  /* ==========================================
+     WHATSAPP HELPER
+     ========================================== */
   function waKasbon(phone) {
     let p = String(phone).replace(/[^\d]/g, '');
     if (p.startsWith('0')) p = '62' + p.slice(1);
@@ -764,7 +935,9 @@ KR.kasbon = (function () {
     window.open(`https://wa.me/${p}`, '_blank');
   }
 
-  /* ---------- EXPOSE ---------- */
+  /* ==========================================
+     EXPOSE
+     ========================================== */
   window.loadKasbon = loadKasbon;
   window.setKasbonFilter = (f) => { filter = f; renderKasbon(); };
   window.setKasbonSearch = (q) => { searchQuery = (q || '').trim(); renderKasbon(); };
@@ -774,6 +947,8 @@ KR.kasbon = (function () {
   window.waKasbon = waKasbon;
   window.openCustomerDetail = openCustomerDetail;
   window.exportCustomerPDF = exportCustomerPDF;
+  window.openManualKasbonForm = openManualKasbonForm;
+  window.submitManualKasbon = submitManualKasbon;
 
   window.addEventListener('kasirku:ready', () => {
     if (KR.auth.isLoggedIn()) setTimeout(loadKasbon, 900);
