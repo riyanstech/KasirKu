@@ -60,11 +60,57 @@ function removeFromCart(productId) {
 }
 
 function clearCart() {
-  if (!cart.length) return;
-  confirmDialog('Kosongkan keranjang?', 'Semua item di keranjang akan dihapus.', () => {
+  console.log('[clearCart] Called. Items:', cart.length);
+
+  if (!cart.length) {
+    if (window.KR?.toast) KR.toast.info('Keranjang sudah kosong');
+    return;
+  }
+
+  // Cek kelengkapan modal confirm
+  const titleEl = document.getElementById('confirm-title');
+  const msgEl = document.getElementById('confirm-message');
+  const okBtn = document.getElementById('confirm-ok');
+  const modalEl = document.getElementById('modal-confirm');
+
+  console.log('[clearCart] Modal elements:', {
+    title: !!titleEl,
+    msg: !!msgEl,
+    ok: !!okBtn,
+    modal: !!modalEl,
+  });
+
+  const doClear = () => {
     cart = [];
     renderCart();
-  });
+    if (window.KR?.toast) KR.toast.success('Keranjang dikosongkan');
+  };
+
+  // Kalau modal tidak lengkap → langsung pakai window.confirm (paling reliable)
+  if (!titleEl || !msgEl || !okBtn || !modalEl) {
+    console.warn('[clearCart] Modal tidak lengkap → fallback ke window.confirm');
+    if (window.confirm('Kosongkan keranjang?')) doClear();
+    return;
+  }
+
+  // Pakai confirmDialog
+  try {
+    confirmDialog('Kosongkan keranjang?', 'Semua item di keranjang akan dihapus.', doClear);
+  } catch (e) {
+    console.error('[clearCart] confirmDialog error:', e);
+    if (window.confirm('Kosongkan keranjang?')) doClear();
+    return;
+  }
+
+  // Cek apakah modal benar-benar terbuka setelah 150ms
+  setTimeout(() => {
+    const isOpen = modalEl.classList.contains('active');
+    console.log('[clearCart] Modal opened?', isOpen);
+    if (!isOpen) {
+      console.warn('[clearCart] Modal gagal terbuka → fallback ke window.confirm');
+      if (window.confirm('Kosongkan keranjang?')) doClear();
+    }
+  }, 150);
 }
 
 function getCartTotals() {
