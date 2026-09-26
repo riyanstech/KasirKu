@@ -275,17 +275,23 @@ window.KR = window.KR || {};
   window.refreshOrders = refreshOrders;
 
   // ============== BADGE ==============
-  function updateNavBadge() {
-    const badge = $('orders-badge');
-    if (!badge) return;
-    const pendingCount = orders.filter(o => o.status === 'pending' && !o.archived).length;
-    if (pendingCount > 0) {
-      badge.textContent = pendingCount > 99 ? '99+' : pendingCount;
-      badge.classList.remove('hidden');
-    } else {
-      badge.classList.add('hidden');
-    }
-  }
+   function updateNavBadge() {
+     const pendingCount = orders.filter(o => o.status === 'pending' && !o.archived).length;
+     const text = pendingCount > 99 ? '99+' : String(pendingCount);
+     const visible = pendingCount > 0;
+   
+     // Update semua badge di 3 tempat
+     ['orders-badge', 'orders-badge-bn', 'orders-badge-mm'].forEach(id => {
+       const badge = document.getElementById(id);
+       if (!badge) return;
+       if (visible) {
+         badge.textContent = text;
+         badge.classList.remove('hidden');
+       } else {
+         badge.classList.add('hidden');
+       }
+     });
+   }
 
   // ============== SUPABASE REALTIME ==============
   async function setupRealtime() {
