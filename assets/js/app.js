@@ -1367,17 +1367,12 @@ window.cleanupOrphanPhotos = cleanupOrphanPhotos;
 
 /* ==================== THERMAL PRINTER UI ==================== */
 async function thermalConnect() {
-  if (!KR.thermal) return KR.toast.error('Modul thermal belum dimuat');
-  try {
-    showLoading('Menghubungkan printer...');
-    const r = await KR.thermal.connect();
-    hideLoading();
-    KR.toast.success('Terhubung ke ' + r.name);
-    updateThermalStatus();
-  } catch (e) {
-    hideLoading();
-    KR.toast.error(e.message || 'Gagal connect printer');
+  if (!KR.thermalUI) {
+    KR.toast.error('Modul UI belum dimuat — refresh halaman');
+    return;
   }
+  await KR.thermalUI.connectFlow();
+  updateThermalStatus();
 }
 
 async function thermalDisconnect() {
