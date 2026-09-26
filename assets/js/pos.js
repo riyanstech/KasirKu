@@ -67,51 +67,101 @@ function clearCart() {
     return;
   }
 
-  // Cek kelengkapan modal confirm
-  const titleEl = document.getElementById('confirm-title');
-  const msgEl = document.getElementById('confirm-message');
-  const okBtn = document.getElementById('confirm-ok');
-  const modalEl = document.getElementById('modal-confirm');
+  // Simpan snapshot untuk undo
+  const snapshot = cart.map(x => ({ ...x }));
 
-  console.log('[clearCart] Modal elements:', {
-    title: !!titleEl,
-    msg: !!msgEl,
-    ok: !!okBtn,
-    modal: !!modalEl,
-  });
+  // Langsung kosongkan
+  cart = [];
+  renderCart();
 
-  const doClear = () => {
-    cart = [];
-    renderCart();
-    if (window.KR?.toast) KR.toast.success('Keranjang dikosongkan');
-  };
-
-  // Kalau modal tidak lengkap → langsung pakai window.confirm (paling reliable)
-  if (!titleEl || !msgEl || !okBtn || !modalEl) {
-    console.warn('[clearCart] Modal tidak lengkap → fallback ke window.confirm');
-    if (window.confirm('Kosongkan keranjang?')) doClear();
-    return;
-  }
-
-  // Pakai confirmDialog
-  try {
-    confirmDialog('Kosongkan keranjang?', 'Semua item di keranjang akan dihapus.', doClear);
-  } catch (e) {
-    console.error('[clearCart] confirmDialog error:', e);
-    if (window.confirm('Kosongkan keranjang?')) doClear();
-    return;
-  }
-
-  // Cek apakah modal benar-benar terbuka setelah 150ms
-  setTimeout(() => {
-    const isOpen = modalEl.classList.contains('active');
-    console.log('[clearCart] Modal opened?', isOpen);
-    if (!isOpen) {
-      console.warn('[clearCart] Modal gagal terbuka → fallback ke window.confirm');
-      if (window.confirm('Kosongkan keranjang?')) doClear();
-    }
-  }, 150);
+  // Tampilkan toast dengan tombol "Urungkan"
+  showUndoToast(snapshot, 'Keranjang dikosongkan');
 }
+
+function showUndoToast(snapshot, message) {
+  const container = document.getElementById('toasts');
+  if (!container) {
+    if (window.confirm(message + '\n\nUrungkan?')) {
+      cart = snapshot;
+      renderCart();
+    }
+    return;
+  }
+
+  // Hapus toast undo lama kalau ada
+  const oldToast = document.getElementById('undo-toast');
+  if (oldToast) {
+    oldToast.remove();
+    if (window._undoCartTimeout) clearTimeout(window._undoCartTimeout);
+  }
+
+  const toast = document.createElement('div');
+  toast.id = 'undo-toast';
+  toast.className = 'toast';
+  toast.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    border-left: 4px solid #10b981;
+    padding: 14px 16px;
+    box-shadow: 0 10px 30px -8px rgba(0,0,0,.4);
+    pointer-events: auto;
+  `;
+  toast.innerHTML = `
+    <span style="font-size:1.1rem;">🗑️</span>
+    <span style="flex:1;font-size:.85rem;font-weight:600;">${message}</span>
+    <button id="undo-cart-btn" style="
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: .8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 4px 10px -2px rgba(16,185,129,.5);
+    ">
+      ↩ Urungkan
+    </button>
+  `;
+  container.appendChild(toast);
+
+  window._undoCartSnapshot = snapshot;
+  window._undoCartTimeout = setTimeout(() => {
+    toast.style.transition = 'all .3s';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(24px)';
+    setTimeout(() => toast.remove(), 300);
+    window._undoCartSnapshot = null;
+  }, 5000);
+
+  // Bind undo button
+  const btn = toast.querySelector('#undo-cart-btn');
+  if (btn) {
+    btn.onclick = () => {
+      if (window._undoCartSnapshot) {
+        cart = window._undoCartSnapshot;
+        window._undoCartSnapshot = null;
+        if (window._undoCartTimeout) clearTimeout(window._undoCartTimeout);
+        renderCart();
+        if (window.KR?.toast) KR.toast.success('Keranjang dikembalikan');
+      }
+      toast.remove();
+    };
+  }
+}
+
+window.undoClearCart = function () {
+  if (window._undoCartSnapshot) {
+    cart = window._undoCartSnapshot;
+    window._undoCartSnapshot = null;
+    renderCart();
+    KR.toast.success('Dikembalikan');
+  }
+};
 
 function getCartTotals() {
   const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
