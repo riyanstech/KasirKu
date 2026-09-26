@@ -69,6 +69,7 @@ function showTab(tabId, btn) {
   if (tabId === 'pengaturan' && typeof loadSettings === 'function') loadSettings();
   if (tabId === 'customer' && typeof loadCustomers === 'function') loadCustomers();
   if (tabId === 'tugas' && typeof loadTaskTab === 'function') loadTaskTab();
+  if (tabId === 'kasbon' && typeof loadKasbon === 'function') loadKasbon();
 
   if (window.lucide) lucide.createIcons();
 }
