@@ -43,20 +43,14 @@ window.KR = window.KR || {};
        cancelled: 'Dibatalkan',
        all:       'Semua',
      };
-     return '<div class="flex gap-2 mb-3 overflow-x-auto no-scrollbar">' +
+     return '<div class="filter-tabs-row">' +
        options.map(s => {
          const isActive = currentFilter === s;
-         const bg = isActive
-           ? 'linear-gradient(135deg, #10b981, #059669)'
-           : '#f1f5f9';
-         const color = isActive ? '#ffffff' : '#475569';
-         const shadow = isActive ? 'box-shadow:0 4px 12px -4px rgba(16,185,129,.5);' : '';
          const label = labels[s] || (s.charAt(0).toUpperCase() + s.slice(1));
-         return '<button onclick="' + fnName + '(\'' + s + '\')" ' +
-           'style="padding:8px 14px;border-radius:12px;font-size:.75rem;font-weight:800;' +
-           'white-space:nowrap;background:' + bg + ';color:' + color + ';border:none;' +
-           'cursor:pointer;font-family:inherit;transition:all .2s;' + shadow + '">' +
-           label + '</button>';
+         return '<button type="button" onclick="' + fnName + '(\'' + s + '\')" ' +
+           'class="filter-tab-pill' + (isActive ? ' active' : '') + '">' +
+           label +
+         '</button>';
        }).join('') +
      '</div>';
    }
@@ -645,19 +639,25 @@ function _buildProofThumb(url) {
   };
 
   /* ---------- MAIN TAB ---------- */
-  window.switchTaskTab = function (tab) {
-    mainTab = tab;
-    document.querySelectorAll('[data-task-tab]').forEach(b => {
-      b.classList.toggle('active', b.dataset.taskTab === tab);
-    });
-    const btnNew = $('create-task-btn');
-    if (btnNew) btnNew.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
-
-    if (tab === 'tasks') loadTasks();
-    if (tab === 'socials') loadSocials();
-    if (tab === 'submissions') loadSubmissions();
-    if (tab === 'withdrawals') loadWithdrawals();
-  };
+   window.switchTaskTab = function (tab) {
+     mainTab = tab;
+   
+     // Update active state tab utama
+     document.querySelectorAll('[data-task-tab]').forEach(b => {
+       b.classList.toggle('active', b.dataset.taskTab === tab);
+     });
+   
+     // Re-render icons (karena ada icon baru)
+     if (window.lucide) lucide.createIcons();
+   
+     const btnNew = $('create-task-btn');
+     if (btnNew) btnNew.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
+   
+     if (tab === 'tasks') loadTasks();
+     if (tab === 'socials') loadSocials();
+     if (tab === 'submissions') loadSubmissions();
+     if (tab === 'withdrawals') loadWithdrawals();
+   };
 
   async function loadTaskTab() {
     switchTaskTab(mainTab);
