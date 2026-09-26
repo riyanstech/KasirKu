@@ -60,108 +60,30 @@ function removeFromCart(productId) {
 }
 
 function clearCart() {
-  console.log('[clearCart] Called. Items:', cart.length);
+  console.log('[clearCart] RUNNING. Items:', cart.length);
 
   if (!cart.length) {
     if (window.KR?.toast) KR.toast.info('Keranjang sudah kosong');
     return;
   }
 
-  // Simpan snapshot untuk undo
-  const snapshot = cart.map(x => ({ ...x }));
+  const itemCount = cart.reduce((s, x) => s + x.qty, 0);
+  const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
 
-  // Langsung kosongkan
-  cart = [];
-  renderCart();
+  const msg = 'Kosongkan keranjang?\n\n' +
+              itemCount + ' item senilai Rp ' +
+              Math.round(total).toLocaleString('id-ID') +
+              '\n\nTindakan ini tidak bisa dibatalkan.';
 
-  // Tampilkan toast dengan tombol "Urungkan"
-  showUndoToast(snapshot, 'Keranjang dikosongkan');
-}
-
-function showUndoToast(snapshot, message) {
-  const container = document.getElementById('toasts');
-  if (!container) {
-    if (window.confirm(message + '\n\nUrungkan?')) {
-      cart = snapshot;
-      renderCart();
-    }
-    return;
-  }
-
-  // Hapus toast undo lama kalau ada
-  const oldToast = document.getElementById('undo-toast');
-  if (oldToast) {
-    oldToast.remove();
-    if (window._undoCartTimeout) clearTimeout(window._undoCartTimeout);
-  }
-
-  const toast = document.createElement('div');
-  toast.id = 'undo-toast';
-  toast.className = 'toast';
-  toast.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #fff;
-    border-left: 4px solid #10b981;
-    padding: 14px 16px;
-    box-shadow: 0 10px 30px -8px rgba(0,0,0,.4);
-    pointer-events: auto;
-  `;
-  toast.innerHTML = `
-    <span style="font-size:1.1rem;">🗑️</span>
-    <span style="flex:1;font-size:.85rem;font-weight:600;">${message}</span>
-    <button id="undo-cart-btn" style="
-      padding: 8px 14px;
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: .8rem;
-      cursor: pointer;
-      white-space: nowrap;
-      box-shadow: 0 4px 10px -2px rgba(16,185,129,.5);
-    ">
-      ↩ Urungkan
-    </button>
-  `;
-  container.appendChild(toast);
-
-  window._undoCartSnapshot = snapshot;
-  window._undoCartTimeout = setTimeout(() => {
-    toast.style.transition = 'all .3s';
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(24px)';
-    setTimeout(() => toast.remove(), 300);
-    window._undoCartSnapshot = null;
-  }, 5000);
-
-  // Bind undo button
-  const btn = toast.querySelector('#undo-cart-btn');
-  if (btn) {
-    btn.onclick = () => {
-      if (window._undoCartSnapshot) {
-        cart = window._undoCartSnapshot;
-        window._undoCartSnapshot = null;
-        if (window._undoCartTimeout) clearTimeout(window._undoCartTimeout);
-        renderCart();
-        if (window.KR?.toast) KR.toast.success('Keranjang dikembalikan');
-      }
-      toast.remove();
-    };
-  }
-}
-
-window.undoClearCart = function () {
-  if (window._undoCartSnapshot) {
-    cart = window._undoCartSnapshot;
-    window._undoCartSnapshot = null;
+  if (window.confirm(msg)) {
+    cart = [];
     renderCart();
-    KR.toast.success('Dikembalikan');
+    if (window.KR?.toast) KR.toast.success('Keranjang dikosongkan');
+    console.log('[clearCart] ✅ Cleared');
+  } else {
+    console.log('[clearCart] ❌ Dibatalkan user');
   }
-};
+}
 
 function getCartTotals() {
   const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
