@@ -70,19 +70,292 @@ function clearCart() {
   const itemCount = cart.reduce((s, x) => s + x.qty, 0);
   const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
 
-  const msg = 'Kosongkan keranjang?\n\n' +
-              itemCount + ' item senilai Rp ' +
-              Math.round(total).toLocaleString('id-ID') +
-              '\n\nTindakan ini tidak bisa dibatalkan.';
+  // Hapus modal lama kalau ada
+  const old = document.getElementById('kr-cc-modal');
+  if (old) old.remove();
 
-  if (window.confirm(msg)) {
-    cart = [];
-    renderCart();
-    if (window.KR?.toast) KR.toast.success('Keranjang dikosongkan');
-    console.log('[clearCart] ✅ Cleared');
-  } else {
+  // ============ BUILD MODAL ============
+  const modal = document.createElement('div');
+  modal.id = 'kr-cc-modal';
+  modal.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    transition: opacity .25s ease;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  `;
+
+  modal.innerHTML = `
+    <div id="kr-cc-card" style="
+      position: relative;
+      width: 100%;
+      max-width: 380px;
+      background: #ffffff;
+      border-radius: 26px;
+      padding: 32px 24px 22px;
+      text-align: center;
+      box-shadow:
+        0 40px 80px -20px rgba(0, 0, 0, .55),
+        0 15px 40px -12px rgba(0, 0, 0, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .8);
+      overflow: hidden;
+      transform: scale(.85) translateY(30px);
+      opacity: 0;
+      transition: all .35s cubic-bezier(.34, 1.56, .64, 1);
+    ">
+      <!-- Dekorasi lingkaran blur di belakang -->
+      <div style="
+        position: absolute;
+        top: -60px; right: -60px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(239, 68, 68, .12), transparent 65%);
+        pointer-events: none;
+      "></div>
+      <div style="
+        position: absolute;
+        bottom: -80px; left: -80px;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(16, 185, 129, .08), transparent 65%);
+        pointer-events: none;
+      "></div>
+
+      <!-- Icon utama -->
+      <div style="position: relative; width: 84px; height: 84px; margin: 0 auto 22px;">
+        <!-- Pulse ring -->
+        <div style="
+          position: absolute; inset: 0;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(239, 68, 68, .35), transparent 70%);
+          animation: krPulse 2s ease-in-out infinite;
+        "></div>
+        <!-- Circle merah -->
+        <div style="
+          position: relative;
+          width: 100%; height: 100%;
+          border-radius: 50%;
+          background: linear-gradient(145deg, #fee2e2 0%, #fecaca 100%);
+          border: 2px solid #fca5a5;
+          display: grid;
+          place-items: center;
+          box-shadow:
+            0 16px 40px -12px rgba(239, 68, 68, .5),
+            inset 0 2px 0 rgba(255, 255, 255, .6);
+        ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 24 24"
+               fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Title -->
+      <h3 style="
+        position: relative;
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 10px;
+        letter-spacing: -.025em;
+        line-height: 1.2;
+      ">Kosongkan Keranjang?</h3>
+
+      <!-- Desc -->
+      <p style="
+        position: relative;
+        font-size: .88rem;
+        color: #64748b;
+        line-height: 1.6;
+        margin: 0 0 20px;
+        padding: 0 8px;
+      ">
+        <strong style="color:#0f172a;">${itemCount} item</strong> senilai
+        <strong style="color:#059669;font-family:'JetBrains Mono',monospace;font-weight:800;">Rp ${Math.round(total).toLocaleString('id-ID')}</strong>
+        akan dihapus dari keranjang.
+      </p>
+
+      <!-- Warning box -->
+      <div style="
+        position: relative;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #fffbeb, #fef3c7);
+        border: 1.5px dashed #fbbf24;
+        border-radius: 14px;
+        margin-bottom: 22px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-align: left;
+      ">
+        <div style="
+          width: 28px; height: 28px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+          display: grid; place-items: center;
+          flex-shrink: 0;
+          box-shadow: 0 3px 8px -2px rgba(245, 158, 11, .5);
+        ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+               fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <span style="font-size: .74rem; color: #78350f; line-height: 1.4; font-weight: 600;">
+          Tindakan ini tidak bisa dibatalkan
+        </span>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display: flex; gap: 10px; position: relative;">
+        <button id="kr-cc-cancel" type="button" style="
+          flex: 1;
+          min-height: 50px;
+          border-radius: 14px;
+          background: #f1f5f9;
+          border: 1.5px solid #e2e8f0;
+          color: #475569;
+          font-size: .9rem;
+          font-weight: 800;
+          cursor: pointer;
+          font-family: inherit;
+          letter-spacing: -.01em;
+          transition: all .2s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        ">
+          Batal
+        </button>
+        <button id="kr-cc-confirm" type="button" style="
+          flex: 1.2;
+          min-height: 50px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          background-size: 200% 200%;
+          color: #ffffff;
+          font-size: .9rem;
+          font-weight: 800;
+          cursor: pointer;
+          border: none;
+          font-family: inherit;
+          letter-spacing: -.01em;
+          box-shadow:
+            0 10px 24px -6px rgba(239, 68, 68, .55),
+            inset 0 1px 0 rgba(255, 255, 255, .25);
+          transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+          </svg>
+          Ya, Kosongkan
+        </button>
+      </div>
+    </div>
+
+    <style>
+      @keyframes krPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.15); opacity: .65; }
+      }
+      @keyframes krFadeOut {
+        to { opacity: 0; }
+      }
+      #kr-cc-cancel:hover {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+        transform: translateY(-2px);
+      }
+      #kr-cc-cancel:active { transform: scale(.97) !important; }
+      #kr-cc-confirm:hover {
+        filter: brightness(1.08);
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px -8px rgba(239, 68, 68, .65) !important;
+      }
+      #kr-cc-confirm:active { transform: scale(.97) !important; }
+      @media (max-width: 400px) {
+        #kr-cc-card { padding: 26px 20px 18px !important; border-radius: 22px !important; }
+      }
+    </style>
+  `;
+
+  document.body.appendChild(modal);
+
+  // ============ ANIMATE IN ============
+  const card = modal.querySelector('#kr-cc-card');
+  requestAnimationFrame(() => {
+    modal.style.opacity = '1';
+    if (card) {
+      card.style.transform = 'scale(1) translateY(0)';
+      card.style.opacity = '1';
+    }
+  });
+
+  // ============ CLOSE HANDLER ============
+  const close = (callback) => {
+    modal.style.opacity = '0';
+    if (card) {
+      card.style.transform = 'scale(.9) translateY(20px)';
+      card.style.opacity = '0';
+    }
+    setTimeout(() => {
+      modal.remove();
+      if (typeof callback === 'function') callback();
+    }, 250);
+  };
+
+  // Batal
+  modal.querySelector('#kr-cc-cancel').onclick = () => {
     console.log('[clearCart] ❌ Dibatalkan user');
-  }
+    close();
+  };
+
+  // Konfirmasi
+  modal.querySelector('#kr-cc-confirm').onclick = () => {
+    close(() => {
+      cart = [];
+      renderCart();
+      if (window.KR?.toast) KR.toast.success('Keranjang dikosongkan');
+      console.log('[clearCart] ✅ Cleared');
+    });
+  };
+
+  // Klik backdrop = batal
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      console.log('[clearCart] ❌ Backdrop clicked');
+      close();
+    }
+  };
+
+  // Escape = batal
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      document.removeEventListener('keydown', escHandler);
+      close();
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 }
 
 function getCartTotals() {
