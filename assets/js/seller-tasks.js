@@ -32,6 +32,66 @@ window.KR = window.KR || {};
     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
   };
 
+   /* ---------- FILTER TABS HELPER (fix: warna tidak muncul karena primary-* tidak ada di Tailwind) ---------- */
+   function _buildFilterTabs(fnName, currentFilter, options) {
+     const labels = {
+       pending:   'Pending',
+       verified:  'Verified',
+       approved:  'Approved',
+       rejected:  'Rejected',
+       done:      'Selesai',
+       cancelled: 'Dibatalkan',
+       all:       'Semua',
+     };
+     return '<div class="flex gap-2 mb-3 overflow-x-auto no-scrollbar">' +
+       options.map(s => {
+         const isActive = currentFilter === s;
+         const bg = isActive
+           ? 'linear-gradient(135deg, #10b981, #059669)'
+           : '#f1f5f9';
+         const color = isActive ? '#ffffff' : '#475569';
+         const shadow = isActive ? 'box-shadow:0 4px 12px -4px rgba(16,185,129,.5);' : '';
+         const label = labels[s] || (s.charAt(0).toUpperCase() + s.slice(1));
+         return '<button onclick="' + fnName + '(\'' + s + '\')" ' +
+           'style="padding:8px 14px;border-radius:12px;font-size:.75rem;font-weight:800;' +
+           'white-space:nowrap;background:' + bg + ';color:' + color + ';border:none;' +
+           'cursor:pointer;font-family:inherit;transition:all .2s;' + shadow + '">' +
+           label + '</button>';
+       }).join('') +
+     '</div>';
+   }
+
+   /* ---------- PROOF THUMB HELPER (fix: layout gambar meluber) ---------- */
+function _buildProofThumb(url) {
+  return '<div style="' +
+    'margin-top:8px;' +
+    'padding:10px;' +
+    'background:#f8fafc;' +
+    'border:1.5px solid #e2e8f0;' +
+    'border-radius:12px;' +
+    'display:flex;' +
+    'justify-content:center;' +
+    'align-items:center;' +
+    'overflow:hidden;' +
+  '">' +
+    '<img src="' + esc(url) + '" ' +
+      'onclick="viewSocialProof(\'' + esc(url) + '\')" ' +
+      'style="' +
+        'max-width:100%;' +
+        'max-height:320px;' +
+        'width:auto;' +
+        'height:auto;' +
+        'object-fit:contain;' +
+        'border-radius:8px;' +
+        'cursor:zoom-in;' +
+        'background:#fff;' +
+        'display:block;' +
+      '" ' +
+      'alt="Bukti" ' +
+    '/>' +
+  '</div>';
+}
+
   async function rpc(fn, params) {
     const { data, error } = await KR.sb.client.rpc(fn, params);
     if (error) throw new Error(error.message || 'Server error');
@@ -181,7 +241,7 @@ window.KR = window.KR || {};
     if (existing) existing.remove();
 
     const options = Object.entries(PLATFORMS).map(([id, p]) =>
-      '<label class="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 hover:border-primary-400 cursor-pointer transition task-plat-opt">' +
+      '<label class="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 cursor-pointer transition task-plat-opt" style="transition:all .2s;" onmouseover="this.style.borderColor=\'#10b981\'" onmouseout="this.style.borderColor=this.querySelector(\'input\').checked?\'#10b981\':\'#e2e8f0\'">' +
         '<input type="radio" name="task-platform" value="' + id + '" class="hidden">' +
         '<div style="width:36px;height:36px;border-radius:10px;background:' + p.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
           '<i data-lucide="' + p.icon + '" class="w-4 h-4"></i>' +
@@ -324,13 +384,7 @@ window.KR = window.KR || {};
 
     if (countEl) countEl.textContent = socials.length + ' akun';
 
-    const tabs =
-      '<div class="flex gap-2 mb-3 overflow-x-auto no-scrollbar">' +
-        ['pending', 'verified', 'rejected', 'all'].map(s =>
-          '<button onclick="setSocialFilter(\'' + s + '\')" class="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap ' +
-          (socialFilter === s ? 'bg-primary-500 text-white shadow' : 'bg-slate-100 text-slate-600') + '">' +
-          s.charAt(0).toUpperCase() + s.slice(1) + '</button>').join('') +
-      '</div>';
+     const tabs = _buildFilterTabs('setSocialFilter', socialFilter, ['pending', 'verified', 'rejected', 'all']);
 
     if (!socials.length) {
       el.innerHTML = tabs + '<div class="empty-state"><i data-lucide="share-2"></i><h3>Tidak ada akun</h3></div>';
@@ -346,9 +400,8 @@ window.KR = window.KR || {};
         rejected: '<span class="customer-badge" style="background:#fee2e2;color:#991b1b;">Rejected</span>',
       }[s.status] || '';
 
-      const proofThumb = s.proof_url
-        ? '<img src="' + esc(s.proof_url) + '" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')" ' +
-          'style="width:100%;max-width:280px;height:200px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;margin-top:8px;cursor:pointer;background:#fff;">'
+       const proofThumb = s.proof_url
+        ? _buildProofThumb(s.proof_url)
         : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">⚠ Bukti tidak ada</div>';
 
       const actions = s.status === 'pending'
@@ -425,11 +478,7 @@ window.KR = window.KR || {};
 
     if (countEl) countEl.textContent = submissions.length + ' submission';
 
-    const tabs = '<div class="flex gap-2 mb-3 overflow-x-auto no-scrollbar">' +
-      ['pending', 'approved', 'rejected', 'all'].map(s =>
-        '<button onclick="setSubmissionFilter(\'' + s + '\')" class="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap ' +
-        (submissionFilter === s ? 'bg-primary-500 text-white shadow' : 'bg-slate-100 text-slate-600') + '">' +
-        s.charAt(0).toUpperCase() + s.slice(1) + '</button>').join('') + '</div>';
+     const tabs = _buildFilterTabs('setSubmissionFilter', submissionFilter, ['pending', 'approved', 'rejected', 'all']);
 
     if (!submissions.length) {
       el.innerHTML = tabs + '<div class="empty-state"><i data-lucide="inbox"></i><h3>Tidak ada bukti</h3></div>';
@@ -440,9 +489,8 @@ window.KR = window.KR || {};
     el.innerHTML = tabs + '<div class="space-y-3">' + submissions.map(s => {
       const plat = PLATFORMS[s.platform] || { name: s.platform, icon: 'globe', color: '#64748b' };
 
-      const proofThumb = s.proof_url
-        ? '<img src="' + esc(s.proof_url) + '" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')" ' +
-          'style="width:100%;max-width:320px;height:220px;object-fit:cover;border-radius:10px;border:2px solid #e2e8f0;margin-top:8px;cursor:pointer;background:#fff;">'
+       const proofThumb = s.proof_url
+        ? _buildProofThumb(s.proof_url)
         : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">⚠ Bukti tidak ada</div>';
 
       const actions = s.status === 'pending'
@@ -523,11 +571,7 @@ window.KR = window.KR || {};
 
     if (countEl) countEl.textContent = withdrawals.length + ' penarikan';
 
-    const tabs = '<div class="flex gap-2 mb-3 overflow-x-auto no-scrollbar">' +
-      ['pending', 'done', 'cancelled', 'all'].map(s =>
-        '<button onclick="setWithdrawalFilter(\'' + s + '\')" class="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap ' +
-        (withdrawalFilter === s ? 'bg-primary-500 text-white shadow' : 'bg-slate-100 text-slate-600') + '">' +
-        s.charAt(0).toUpperCase() + s.slice(1) + '</button>').join('') + '</div>';
+     const tabs = _buildFilterTabs('setWithdrawalFilter', withdrawalFilter, ['pending', 'done', 'cancelled', 'all']);
 
     if (!withdrawals.length) {
       el.innerHTML = tabs + '<div class="empty-state"><i data-lucide="banknote"></i><h3>Tidak ada penarikan</h3></div>';
