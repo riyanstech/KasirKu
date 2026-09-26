@@ -711,10 +711,14 @@ function onScanSuccess(decodedText) {
     resultEl.innerHTML = `
       <div style="font-weight:800;margin-bottom:4px;">❌ Produk tidak ditemukan</div>
       <div style="font-size:.85rem;">SKU: <code>${escapeHtml(decodedText)}</code></div>
-      <button class="btn btn-primary" style="margin-top:10px;" onclick="closeScanner(); openProductForm({ sku: '${escapeHtml(decodedText)}' });">
+      <button class="btn btn-primary" style="margin-top:10px;" id="btn-add-sku-new">
         + Tambah Produk Baru dengan SKU ini
       </button>
     `;
+    document.getElementById('btn-add-sku-new').onclick = () => {
+      closeScanner();
+      openProductForm({ sku: decodedText });
+    };
   }
 }
 
