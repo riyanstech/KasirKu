@@ -24,13 +24,14 @@ function addToCart(product, qty = 1) {
     }
     existing.qty += qty;
   } else {
-    cart.push({
+   cart.push({
       productId: product.id,
       name: product.name,
       price: product.price,
       image: product.image || '',
       qty: qty,
       sku: product.sku || '',
+      unit: product.unit || '',
     });
   }
   renderCart();
@@ -394,8 +395,8 @@ function renderCart() {
         <div class="cart-item">
           <div class="ci-img">${img}</div>
           <div class="ci-body">
-            <div class="ci-name">${escapeHtml(item.name)}</div>
-            <div class="ci-price">${formatRupiah(item.price)}</div>
+            <div class="ci-name">${escapeHtml(item.name)}${item.unit ? ` <span style="font-size:.68rem;color:var(--text-3);font-weight:600;">/ ${escapeHtml(item.unit)}</span>` : ''}</div>
+            <div class="ci-price">${formatRupiah(item.price)}${item.unit ? ` / ${escapeHtml(item.unit)}` : ''}</div>
             <div class="ci-controls">
               <button class="ci-qty-btn" onclick="changeQty('${item.productId}', -1)">−</button>
               <span class="ci-qty">${item.qty}</span>
@@ -485,7 +486,8 @@ function renderPosGrid() {
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
     const img = p.image ? `<img src="${p.image}" alt="">` : `<i data-lucide="package"></i>`;
     const stockClass = out ? 'empty' : (low ? 'low' : '');
-    const stockLabel = out ? 'Habis' : `Stok: ${p.stock != null ? p.stock : '∞'}`;
+    const unitText = p.unit ? ` ${p.unit}` : '';
+    const stockLabel = out ? 'Habis' : `Stok: ${p.stock != null ? p.stock : '∞'}${unitText}`;
     return `
       <div class="product-tile ${out ? 'out' : ''}" onclick="handleTileClick('${p.id}')">
         ${p.category ? `<span class="pt-cat">${escapeHtml(p.category)}</span>` : ''}
@@ -805,13 +807,15 @@ let currentReceipt = null;
 function buildReceiptHtml(trx) {
   const s = KR.store.getSettings();
   const date = formatDate(trx.at);
-  const itemsHtml = trx.items.map(it => `
-    <div class="r-row">
-      <span class="r-item-name">${escapeHtml(it.name)}</span>
-      <span>${it.qty}x${formatRupiah(it.price).replace('Rp ','')}</span>
-      <span style="text-align:right;min-width:70px">${formatRupiah(it.price * it.qty).replace('Rp ','')}</span>
-    </div>
-  `).join('');
+   const itemsHtml = trx.items.map(it => {
+     const unitText = it.unit ? ` ${it.unit}` : '';
+     return `
+       <div class="r-row">
+         <span class="r-item-name">${escapeHtml(it.name)}</span>
+         <span>${it.qty}${unitText}x${formatRupiah(it.price).replace('Rp ','')}</span>
+         <span style="text-align:right;min-width:70px">${formatRupiah(it.price * it.qty).replace('Rp ','')}</span>
+       </div>`;
+   }).join('');
 
   return `
     <div class="r-center">
