@@ -78,6 +78,10 @@
                       <i data-lucide="users"></i><span>Customer</span>
                     </button>
 
+                    <button class="nav-tab" data-tab="kasbon" onclick="showTab('kasbon', this)">
+                      <i data-lucide="hand-coins"></i><span>Kasbon</span>
+                    </button>
+
                     <button class="nav-tab" data-tab="pengaturan" onclick="showTab('pengaturan', this)">
                         <i data-lucide="settings"></i><span>Pengaturan</span>
                     </button>
@@ -292,6 +296,30 @@
             
               <div id="tasks-stats" class="orders-stats"></div>
               <div id="tasks-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-kasbon" class="tab-content">
+              <div class="page-header">
+                <div>
+                  <h2>Kasbon / Hutang Customer</h2>
+                  <p id="kasbon-count-label">0 kasbon</p>
+                </div>
+                <div class="page-header-actions">
+                  <button class="btn btn-secondary" onclick="loadKasbon()">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                </div>
+              </div>
+            
+              <div class="toolbar">
+                <div class="search-box">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="kasbon-search" placeholder="Cari nama atau nomor HP..." oninput="setKasbonSearch(this.value)">
+                </div>
+              </div>
+            
+              <div id="kasbon-stats" class="orders-stats"></div>
+              <div id="kasbon-list" class="orders-list"></div>
             </section>
 
             <section id="tab-pengaturan" class="tab-content">
@@ -877,6 +905,7 @@
         '/assets/js/pos.js',
         '/assets/js/orders.js',
         '/assets/js/customers-admin.js',
+        '/assets/js/kasbon.js',
         '/assets/js/seller-tasks.js',
         '/assets/js/pwa.js', 
         '/assets/js/app.js'
