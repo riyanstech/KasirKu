@@ -5105,5 +5105,106 @@
 
 })();
 </script>
+
+<!-- ============================================================
+     PATCH v5.4 — Fix Favorit Reset + Hide Duplicate Header Buttons
+     ============================================================ -->
+
+<style>
+  /* Sembunyikan tombol duplikat di top bar mobile
+     (Tugas & Pesanan sudah ada di bottom nav, jadi top bar
+     hanya butuh tombol Akun) */
+  @media (max-width: 1023px) {
+    #tasks-header-btn,
+    #my-orders-header-btn {
+      display: none !important;
+    }
+  }
+</style>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     Override bnSwitch dengan versi clean & lengkap
+     - Fix: klik "Beranda" reset filter favorit
+     - Fix: klik "Favorit" toggle filter dengan benar
+     - Fix: klik "Tugas"/"Pesanan" cek login + tampilkan hint
+     ============================================================ */
+  window.bnSwitch = function (tab) {
+    // 1. Update active state semua bottom nav item
+    document.querySelectorAll('.bn-item').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.bn === tab);
+    });
+
+    // 2. HOME — reset semua filter (favorit, kategori) & scroll top
+    if (tab === 'home') {
+      if (typeof window.sbNavClick === 'function') window.sbNavClick('home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 3. FAVORIT — toggle filter lewat sbNavClick
+    if (tab === 'fav') {
+      if (typeof window.sbNavClick === 'function') window.sbNavClick('fav');
+      return;
+    }
+
+    // 4. KATEGORI — scroll ke sticky tabs
+    if (tab === 'cat') {
+      var catWrap = document.querySelector('.cat-wrap');
+      if (catWrap) catWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    // 5. TUGAS / PESANAN — butuh login dulu
+    if (tab === 'tasks' || tab === 'orders') {
+      var session = window.KRCustomer && window.KRCustomer.getSession && window.KRCustomer.getSession();
+
+      if (!session) {
+        // Belum login → reset active ke home + tampilkan modal hint
+        document.querySelectorAll('.bn-item').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.bn === 'home');
+        });
+        if (typeof window.showLoginHint === 'function') {
+          window.showLoginHint(tab);
+        }
+        return;
+      }
+
+      // Sudah login → buka fitur
+      if (tab === 'tasks') {
+        if (window.CustomerTasks && window.CustomerTasks.openTasksSheet) {
+          window.CustomerTasks.openTasksSheet();
+        }
+      } else if (tab === 'orders') {
+        if (window.CustomerAuth && window.CustomerAuth.openMyOrders) {
+          window.CustomerAuth.openMyOrders();
+        } else if (typeof window.__customerToast === 'function') {
+          window.__customerToast('Memuat pesanan...', 'info');
+        }
+      }
+      return;
+    }
+  };
+
+  /* ============================================================
+     Safety net — kalau ada state favorit nyangkut,
+     reset saat halaman difokus kembali atau user refresh
+     ============================================================ */
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      // Halaman di-restore dari bfcache — reset ke home
+      var homeBtn = document.querySelector('.bn-item[data-bn="home"]');
+      if (homeBtn && typeof window.sbNavClick === 'function') {
+        // Cukup panggil sbNavClick('home') untuk reset state internal
+        window.sbNavClick('home');
+      }
+    }
+  });
+
+})();
+</script>
 </body>
 </html>
