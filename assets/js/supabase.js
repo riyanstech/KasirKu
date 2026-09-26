@@ -106,6 +106,7 @@ KR.sb = (function () {
     if (updates.price !== undefined) payload.price = updates.price;
     if (updates.stock !== undefined) payload.stock = updates.stock;
     if (updates.category !== undefined) payload.category = updates.category;
+    if (updates.unit !== undefined) payload.unit = updates.unit;
     if (updates.image !== undefined) payload.image_url = updates.image;
     if (updates.is_online !== undefined) payload.is_online = updates.is_online;
     if (updates.needs_address !== undefined) payload.needs_address = updates.needs_address;
