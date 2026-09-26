@@ -609,15 +609,25 @@ async function submitCheckout() {
 
   try {
     // 1. Insert transaksi ke cloud
-    if (KR.auth.isLoggedIn()) {
-      try {
-        const dbTrx = await KR.sb.insertTransaction(trx);
-        trx.dbId = dbTrx.id;
-      } catch (e) {
-        console.error('[Checkout] Insert trx failed', e);
-        KR.toast.warn('Transaksi tersimpan lokal, gagal sync cloud');
-      }
-    }
+   if (KR.auth.isLoggedIn()) {
+     if (KR.sync && !KR.sync.isOnline()) {
+       KR.sync.enqueueTransaction(trx);
+       KR.toast.info('📴 Offline — transaksi masuk antrian sync');
+     } else {
+       try {
+         const dbTrx = await KR.sb.insertTransaction(trx);
+         trx.dbId = dbTrx.id;
+       } catch (e) {
+         console.error('[Checkout] Insert trx failed — queueing', e);
+         if (KR.sync) {
+           KR.sync.enqueueTransaction(trx);
+           KR.toast.warn('Gagal sync — transaksi masuk antrian');
+         } else {
+           KR.toast.warn('Transaksi tersimpan lokal, gagal sync cloud');
+         }
+       }
+     }
+   }
 
     // 2. Update stok produk (lokal + cloud)
     const products = KR.store.getProducts();
@@ -626,13 +636,18 @@ async function submitCheckout() {
       const p = products.find(x => x.id === item.productId);
       if (p && p.stock !== undefined && p.stock !== null) {
         p.stock = Math.max(0, p.stock - item.qty);
-        if (KR.auth.isLoggedIn()) {
+      if (KR.auth.isLoggedIn()) {
+        if (KR.sync && !KR.sync.isOnline()) {
+          KR.sync.enqueueStockUpdate(p.id, p.stock);
+        } else {
           stockUpdates.push(
             KR.sb.updateProductDb(p.id, { stock: p.stock }).catch(e => {
-              console.warn('[Checkout] Stock update failed', p.id, e);
+              console.warn('[Checkout] Stock update failed — queueing', p.id, e);
+              if (KR.sync) KR.sync.enqueueStockUpdate(p.id, p.stock);
             })
           );
         }
+      }
       }
     });
     if (stockUpdates.length) await Promise.allSettled(stockUpdates);
