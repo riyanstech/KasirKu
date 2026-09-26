@@ -1498,3 +1498,10 @@ window.addEventListener('kasirku:ready', () => {
 window.addEventListener('beforeinstallprompt', () => {
   setTimeout(updateInstallStatus, 500);
 });
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  setTimeout(initApp, 0);
+}
+window.addEventListener('kasirku:ready', initApp);
