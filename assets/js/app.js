@@ -489,6 +489,26 @@ document.addEventListener('change', async (e) => {
   }
 });
 
+/* ==================== AUTO-GENERATE SKU ==================== */
+function generateAutoSku() {
+  // Format: AUTO-XXXXXX (6 karakter base36 random)
+  // Contoh: AUTO-K3F9X2
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // tanpa I, O, 0, 1 biar tidak bingung
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  const sku = 'AUTO-' + code;
+
+  // Cek kalau kebetulan duplikat (kemungkinan sangat kecil), coba lagi
+  const existing = KR.store.findProductBySku(sku);
+  if (existing) {
+    return generateAutoSku(); // rekursif sampai dapat yang unik
+  }
+  return sku;
+}
+window.generateAutoSku = generateAutoSku;
+
 async function saveProduct() {
   const idEl = document.getElementById('pf-id');
   const nameEl = document.getElementById('pf-name');
@@ -501,7 +521,7 @@ async function saveProduct() {
 
   const id = idEl.value;
   const name = nameEl.value.trim();
-  const sku = skuEl.value.trim();
+  let sku = skuEl.value.trim();  // ← let, karena mungkin di-generate
   const cost = Number(costEl?.value) || 0;
   const price = Number(priceEl.value) || 0;
   const stock = Number(stockEl?.value) || 0;
@@ -512,12 +532,26 @@ async function saveProduct() {
   const onlinePriceRaw = document.getElementById('pf-online-price')?.value;
   const onlinePrice = onlinePriceRaw ? Number(onlinePriceRaw) : null;
 
+  // === VALIDASI ===
   if (!name) { KR.toast.error('Nama produk wajib diisi'); return; }
-  if (!sku) { KR.toast.error('SKU wajib diisi'); return; }
   if (price <= 0) { KR.toast.error('Harga jual harus lebih dari 0'); return; }
 
-  const dup = KR.store.findProductBySku(sku);
-  if (dup && dup.id !== id) { KR.toast.error('SKU sudah dipakai produk lain'); return; }
+  // === AUTO-GENERATE SKU kalau kosong ===
+  if (!sku) {
+    sku = generateAutoSku();
+    console.log('[saveProduct] SKU kosong → auto-generate:', sku);
+  }
+
+  // === CEK DUPLIKAT SKU — hanya untuk SKU yang diisi manual ===
+  // SKU auto-generate dijamin unik, jadi skip pengecekan
+  const isAutoSku = sku.startsWith('AUTO-');
+  if (!isAutoSku) {
+    const dup = KR.store.findProductBySku(sku);
+    if (dup && dup.id !== id) {
+      KR.toast.error('SKU "' + sku + '" sudah dipakai produk lain: ' + dup.name);
+      return;
+    }
+  }
 
   if (!KR.auth.isLoggedIn()) {
     KR.toast.error('Harus login dulu');
