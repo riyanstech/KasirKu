@@ -687,7 +687,7 @@ async function loadTaskTab(evt) {
     await new Promise(r => setTimeout(r, 400));
 
     // Toast feedback
-    if (KR.toast) KR.toast.success('🔄 Data diperbarui');
+    if (KR.toast) KR.toast.success('Data diperbarui');
   } catch (e) {
     console.error('[Refresh Tasks]', e);
     if (KR.toast) KR.toast.error('Gagal refresh: ' + (e.message || 'Unknown'));
