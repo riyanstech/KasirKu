@@ -88,6 +88,18 @@
                 </nav>
 
                 <div class="hdr-actions">
+                    <!-- Badge sync pending (oranye) -->
+                    <button id="sync-badge" class="cart-badge hidden"
+                            style="background:linear-gradient(135deg,#f59e0b,#d97706);"
+                            title="Pending sync">0</button>
+                
+                    <!-- Badge offline (kuning) -->
+                    <div id="offline-badge" class="hidden"
+                         style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:#fef3c7;border-radius:8px;font-size:.72rem;font-weight:700;color:#92400e;">
+                        <i data-lucide="wifi-off" style="width:12px;height:12px;"></i>
+                        <span>Offline</span>
+                    </div>
+                
                     <span id="cart-badge-hdr" class="cart-badge hidden">0</span>
                     <button id="user-badge-btn" onclick="showTab('pengaturan')" class="user-badge" title="Akun" style="display:none">
                         <i data-lucide="user"></i>
