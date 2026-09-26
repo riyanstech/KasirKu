@@ -747,6 +747,7 @@
                         <input id="pf-price" type="number" class="input" placeholder="0" min="0">
                     </div>
                 </div>
+
                 <div class="field-grid">
                     <div class="field">
                         <label>Stok</label>
@@ -756,6 +757,71 @@
                         <label>Kategori</label>
                         <input id="pf-category" class="input" placeholder="Contoh: Makanan">
                     </div>
+                </div>
+                
+                <div class="field">
+                    <label>
+                        Satuan
+                        <span style="color:var(--text-3);font-weight:600;font-size:.65rem;text-transform:none;letter-spacing:0;margin-left:4px;">(opsional)</span>
+                    </label>
+                    <select id="pf-unit" class="select" onchange="onPfUnitChange()">
+                        <option value="">— Tidak ada satuan —</option>
+                        <optgroup label="🔢 Satuan Umum">
+                            <option value="pcs">pcs — piece / buah</option>
+                            <option value="buah">buah</option>
+                            <option value="unit">unit</option>
+                            <option value="ekor">ekor (untuk ikan/ayam)</option>
+                            <option value="butir">butir (untuk telur)</option>
+                            <option value="batang">batang</option>
+                            <option value="lembar">lembar</option>
+                            <option value="keping">keping</option>
+                        </optgroup>
+                        <optgroup label="⚖️ Berat & Volume">
+                            <option value="kg">kg — kilogram</option>
+                            <option value="gram">gram / g</option>
+                            <option value="ons">ons</option>
+                            <option value="liter">liter / l</option>
+                            <option value="ml">ml — mililiter</option>
+                            <option value="meter">meter / m</option>
+                        </optgroup>
+                        <optgroup label="📦 Kemasan">
+                            <option value="bungkus">bungkus</option>
+                            <option value="sachet">sachet</option>
+                            <option value="pack">pack / pak</option>
+                            <option value="renteng">renteng</option>
+                            <option value="botol">botol</option>
+                            <option value="kaleng">kaleng</option>
+                            <option value="dus">dus</option>
+                            <option value="box">box</option>
+                            <option value="karton">karton</option>
+                            <option value="karung">karung</option>
+                            <option value="sak">sak</option>
+                            <option value="ikat">ikat</option>
+                            <option value="set">set</option>
+                        </optgroup>
+                        <optgroup label="📊 Kuantitas Besar">
+                            <option value="lusin">lusin (12)</option>
+                            <option value="kodi">kodi (20)</option>
+                            <option value="rim">rim (500 lembar)</option>
+                            <option value="roll">roll / gulung</option>
+                        </optgroup>
+                        <optgroup label="🍽️ Porsi">
+                            <option value="porsi">porsi</option>
+                            <option value="gelas">gelas</option>
+                            <option value="mangkuk">mangkuk</option>
+                            <option value="piring">piring</option>
+                        </optgroup>
+                        <option value="__custom__" style="font-weight:800;color:#059669;">✏️ Ketik sendiri...</option>
+                    </select>
+                
+                    <!-- Input custom — muncul kalau pilih "Ketik sendiri" -->
+                    <input 
+                        id="pf-unit-custom" 
+                        class="input hidden" 
+                        placeholder="Contoh: sendok, genggam, ember..." 
+                        style="margin-top:8px;"
+                        oninput="onPfUnitCustomChange()"
+                    >
                 </div>
 
                 <div class="pf-online-section">
