@@ -538,6 +538,7 @@ function loadSettings() {
   initAiSettings();
   if (KR.auth) KR.auth.renderAccountCard();
   if (typeof loadOnlineSettings === 'function') loadOnlineSettings();
+  if (typeof loadThermalSettings === 'function') loadThermalSettings();
 }
 window.loadSettings = loadSettings;
 
@@ -1364,6 +1365,120 @@ async function cleanupOrphanPhotos() {
 }
 window.cleanupOrphanPhotos = cleanupOrphanPhotos;
 
+/* ==================== THERMAL PRINTER UI ==================== */
+async function thermalConnect() {
+  if (!KR.thermal) return KR.toast.error('Modul thermal belum dimuat');
+  try {
+    showLoading('Menghubungkan printer...');
+    const r = await KR.thermal.connect();
+    hideLoading();
+    KR.toast.success('Terhubung ke ' + r.name);
+    updateThermalStatus();
+  } catch (e) {
+    hideLoading();
+    KR.toast.error(e.message || 'Gagal connect printer');
+  }
+}
+
+async function thermalDisconnect() {
+  if (!KR.thermal) return;
+  await KR.thermal.disconnect();
+  KR.toast.info('Printer diputuskan');
+  updateThermalStatus();
+}
+
+async function thermalTestPrint() {
+  if (!KR.thermal) return;
+  if (!KR.thermal.isConnected()) return KR.toast.warn('Printer belum terhubung');
+  try {
+    showLoading('Mencetak test...');
+    await KR.thermal.testPrint();
+    hideLoading();
+    KR.toast.success('Test print terkirim ✅');
+  } catch (e) {
+    hideLoading();
+    KR.toast.error(e.message || 'Gagal test print');
+  }
+}
+
+function updateThermalStatus() {
+  const statusEl = document.getElementById('thermal-status');
+  const connBtn = document.getElementById('thermal-connect-btn');
+  const testBtn = document.getElementById('thermal-test-btn');
+  const discBtn = document.getElementById('thermal-disconnect-btn');
+  if (!statusEl || !KR.thermal) return;
+
+  const supported = KR.thermal.isSupported();
+  const connected = KR.thermal.isConnected();
+  const name = KR.thermal.getDeviceName();
+
+  if (!supported) {
+    statusEl.className = 'gh-status error';
+    statusEl.innerHTML = '<i data-lucide="alert-triangle"></i><span>Browser tidak support Web Bluetooth. Pakai Chrome Android / Desktop.</span>';
+    if (connBtn) connBtn.disabled = true;
+  } else if (connected) {
+    statusEl.className = 'gh-status ok';
+    statusEl.innerHTML = '<i data-lucide="bluetooth-connected"></i><span>Terhubung: ' + (name || 'Printer') + '</span>';
+    if (connBtn) connBtn.classList.add('hidden');
+    if (testBtn) testBtn.classList.remove('hidden');
+    if (discBtn) discBtn.classList.remove('hidden');
+  } else {
+    statusEl.className = 'gh-status warn';
+    statusEl.innerHTML = '<i data-lucide="bluetooth-off"></i><span>Belum terhubung</span>';
+    if (connBtn) { connBtn.disabled = false; connBtn.classList.remove('hidden'); }
+    if (testBtn) testBtn.classList.add('hidden');
+    if (discBtn) discBtn.classList.add('hidden');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function loadThermalSettings() {
+  if (!KR.thermal) return;
+  const s = KR.thermal.getSettings();
+  const paper = document.getElementById('thermal-paper');
+  const auto = document.getElementById('thermal-auto');
+  const cut = document.getElementById('thermal-cut');
+  if (paper) paper.value = String(s.paperWidth);
+  if (auto) auto.checked = !!s.autoPrint;
+  if (cut) cut.checked = !!s.cutAfterPrint;
+  updateThermalStatus();
+}
+
+function saveThermalSettings() {
+  if (!KR.thermal) return;
+  KR.thermal.saveSettings({
+    paperWidth: Number(document.getElementById('thermal-paper')?.value) || 58,
+    autoPrint: !!document.getElementById('thermal-auto')?.checked,
+    cutAfterPrint: !!document.getElementById('thermal-cut')?.checked,
+  });
+}
+
+async function printThermalReceipt() {
+  if (typeof currentReceipt === 'undefined' || !currentReceipt) return KR.toast.error('Tidak ada struk');
+  if (!KR.thermal) return KR.toast.error('Modul thermal belum dimuat');
+  if (!KR.thermal.isConnected()) {
+    KR.toast.warn('Printer belum terhubung, menghubungkan...');
+    try { await KR.thermal.connect(); updateThermalStatus(); } catch (e) { return KR.toast.error(e.message); }
+  }
+  try {
+    showLoading('Mencetak...');
+    await KR.thermal.printReceipt(currentReceipt);
+    hideLoading();
+    KR.toast.success('Struk terkirim ke printer 🖨️');
+  } catch (e) {
+    hideLoading();
+    KR.toast.error(e.message || 'Gagal cetak');
+  }
+}
+
+window.thermalConnect = thermalConnect;
+window.thermalDisconnect = thermalDisconnect;
+window.thermalTestPrint = thermalTestPrint;
+window.updateThermalStatus = updateThermalStatus;
+window.loadThermalSettings = loadThermalSettings;
+window.saveThermalSettings = saveThermalSettings;
+window.printThermalReceipt = printThermalReceipt;
+
 /* ==================== INIT ==================== */
 function initApp() {
   if (window.__kasirku_inited) return;
@@ -1505,3 +1620,12 @@ if (document.readyState === 'loading') {
   setTimeout(initApp, 0);
 }
 window.addEventListener('kasirku:ready', initApp);
+
+window.addEventListener('kasirku:ready', async () => {
+  setTimeout(async () => {
+    if (KR.thermal?.isSupported?.()) {   // ← pakai tanda tanya
+      const ok = await KR.thermal.autoReconnect();
+      if (ok) updateThermalStatus();
+    }
+  }, 1500);
+});
