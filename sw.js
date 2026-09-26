@@ -2,7 +2,7 @@
    KasirKu — Service Worker
    Auto-update + Offline support
    ========================================== */
-const CACHE_VERSION = 'kasirku-' + Date.now();
+const CACHE_VERSION = 'kasirku-v4-kasbon-pdf';
 
 const ASSETS = [
   './',
