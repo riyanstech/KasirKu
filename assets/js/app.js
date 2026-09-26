@@ -30,19 +30,100 @@ window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 
 function confirmDialog(title, message, onOk) {
-  const titleEl = document.getElementById('confirm-title');
-  const msgEl = document.getElementById('confirm-message');
-  const okBtn = document.getElementById('confirm-ok');
-  if (!titleEl || !msgEl || !okBtn) return;
-  titleEl.textContent = title;
-  msgEl.textContent = message;
-  const fresh = okBtn.cloneNode(true);
-  okBtn.parentNode.replaceChild(fresh, okBtn);
-  fresh.addEventListener('click', () => {
-    closeModal('modal-confirm');
-    if (typeof onOk === 'function') onOk();
+  // Hapus modal lama kalau ada
+  const existing = document.getElementById('kr-global-confirm');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'kr-global-confirm';
+  modal.style.cssText = `
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 999999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    background: rgba(15, 23, 42, .55) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    opacity: 0;
+    transition: opacity .25s ease;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  `;
+
+  modal.innerHTML = `
+    <div id="kr-gc-card" style="
+      position: relative;
+      width: 100%;
+      max-width: 380px;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 28px 22px 22px;
+      text-align: center;
+      box-shadow: 0 30px 70px -20px rgba(0,0,0,.5), 0 10px 30px -10px rgba(0,0,0,.3);
+      overflow: hidden;
+      transform: scale(.9) translateY(20px);
+      opacity: 0;
+      transition: all .35s cubic-bezier(.34,1.56,.64,1);
+    ">
+      <div style="position:absolute;top:-50%;right:-30%;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle, rgba(239,68,68,.1), transparent 65%);pointer-events:none;"></div>
+
+      <div style="position:relative;width:76px;height:76px;margin:0 auto 18px;">
+        <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle, rgba(239,68,68,.3), transparent 70%);animation:krCdPulse 2s ease-in-out infinite;"></div>
+        <div style="position:relative;width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#fee2e2,#fecaca);border:2px solid #fca5a5;display:grid;place-items:center;box-shadow:0 12px 28px -10px rgba(239,68,68,.5);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+      </div>
+
+      <h3 style="position:relative;font-size:1.15rem;font-weight:800;color:#0f172a;margin:0 0 8px;letter-spacing:-.02em;">${escapeHtml(title)}</h3>
+      <p style="position:relative;font-size:.85rem;color:#64748b;line-height:1.6;margin:0 0 22px;">${escapeHtml(message)}</p>
+
+      <div style="display:flex;gap:10px;position:relative;">
+        <button data-kr-cd="cancel" type="button" style="flex:1;min-height:46px;border-radius:14px;background:#f1f5f9;border:1.5px solid #e2e8f0;color:#475569;font-size:.88rem;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;">Batal</button>
+        <button data-kr-cd="ok" type="button" style="flex:1.2;min-height:46px;border-radius:14px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;border:none;font-family:inherit;box-shadow:0 10px 24px -6px rgba(239,68,68,.55);transition:all .25s cubic-bezier(.34,1.56,.64,1);">Ya, Lanjutkan</button>
+      </div>
+    </div>
+    <style>@keyframes krCdPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.15);opacity:.65}}</style>
+  `;
+
+  document.body.appendChild(modal);
+
+  const card = modal.querySelector('#kr-gc-card');
+  requestAnimationFrame(() => {
+    modal.style.opacity = '1';
+    if (card) { card.style.transform = 'scale(1) translateY(0)'; card.style.opacity = '1'; }
   });
-  openModal('modal-confirm');
+
+  const close = (confirmed) => {
+    modal.style.opacity = '0';
+    if (card) { card.style.transform = 'scale(.9) translateY(20px)'; card.style.opacity = '0'; }
+    setTimeout(() => {
+      modal.remove();
+      if (confirmed && typeof onOk === 'function') {
+        try { onOk(); } catch (e) { console.error('[confirmDialog]', e); }
+      }
+    }, 250);
+  };
+
+  modal.querySelector('[data-kr-cd="cancel"]').onclick = () => close(false);
+  modal.querySelector('[data-kr-cd="ok"]').onclick = () => close(true);
+  modal.onclick = (e) => { if (e.target === modal) close(false); };
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      document.removeEventListener('keydown', escHandler);
+      close(false);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 }
 window.confirmDialog = confirmDialog;
 
