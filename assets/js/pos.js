@@ -659,13 +659,19 @@ async function submitCheckout() {
    // Simpan kasbon ke cloud
    if (method === 'Kasbon' && kasbonData && KR.kasbon) {
      try {
-       await KR.kasbon.createKasbon({
-         customerName: kasbonData.name,
-         customerPhone: kasbonData.phone,
-         amount: t.total,
-         note: kasbonData.note,
-         dueDate: kasbonData.dueDate,
-       });
+      await KR.kasbon.createKasbon({
+        customerName: kasbonData.name,
+        customerPhone: kasbonData.phone,
+        amount: t.total,
+        note: kasbonData.note,
+        dueDate: kasbonData.dueDate,
+        items: cart.map(x => ({
+          name: x.name,
+          qty: x.qty,
+          price: x.price,
+          subtotal: x.price * x.qty,
+        })),
+      });
        KR.toast.success('Kasbon dicatat untuk ' + kasbonData.name);
      } catch (e) {
        console.error('[Kasbon]', e);
