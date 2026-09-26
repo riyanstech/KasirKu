@@ -20,10 +20,11 @@ KR.auth = (function () {
   function getUser() { return getUserCache(); }
 
   function showLoginScreen() {
-    if (location.pathname.indexOf('dashboard.html') !== -1) {
-      location.href = '/';
-    }
+  const path = location.pathname.replace(/\.html$/, '');
+  if (path === '/dashboard') {
+    location.href = '/';
   }
+}
   function hideLoginScreen() {}
   function switchAuthTab() {}
   function setStatus() {}
