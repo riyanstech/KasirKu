@@ -129,15 +129,30 @@ window.confirmDialog = confirmDialog;
 
 /* ==================== NAVIGATION ==================== */
 function showTab(tabId, btn) {
+  // Update tab content
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('tab-' + tabId);
   if (target) target.classList.add('active');
 
+  // Update nav-tabs (desktop)
   document.querySelectorAll('.nav-tab').forEach(b => {
     if (b.dataset.tab === tabId) b.classList.add('active');
     else b.classList.remove('active');
   });
 
+  // Update mobile bottom nav
+  document.querySelectorAll('.bn-item-mobile').forEach(b => {
+    if (b.dataset.tab === tabId) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+
+  // Update mobile drawer
+  document.querySelectorAll('.mm-item[data-menu-tab]').forEach(b => {
+    if (b.dataset.menuTab === tabId) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+
+  // Render sesuai tab
   if (tabId === 'kasir' && typeof renderPosGrid === 'function') {
     renderPosGrid();
     if (typeof renderCategoryChips === 'function') renderCategoryChips();
@@ -154,6 +169,67 @@ function showTab(tabId, btn) {
 
   if (window.lucide) lucide.createIcons();
 }
+
+/* ==================== MOBILE NAV HELPERS ==================== */
+function switchMobileTab(tabId) {
+  showTab(tabId);
+  // Scroll ke atas biar user lihat konten baru
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openMobileMenu() {
+  const drawer = document.getElementById('mobile-menu-drawer');
+  if (drawer) {
+    drawer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeMobileMenu() {
+  const drawer = document.getElementById('mobile-menu-drawer');
+  if (drawer) {
+    drawer.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+// Update info user di drawer
+function updateMobileUserInfo() {
+  const cache = KR.store.get('authCache', null);
+  if (!cache || !cache.loggedIn) return;
+  
+  const initial = (cache.username || cache.email || '?')[0].toUpperCase();
+  const avatarEl = document.getElementById('mm-user-avatar');
+  const nameEl = document.getElementById('mm-user-name');
+  const roleEl = document.getElementById('mm-user-role');
+  
+  if (avatarEl) avatarEl.textContent = initial;
+  if (nameEl) nameEl.textContent = cache.username || cache.email || 'User';
+  if (roleEl) {
+    const roleLabel = cache.role === 'admin' ? '👑 Admin' : '👤 Kasir';
+    roleEl.textContent = roleLabel;
+  }
+}
+
+// Expose ke global
+window.switchMobileTab = switchMobileTab;
+window.openMobileMenu = openMobileMenu;
+window.closeMobileMenu = closeMobileMenu;
+window.updateMobileUserInfo = updateMobileUserInfo;
+
+// Escape key untuk close drawer
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const drawer = document.getElementById('mobile-menu-drawer');
+    if (drawer && drawer.classList.contains('open')) closeMobileMenu();
+  }
+});
+
+// Update user info saat ready
+window.addEventListener('kasirku:ready', () => {
+  setTimeout(updateMobileUserInfo, 500);
+});
 
 /* ==================== THEME ==================== */
 function initTheme() {
