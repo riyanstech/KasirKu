@@ -3646,4 +3646,162 @@ body {
   .mobile-bottom-nav,
   .mobile-menu-drawer { display: none !important; }
 }
+
+/* ============================================================
+   TASK TAB — Fix tampilan halaman Tugas Berhadiah
+   ============================================================ */
+
+/* Tab utama: Tugas | Akun Sosmed | Bukti Tugas | Penarikan Saldo */
+.task-main-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+  background: var(--bg-subtle);
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 640px) {
+  .task-main-tabs {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.task-main-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: .75rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
+  text-align: center;
+  line-height: 1.2;
+  min-height: 62px;
+  letter-spacing: -.01em;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.task-main-tab svg {
+  width: 18px;
+  height: 18px;
+  transition: all .25s;
+  flex-shrink: 0;
+}
+
+.task-main-tab span {
+  white-space: nowrap;
+  font-size: .72rem;
+}
+
+.task-main-tab:hover {
+  background: rgba(255, 255, 255, .5);
+  color: var(--text);
+}
+
+.task-main-tab:active {
+  transform: scale(.96);
+}
+
+.task-main-tab.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 8px 20px -6px rgba(16, 185, 129, .55),
+              inset 0 1px 0 rgba(255, 255, 255, .2);
+  font-weight: 900;
+}
+
+.task-main-tab.active svg {
+  transform: scale(1.15);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .15));
+}
+
+/* Fix filter tabs dari garis jelek scrollbar */
+.filter-tabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filter-tab-pill {
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 800;
+  border: 1.5px solid transparent;
+  background: var(--bg-subtle);
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s cubic-bezier(.34, 1.56, .64, 1);
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -.01em;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+.filter-tab-pill:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.filter-tab-pill:active {
+  transform: scale(.95);
+}
+
+.filter-tab-pill.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 16px -4px rgba(16, 185, 129, .55),
+              inset 0 1px 0 rgba(255, 255, 255, .2);
+  font-weight: 900;
+}
+
+/* Kartu statistik di halaman Tugas — lebih nyaman dilihat */
+@media (max-width: 640px) {
+  #tasks-stats.orders-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  #tasks-stats .order-stat {
+    padding: 14px 14px;
+    border-radius: 14px;
+  }
+  #tasks-stats .order-stat-label {
+    font-size: .66rem;
+    margin-bottom: 6px;
+  }
+  #tasks-stats .order-stat-value {
+    font-size: 1.3rem;
+  }
+}
+
+/* Container menu tab tidak punya garis jelek */
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
 /* ==================== END OF FILE ==================== */
