@@ -271,6 +271,7 @@ function mapProductFromDb(p) {
     price: Number(p.price) || 0,
     stock: Number(p.stock) || 0,
     category: p.category || '',
+    unit: p.unit || '',
     image: p.image_url || '',
     is_online: p.is_online === true,
     needs_address: p.needs_address === true,
@@ -334,12 +335,13 @@ function renderProductList() {
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
 
-    let stockChip = `<span class="pa-chip neutral">∞</span>`;
-    if (p.stock !== undefined && p.stock !== null) {
-      if (out) stockChip = `<span class="pa-chip danger">Habis</span>`;
-      else if (low) stockChip = `<span class="pa-chip warn">Stok ${p.stock}</span>`;
-      else stockChip = `<span class="pa-chip neutral">Stok ${p.stock}</span>`;
-    }
+   let stockChip = `<span class="pa-chip neutral">∞</span>`;
+   if (p.stock !== undefined && p.stock !== null) {
+     const unitText = p.unit ? ` ${p.unit}` : '';
+     if (out) stockChip = `<span class="pa-chip danger">Habis</span>`;
+     else if (low) stockChip = `<span class="pa-chip warn">Stok ${p.stock}${unitText}</span>`;
+     else stockChip = `<span class="pa-chip neutral">Stok ${p.stock}${unitText}</span>`;
+   }
 
     const profit = (Number(p.price) || 0) - (Number(p.cost) || 0);
     const profitChip = profit > 0 ? `<span class="pa-chip neutral">Margin ${formatRupiah(profit)}</span>` : '';
@@ -395,6 +397,8 @@ function openProductForm(preset = null, editId = null) {
 
   if (catEl) catEl.value = '';
   if (statusEl) statusEl.innerHTML = '';
+  // Reset unit
+  if (typeof setSelectedUnit === 'function') setSelectedUnit('');
   const onlineEl = document.getElementById('pf-online');
   const needsAddrEl = document.getElementById('pf-needs-address');
   const onlinePriceEl = document.getElementById('pf-online-price');
@@ -413,6 +417,7 @@ function openProductForm(preset = null, editId = null) {
       if (priceEl) priceEl.value = p.price || '';
       if (stockEl) stockEl.value = (p.stock != null ? p.stock : 0);
       if (catEl) catEl.value = p.category || '';
+      if (typeof setSelectedUnit === 'function') setSelectedUnit(p.unit || '');
       if (onlineEl) onlineEl.checked = !!p.is_online;
       if (needsAddrEl) needsAddrEl.checked = !!p.needs_address;
       if (onlinePriceEl) onlinePriceEl.value = p.online_price != null ? p.online_price : '';
@@ -509,6 +514,67 @@ function generateAutoSku() {
 }
 window.generateAutoSku = generateAutoSku;
 
+/* ==================== UNIT HELPERS ==================== */
+function onPfUnitChange() {
+  const selectEl = document.getElementById('pf-unit');
+  const customEl = document.getElementById('pf-unit-custom');
+  if (!selectEl || !customEl) return;
+
+  if (selectEl.value === '__custom__') {
+    customEl.classList.remove('hidden');
+    customEl.focus();
+  } else {
+    customEl.classList.add('hidden');
+    customEl.value = '';
+  }
+}
+
+function onPfUnitCustomChange() {
+  // Tidak perlu aksi, tapi disiapkan untuk future
+}
+
+function getSelectedUnit() {
+  const selectEl = document.getElementById('pf-unit');
+  const customEl = document.getElementById('pf-unit-custom');
+  if (!selectEl) return '';
+
+  if (selectEl.value === '__custom__') {
+    return (customEl?.value || '').trim();
+  }
+  return selectEl.value || '';
+}
+
+function setSelectedUnit(unit) {
+  const selectEl = document.getElementById('pf-unit');
+  const customEl = document.getElementById('pf-unit-custom');
+  if (!selectEl || !customEl) return;
+
+  if (!unit) {
+    selectEl.value = '';
+    customEl.classList.add('hidden');
+    customEl.value = '';
+    return;
+  }
+
+  // Cek apakah unit ada di list preset
+  const options = Array.from(selectEl.options).map(o => o.value);
+  if (options.includes(unit)) {
+    selectEl.value = unit;
+    customEl.classList.add('hidden');
+    customEl.value = '';
+  } else {
+    // Custom unit
+    selectEl.value = '__custom__';
+    customEl.classList.remove('hidden');
+    customEl.value = unit;
+  }
+}
+
+window.onPfUnitChange = onPfUnitChange;
+window.onPfUnitCustomChange = onPfUnitCustomChange;
+window.getSelectedUnit = getSelectedUnit;
+window.setSelectedUnit = setSelectedUnit;
+
 async function saveProduct() {
   const idEl = document.getElementById('pf-id');
   const nameEl = document.getElementById('pf-name');
@@ -526,6 +592,7 @@ async function saveProduct() {
   const price = Number(priceEl.value) || 0;
   const stock = Number(stockEl?.value) || 0;
   const category = (catEl?.value || '').trim();
+  const unit = typeof getSelectedUnit === 'function' ? getSelectedUnit() : '';
 
   const isOnline = document.getElementById('pf-online')?.checked || false;
   const needsAddress = document.getElementById('pf-needs-address')?.checked || false;
@@ -559,12 +626,13 @@ async function saveProduct() {
   }
 
   const isEdit = !!id;
-  const data = {
-    name, sku, cost, price, stock, category,
-    is_online: isOnline,
-    needs_address: isOnline && needsAddress,
-    online_price: isOnline ? onlinePrice : null,
-  };
+   const data = {
+       name, sku, cost, price, stock, category,
+       unit: unit || null,
+       is_online: isOnline,
+       needs_address: isOnline && needsAddress,
+       online_price: isOnline ? onlinePrice : null,
+   };
 
   showLoading(isEdit ? 'Menyimpan...' : 'Membuat produk...');
 
