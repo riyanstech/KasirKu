@@ -1619,7 +1619,14 @@ window.addEventListener('kasirku:ready', initApp);
 
 window.addEventListener('kasirku:ready', async () => {
   setTimeout(async () => {
-    if (KR.thermal?.isSupported?.()) {   // ← pakai tanda tanya
+    // 1. SYNC — jalan apapun browsernya
+    if (KR.sync?.setupListeners) {
+      KR.sync.setupListeners();
+      console.log('[App] Sync listeners aktif');
+    }
+
+    // 2. THERMAL — hanya kalau browser support
+    if (KR.thermal?.isSupported?.()) {
       const ok = await KR.thermal.autoReconnect();
       if (ok) updateThermalStatus();
     }
