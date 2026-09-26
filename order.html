@@ -3790,11 +3790,12 @@
         existing.qty += qty;
         toast(`${p.name} × ${existing.qty}`, 'success');
       } else {
-        state.cart.push({
+         state.cart.push({
           productId: p.id, name: p.name,
           price: Number(p.online_price || p.price || 0),
           qty, needs_address: !!p.needs_address,
           image_url: p.image_url || '', stock: p.stock,
+          unit: p.unit || '',
         });
         toast(`${p.name} ditambahkan ke keranjang`, 'success');
       }
@@ -4278,7 +4279,7 @@
 
         const { data: products } = await sb
           .from('products')
-          .select('id, name, sku, price, online_price, stock, category, image_url, is_online, needs_address')
+          .select('id, name, sku, price, online_price, stock, category, unit, image_url, is_online, needs_address')
           .eq('user_id', profile.id)
           .eq('is_online', true)
           .order('category', { ascending: true, nullsFirst: false })
@@ -4509,7 +4510,7 @@
               ${stockBadge}
             </div>
             <div class="pc-info">
-              <div class="pc-name">${esc(p.name)}</div>
+              <div class="pc-name">${esc(p.name)}${p.unit ? ` <span style="font-size:.65rem;color:var(--ink-3);font-weight:600;">/ ${esc(p.unit)}</span>` : ''}</div>
               <div class="pc-price-row">
                 <div class="pc-price">${fmtNum(price)}</div>
                 <div class="pc-add-btn"><i data-lucide="plus"></i></div>
