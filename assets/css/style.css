@@ -4286,4 +4286,92 @@ body {
 .dark .kds-event.kasbon { background: rgba(245, 158, 11, .08); border-color: rgba(245, 158, 11, .3); }
 .dark .kds-event.payment { background: rgba(16, 185, 129, .08); border-color: rgba(16, 185, 129, .3); }
 .dark .kds-total-card { background: linear-gradient(135deg, #0f172a, #1e293b); }
+
+/* ===== KASBON — Event Items & Pay Button ===== */
+
+.kds-event-items {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, .7);
+  border-radius: 8px;
+  border: 1px dashed rgba(0, 0, 0, .08);
+}
+
+.dark .kds-event-items {
+  background: rgba(0, 0, 0, .2);
+  border-color: rgba(255, 255, 255, .1);
+}
+
+.kds-item-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: .74rem;
+  color: var(--text-2);
+  line-height: 1.35;
+}
+
+.kds-item-line:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, .04);
+}
+
+.kds-item-name {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  font-weight: 600;
+}
+
+.kds-item-qty {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 900;
+  color: #d97706;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
+.kds-item-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  color: var(--text);
+  font-size: .74rem;
+  white-space: nowrap;
+}
+
+/* Tombol Bayar / Cicil di bawah amount */
+.kds-pay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  font-size: .72rem;
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .25s cubic-bezier(.34, 1.56, .64, 1);
+  box-shadow: 0 6px 14px -4px rgba(16, 185, 129, .55);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kds-pay-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -6px rgba(16, 185, 129, .65);
+}
+
+.kds-pay-btn:active {
+  transform: scale(.94);
+}
+
+.kds-pay-btn svg {
+  width: 13px;
+  height: 13px;
+}
 /* ==================== END OF FILE ==================== */
