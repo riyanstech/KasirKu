@@ -293,8 +293,9 @@
                   <button id="create-task-btn" class="btn btn-primary" onclick="openCreateTaskModal()">
                     <i data-lucide="plus"></i> Buat Tugas
                   </button>
-                  <button class="btn btn-secondary" onclick="loadTaskTab()">
-                    <i data-lucide="refresh-cw"></i> Refresh
+    
+                  <button class="btn btn-secondary" id="task-refresh-btn" onclick="loadTaskTab(event)">
+                      <i data-lucide="refresh-cw"></i> Refresh
                   </button>
                 </div>
               </div>
