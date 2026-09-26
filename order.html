@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -668,6 +668,7 @@
       max-width: calc(100% - 20px);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* Favorite button */
     .pc-fav {
       position: absolute;
       top: 8px; right: 8px;
@@ -1806,12 +1807,15 @@
        DESKTOP OVERRIDES (>= 1024px)
        ============================================================ */
     @media (min-width: 1024px) {
+      /* Hide mobile */
       .top-bar, .bottom-nav { display: none !important; }
 
+      /* Show desktop */
       .dt-header { display: block; }
       .dt-sidebar { display: flex; }
       .dt-right-panel { display: flex; }
 
+      /* Layout: sidebar + main + right panel */
       .layout {
         max-width: 1520px;
         padding: 24px;
@@ -1822,6 +1826,7 @@
         padding-bottom: 60px;
       }
 
+      /* Sidebar */
       .dt-sidebar {
         flex-direction: column;
         gap: 6px;
@@ -1889,11 +1894,13 @@
         line-height: 1.5;
       }
 
+      /* Main: remove horizontal padding, remove bottom-nav space */
       main {
         padding: 0;
         min-width: 0;
       }
 
+      /* Hero: bigger */
       .hero-strip {
         margin: 0 0 24px;
         padding: 44px 48px 48px;
@@ -1943,6 +1950,7 @@
       .hero-content-cta:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -8px rgba(0,0,0,.3); }
       .hero-content-cta svg { width: 16px; height: 16px; }
 
+      /* Hero decoration */
       .hero-decor {
         position: relative;
         width: 300px;
@@ -1967,13 +1975,18 @@
       .hd-3 { width: 70px; height: 70px; top: 130px; right: 140px; animation: floatSoft 5.5s ease-in-out infinite .8s; background: rgba(255,255,255,.20); }
       .hd-4 { width: 56px; height: 56px; top: 20px; right: 0; animation: floatSoft 4.5s ease-in-out infinite 1.2s; background: rgba(255,255,255,.26); }
 
+      /* Section head */
       .sec-head {
         padding: 0 0 14px;
         margin-top: 8px;
       }
       .sec-title { font-size: 1.5rem; }
 
-      .dt-categories { display: block; margin-bottom: 24px; }
+      /* Categories grid (desktop) — visible below hero */
+      .dt-categories {
+        display: block;
+        margin-bottom: 24px;
+      }
       .dt-cat-head {
         display: flex;
         align-items: center;
@@ -2053,6 +2066,7 @@
         font-weight: 700;
       }
 
+      /* Product grid desktop */
       .product-grid {
         padding: 0;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -2069,8 +2083,10 @@
       .pc-fav svg { width: 17px; height: 17px; }
       .pc-cart-badge { top: 50px; right: 12px; }
 
+      /* Info footer desktop: hide */
       .info-footer { display: none; }
 
+      /* Right panel */
       .dt-right-panel {
         flex-direction: column;
         gap: 16px;
@@ -2091,30 +2107,28 @@
         box-shadow: var(--sh-1);
       }
 
-      .rp-card.rp-greeting {
-        background: linear-gradient(135deg, #10b981 0%, #059669 55%, #065f46 100%) !important;
-        color: #fff !important;
-        border: none !important;
+      /* Greeting */
+      .rp-greeting {
+        background: linear-gradient(135deg, #10b981 0%, #059669 55%, #065f46 100%);
+        color: #fff;
         display: flex;
         align-items: center;
         gap: 14px;
-        padding: 20px !important;
-        box-shadow: 0 12px 28px -8px rgba(16,185,129,.45), 0 4px 10px -3px rgba(16,185,129,.25) !important;
+        border: none;
+        box-shadow: var(--sh-primary-sm);
         position: relative;
         overflow: hidden;
       }
-      .rp-card.rp-greeting::before {
+      .rp-greeting::before {
         content: '';
         position: absolute;
         top: -30%; right: -15%;
         width: 160px; height: 160px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,.28), transparent 70%);
-        filter: blur(24px);
+        background: radial-gradient(circle, rgba(255,255,255,.3), transparent 65%);
+        filter: blur(20px);
         pointer-events: none;
-        z-index: 0;
       }
-      .rp-card.rp-greeting > * { position: relative; z-index: 1; }
       .rp-greet-avatar {
         width: 54px; height: 54px;
         border-radius: 16px;
@@ -2123,11 +2137,17 @@
         border: 1.5px solid rgba(255,255,255,.28);
         display: grid; place-items: center;
         flex-shrink: 0;
+        position: relative;
+        z-index: 1;
         overflow: hidden;
       }
       .rp-greet-avatar svg { width: 26px; height: 26px; color: #fff; }
-      .rp-greet-avatar span { font-weight: 900; font-size: 1.3rem; color: #fff; }
-      .rp-greet-text { flex: 1; min-width: 0; }
+      .rp-greet-avatar span {
+        font-weight: 900;
+        font-size: 1.3rem;
+        color: #fff;
+      }
+      .rp-greet-text { flex: 1; min-width: 0; position: relative; z-index: 1; }
       .rp-greet-hi {
         font-family: 'Fraunces', serif;
         font-weight: 700;
@@ -2143,7 +2163,12 @@
         font-weight: 600;
       }
 
-      .rp-info-list { display: flex; flex-direction: column; gap: 8px; }
+      /* Info cards */
+      .rp-info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
       .rp-info-item {
         display: flex;
         align-items: center;
@@ -2169,6 +2194,7 @@
       .rp-info-t { font-weight: 800; font-size: .78rem; color: var(--ink); line-height: 1.2; }
       .rp-info-d { font-size: .66rem; color: var(--ink-3); margin-top: 2px; line-height: 1.3; }
 
+      /* Right panel cart */
       .rp-cart-head {
         display: flex;
         align-items: center;
@@ -2314,15 +2340,22 @@
       }
       .rp-btn-checkout:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-2px); box-shadow: var(--sh-primary); }
       .rp-btn-checkout:disabled { opacity: .5; cursor: not-allowed; }
-      .rp-btn-l { display: inline-flex; align-items: center; gap: 8px; }
+      .rp-btn-l {
+        display: inline-flex; align-items: center; gap: 8px;
+      }
       .rp-btn-checkout svg { width: 16px; height: 16px; }
 
+      /* Toasts top */
       #toasts { top: 96px; right: 24px; left: auto; max-width: 400px; margin-right: 0; }
 
+      /* Reveal on desktop: no translateY on cards after load */
       .reveal { opacity: 1 !important; transform: none !important; }
     }
 
-    .dt-categories, .hero-decor, .hero-content-cta { display: none; }
+    /* Hide desktop-only elements on mobile */
+    .dt-categories,
+    .hero-decor,
+    .hero-content-cta { display: none; }
 
     @media (min-width: 1024px) {
       .dt-categories { display: block; }
@@ -2330,10 +2363,12 @@
       .hero-content-cta { display: inline-flex; }
     }
 
+    /* Hide mobile cart badge on desktop */
     @media (min-width: 1024px) {
       #fab-cart-badge { display: none !important; }
     }
 
+    /* Mobile cart-badge in nav visible only on mobile */
     @media (max-width: 1023px) {
       .rp-cart-count { display: none; }
     }
@@ -2346,7 +2381,11 @@
       }
     }
 
-    /* Fix hero mobile */
+    /* ============================================================
+       PATCH v5.1 — Fix Mobile Hero + Desktop Greeting
+       ============================================================ */
+
+    /* -------- FIX 1: HERO MOBILE -------- */
     .hero-top {
       display: flex !important;
       flex-direction: column !important;
@@ -2354,6 +2393,7 @@
       gap: 12px !important;
       width: 100% !important;
     }
+
     .hero-h {
       font-size: 1.7rem !important;
       line-height: 1.08 !important;
@@ -2362,12 +2402,14 @@
       word-break: keep-all !important;
       overflow-wrap: break-word !important;
     }
+
     .hero-top > p {
       font-size: .82rem !important;
       line-height: 1.5 !important;
       max-width: 100% !important;
       margin: 2px 0 0 0 !important;
     }
+
     .hero-content-cta {
       display: inline-flex !important;
       align-items: center !important;
@@ -2385,8 +2427,12 @@
     }
     .hero-content-cta:hover { transform: translateY(-2px) !important; }
     .hero-content-cta svg { width: 15px !important; height: 15px !important; }
+
     .hero-decor { display: none !important; }
 
+    /* ============================================================
+       FIX 2: HERO DESKTOP — layout 2 kolom
+       ============================================================ */
     @media (min-width: 1024px) {
       .hero-top {
         flex-direction: column !important;
@@ -2394,8 +2440,14 @@
         gap: 18px !important;
         flex: 1 !important;
       }
-      .hero-h { font-size: 2.5rem !important; line-height: 1.05 !important; }
-      .hero-top > p { font-size: .92rem !important; max-width: 460px !important; }
+      .hero-h {
+        font-size: 2.5rem !important;
+        line-height: 1.05 !important;
+      }
+      .hero-top > p {
+        font-size: .92rem !important;
+        max-width: 460px !important;
+      }
       .hero-content-cta {
         padding: 14px 24px !important;
         font-size: .9rem !important;
@@ -2405,32 +2457,72 @@
     }
 
     /* ============================================================
-       CONFIRM MODAL
+       FIX 3: GREETING CARD DESKTOP
        ============================================================ */
-    @keyframes confirmPop {
-      0% { transform: scale(.75); opacity: 0 }
-      100% { transform: scale(1); opacity: 1 }
-    }
-    @keyframes confirmFloat {
-      0%, 100% { transform: translateY(0) }
-      50% { transform: translateY(-5px) }
-    }
-    @keyframes confirmPulse {
-      0%, 100% { opacity: 1; transform: scale(1) }
-      50% { opacity: .55; transform: scale(1.12) }
+    @media (min-width: 1024px) {
+      .rp-card.rp-greeting,
+      #dt-right-panel .rp-card.rp-greeting {
+        background: linear-gradient(135deg, #10b981 0%, #059669 55%, #065f46 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        padding: 20px !important;
+        box-shadow: 0 12px 28px -8px rgba(16,185,129,.45),
+                    0 4px 10px -3px rgba(16,185,129,.25) !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+
+      .rp-card.rp-greeting::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -30% !important;
+        right: -15% !important;
+        width: 160px !important;
+        height: 160px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255,255,255,.28), transparent 70%) !important;
+        filter: blur(24px) !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+      }
+      .rp-card.rp-greeting > * { position: relative !important; z-index: 1 !important; }
+
+      .rp-card.rp-greeting .rp-greet-hi {
+        color: #ffffff !important;
+        font-size: 1.15rem !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,.12) !important;
+      }
+      .rp-card.rp-greeting .rp-greet-sub {
+        color: rgba(255,255,255,.92) !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,.08) !important;
+      }
+
+      .rp-card.rp-greeting .rp-greet-avatar {
+        background: rgba(255,255,255,.22) !important;
+        border: 1.5px solid rgba(255,255,255,.35) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.3) !important;
+      }
+      .rp-card.rp-greeting .rp-greet-avatar svg,
+      .rp-card.rp-greeting .rp-greet-avatar span {
+        color: #fff !important;
+      }
     }
 
+    /* ============================================================
+       NEW — CONFIRM MODAL (Custom, menggantikan native confirm)
+       ============================================================ */
     .confirm-card {
       position: relative;
+      z-index: 1;
       width: 100%;
       max-width: 340px;
       background: var(--paper);
-      border-radius: 26px;
+      border-radius: 24px;
       padding: 28px 22px 22px;
       text-align: center;
       box-shadow: 0 30px 70px -20px rgba(6,44,34,.4),
                   0 10px 30px -10px rgba(6,44,34,.2);
-      animation: confirmPop .4s cubic-bezier(.34,1.56,.64,1);
+      animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
       overflow: hidden;
     }
     .confirm-card::before {
@@ -2454,7 +2546,7 @@
       position: absolute; inset: 0;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(239,68,68,.30), transparent 70%);
-      animation: confirmPulse 2.2s ease-in-out infinite;
+      animation: pulseDot 2.2s ease-in-out infinite;
     }
     .confirm-icon {
       position: relative;
@@ -2466,11 +2558,12 @@
       color: #dc2626;
       box-shadow: 0 12px 28px -10px rgba(239,68,68,.5),
                   inset 0 1px 0 rgba(255,255,255,.6);
-      animation: confirmFloat 3.5s ease-in-out infinite;
+      animation: floatSoft 3.5s ease-in-out infinite;
       transition: all .3s;
     }
     .confirm-icon svg { width: 30px; height: 30px; }
 
+    /* Variant kuning (opsional) */
     .confirm-card.variant-warn .confirm-icon {
       background: linear-gradient(135deg, #fef3c7, #fde68a);
       border-color: #fbbf24;
@@ -2488,7 +2581,7 @@
     .confirm-title {
       font-family: 'Fraunces', serif;
       font-weight: 700;
-      font-size: 1.22rem;
+      font-size: 1.28rem;
       letter-spacing: -.025em;
       color: var(--ink);
       margin: 0 0 8px;
@@ -2502,7 +2595,10 @@
       max-width: 280px;
       font-weight: 500;
     }
-    .confirm-actions { display: flex; gap: 10px; }
+    .confirm-actions {
+      display: flex;
+      gap: 10px;
+    }
     .confirm-btn {
       flex: 1;
       min-height: 46px;
@@ -2542,17 +2638,38 @@
       box-shadow: 0 12px 26px -8px rgba(239,68,68,.6);
     }
     .confirm-btn:active { transform: scale(.96); }
+
+    /* ============================================================
+       PATCH v5.2 — Fix Auth Tab Switching
+       Panel "Daftar" & "Tamu" tidak muncul karena CSS/JS mismatch
+       ============================================================ */
+
+    /* Default: panel auth TAMPIL. Yang disembunyikan hanya yang punya .hidden */
+    .auth-panel {
+      display: block !important;
+      animation: fadeIn .25s ease;
+    }
+    .auth-panel.hidden {
+      display: none !important;
+    }
+
+    /* Fallback: kalau ada panel yang tetap pakai .active (backend lama) */
+    .auth-panel.active:not(.hidden) {
+      display: block !important;
+    }
   </style>
 </head>
 <body>
 
   <!-- ============================================
-       DESKTOP HEADER
+       DESKTOP HEADER (>= 1024px)
        ============================================ -->
   <header class="dt-header">
     <div class="dt-header-inner">
       <div class="dt-brand">
-        <div class="dt-brand-logo"><i data-lucide="store"></i></div>
+        <div class="dt-brand-logo">
+          <i data-lucide="store"></i>
+        </div>
         <div class="dt-brand-text">
           <div class="dt-brand-title">
             <span id="dt-store-name">Memuat...</span>
@@ -2575,14 +2692,6 @@
         <button class="dt-nav-item" data-dt-nav="cat" onclick="dtNavClick('cat')">
           <i data-lucide="layout-grid"></i>
           <span>Kategori</span>
-        </button>
-        <button class="dt-nav-item" data-dt-nav="tasks" id="dt-tasks-btn" onclick="dtNavClick('tasks')">
-          <i data-lucide="gift"></i>
-          <span>Tugas</span>
-        </button>
-        <button class="dt-nav-item" data-dt-nav="orders" id="dt-orders-btn" onclick="dtNavClick('orders')">
-          <i data-lucide="receipt-text"></i>
-          <span>Pesanan</span>
         </button>
         <button class="dt-nav-item" data-dt-nav="fav" onclick="dtNavClick('fav')">
           <i data-lucide="heart"></i>
@@ -2611,12 +2720,14 @@
   </header>
 
   <!-- ============================================
-       MOBILE TOP BAR
+       MOBILE TOP BAR (< 1024px)
        ============================================ -->
   <header class="top-bar">
     <div class="top-inner">
       <div class="brand">
-        <div class="brand-logo"><i data-lucide="store"></i></div>
+        <div class="brand-logo">
+          <i data-lucide="store"></i>
+        </div>
         <div class="brand-text">
           <div id="store-name" class="brand-title">Memuat...</div>
           <div id="store-status" class="brand-sub">
@@ -2625,7 +2736,6 @@
           </div>
         </div>
       </div>
-      <!-- ⬇⬇ PENTING: 2 tombol ini yang di-handle customer-auth.js ⬇⬇ -->
       <button id="tasks-header-btn" class="tb-btn tasks hidden" onclick="CustomerTasks.openTasksSheet()" title="Tugas">
         <i data-lucide="gift"></i>
       </button>
@@ -2650,35 +2760,40 @@
   </header>
 
   <!-- ============================================
-       LAYOUT
+       LAYOUT: SIDEBAR + MAIN + RIGHT PANEL
        ============================================ -->
   <div class="layout">
 
-    <!-- SIDEBAR (DESKTOP) -->
+    <!-- ============ SIDEBAR (DESKTOP) ============ -->
     <aside class="dt-sidebar" id="dt-sidebar">
       <button class="sb-item active" data-sb="home" onclick="sbNavClick('home')">
-        <i data-lucide="home"></i><span>Beranda</span>
+        <i data-lucide="home"></i>
+        <span>Beranda</span>
       </button>
       <button class="sb-item" data-sb="all" onclick="sbNavClick('all')">
-        <i data-lucide="package"></i><span>Semua Produk</span>
+        <i data-lucide="package"></i>
+        <span>Semua Produk</span>
         <span class="sb-count" id="sb-count-all">0</span>
       </button>
       <button class="sb-item" data-sb="fav" onclick="sbNavClick('fav')">
-        <i data-lucide="heart"></i><span>Favorit</span>
+        <i data-lucide="heart"></i>
+        <span>Favorit</span>
         <span class="sb-count" id="sb-count-fav">0</span>
       </button>
 
       <div class="sb-divider"></div>
       <div class="sb-section-label">Kategori</div>
+
       <div id="sb-cat-list"></div>
 
       <div class="sb-divider"></div>
       <button class="sb-item" data-sb="info" onclick="sbNavClick('info')">
-        <i data-lucide="shield-check"></i><span>Tentang Toko</span>
+        <i data-lucide="shield-check"></i>
+        <span>Tentang Toko</span>
       </button>
     </aside>
 
-    <!-- MAIN -->
+    <!-- ============ MAIN ============ -->
     <main>
       <div id="loading-screen">
         <div style="padding:16px 0;">
@@ -2700,6 +2815,7 @@
       </div>
 
       <div id="main-screen" class="hidden">
+
         <!-- HERO -->
         <div class="hero-strip reveal">
           <div class="hero-shimmer"></div>
@@ -2709,16 +2825,23 @@
                 <span class="hero-kicker-dot"></span>
                 <span class="hero-kicker">Promo Spesial</span>
               </div>
-              <h2 class="hero-h">Belanja Mudah,<br>Hidup <em>Lebih Praktis</em></h2>
+
+              <h2 class="hero-h">
+                Belanja Mudah,<br>
+                Hidup <em>Lebih Praktis</em>
+              </h2>
+
               <p style="margin:0;font-size:.86rem;color:rgba(255,255,255,.9);line-height:1.5;max-width:440px;font-weight:500;">
                 Temukan produk pilihan dengan harga terbaik hanya di toko kami. Pesan sekarang, kami siapkan.
               </p>
+
               <button class="hero-content-cta" onclick="scrollToProducts()">
                 <i data-lucide="shopping-bag"></i>
                 <span>Belanja Sekarang</span>
                 <i data-lucide="arrow-right"></i>
               </button>
             </div>
+
             <div class="hero-decor">
               <div class="hero-decor-item hd-1"><i data-lucide="shopping-bag"></i></div>
               <div class="hero-decor-item hd-2"><i data-lucide="package"></i></div>
@@ -2739,20 +2862,23 @@
           <div id="dt-category-grid" class="dt-cat-grid"></div>
         </div>
 
-        <!-- PRODUCT HEAD -->
+        <!-- PRODUCT SECTION HEAD -->
         <div class="sec-head">
           <div class="sec-title" id="dt-prod-title">Produk Tersedia</div>
           <span id="product-count" class="sec-sub"></span>
         </div>
 
+        <!-- PRODUCT GRID -->
         <div id="product-grid" class="product-grid"></div>
 
+        <!-- EMPTY -->
         <div id="empty-products" class="hidden empty-box">
           <div class="empty-icon"><i data-lucide="package-open"></i></div>
           <div class="empty-title">Belum ada produk</div>
           <p class="empty-sub">Produk akan muncul di sini saat toko menambahkan barang.</p>
         </div>
 
+        <!-- INFO FOOTER (MOBILE) -->
         <div class="info-footer reveal">
           <div class="if-icon"><i data-lucide="headphones"></i></div>
           <div class="if-text">
@@ -2770,16 +2896,21 @@
       </div>
     </main>
 
-    <!-- RIGHT PANEL (DESKTOP) -->
+    <!-- ============ RIGHT PANEL (DESKTOP) ============ -->
     <aside class="dt-right-panel">
+
+      <!-- Greeting -->
       <div class="rp-card rp-greeting">
-        <div class="rp-greet-avatar" id="rp-greet-avatar"><i data-lucide="user"></i></div>
+        <div class="rp-greet-avatar" id="rp-greet-avatar">
+          <i data-lucide="user"></i>
+        </div>
         <div class="rp-greet-text">
           <div class="rp-greet-hi" id="rp-greet-hi">Halo, Selamat Datang</div>
           <div class="rp-greet-sub" id="rp-greet-sub">Silakan login untuk pengalaman lebih baik</div>
         </div>
       </div>
 
+      <!-- Info cards -->
       <div class="rp-info-list">
         <div class="rp-info-item">
           <div class="rp-info-ico green"><i data-lucide="shield-check"></i></div>
@@ -2804,24 +2935,31 @@
         </div>
       </div>
 
+      <!-- Cart panel -->
       <div class="rp-card">
         <div class="rp-cart-head">
           <div class="rp-cart-title">Keranjang Belanja</div>
           <span class="rp-cart-count" id="rp-cart-count">0 item</span>
         </div>
+
         <div class="rp-cart-items" id="rp-cart-items"></div>
+
         <div class="rp-cart-foot">
           <div class="rp-cart-total-row">
             <span class="rp-cart-total-label">Total</span>
             <span class="rp-cart-total-value" id="rp-cart-total">Rp 0</span>
           </div>
           <button class="rp-btn-checkout" id="rp-btn-checkout" onclick="openCart()" disabled>
-            <span class="rp-btn-l"><i data-lucide="shopping-cart"></i> Checkout</span>
+            <span class="rp-btn-l">
+              <i data-lucide="shopping-cart"></i>
+              Checkout
+            </span>
             <i data-lucide="arrow-right"></i>
           </button>
         </div>
       </div>
 
+      <!-- Contact card -->
       <div class="rp-card">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
           <div class="rp-info-ico green"><i data-lucide="headphones"></i></div>
@@ -2831,7 +2969,10 @@
           </div>
         </div>
         <button onclick="openFooterWA()" class="rp-btn-checkout" style="background:linear-gradient(135deg,#22c55e,#16a34a);">
-          <span class="rp-btn-l"><i data-lucide="message-circle"></i> Hubungi via WhatsApp</span>
+          <span class="rp-btn-l">
+            <i data-lucide="message-circle"></i>
+            Hubungi via WhatsApp
+          </span>
           <i data-lucide="arrow-right"></i>
         </button>
       </div>
@@ -2844,20 +2985,26 @@
   <nav class="bottom-nav">
     <div class="bn-inner">
       <button class="bn-item active" data-bn="home" onclick="bnSwitch('home')">
-        <i data-lucide="home"></i><span>Beranda</span>
+        <i data-lucide="home"></i>
+        <span>Beranda</span>
       </button>
       <button class="bn-item" data-bn="cat" onclick="bnSwitch('cat')">
-        <i data-lucide="grid-2x2"></i><span>Kategori</span>
+        <i data-lucide="grid-2x2"></i>
+        <span>Kategori</span>
       </button>
+
       <button class="bn-cart" onclick="openCart()" title="Keranjang">
         <i data-lucide="shopping-bag"></i>
         <span id="fab-cart-badge" class="badge hidden">0</span>
       </button>
+
       <button class="bn-item" data-bn="tasks" onclick="bnSwitch('tasks')">
-        <i data-lucide="gift"></i><span>Tugas</span>
+        <i data-lucide="gift"></i>
+        <span>Tugas</span>
       </button>
       <button class="bn-item" data-bn="orders" onclick="bnSwitch('orders')">
-        <i data-lucide="receipt-text"></i><span>Pesanan</span>
+        <i data-lucide="receipt-text"></i>
+        <span>Pesanan</span>
       </button>
     </div>
   </nav>
@@ -2958,6 +3105,7 @@
 
       <div class="sheet-body">
         <div style="display:flex; flex-direction:column; gap:14px;">
+
           <div id="checkout-summary" class="order-summary"></div>
 
           <div id="method-section" class="co-section hidden">
@@ -3303,11 +3451,11 @@
   </div>
 
   <!-- ============================================
-       CONFIRM MODAL
+       NEW — CONFIRM MODAL
        ============================================ -->
   <div id="confirm-modal" class="sheet hidden" style="align-items:center; padding:24px; z-index:120;">
     <div class="sheet-bg" onclick="closeConfirm()"></div>
-    <div class="confirm-card" id="confirm-card">
+    <div class="confirm-card">
       <div class="confirm-icon-wrap">
         <div class="confirm-icon-ring"></div>
         <div class="confirm-icon" id="confirm-icon">
@@ -3330,10 +3478,10 @@
   </div>
 
   <div id="toasts"></div>
-  <!-- END BODY PART -->
 
-
-
+  <!-- ============================================
+       SCRIPT
+       ============================================ -->
   <script>
   (function () {
     'use strict';
@@ -3361,6 +3509,7 @@
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const icon = () => { if (window.lucide) lucide.createIcons(); };
 
+    /* ============ CATEGORY ICON MAPPING ============ */
     function getCategoryMeta(cat, idx) {
       const c = (cat || '').toLowerCase();
       const presets = [
@@ -3386,6 +3535,7 @@
       else if (c.includes('fashion') || c.includes('baju') || c.includes('pakaian')) iconName = 'shirt';
       else if (c.includes('sehat') || c.includes('obat') || c.includes('vitamin')) iconName = 'heart-pulse';
       else if (c.includes('elektronik') || c.includes('gadget')) iconName = 'monitor';
+
       const preset = presets.find(p => p.icon === iconName) || presets[idx % presets.length];
       return { icon: iconName, bg: preset.bg, color: preset.color };
     }
@@ -3416,7 +3566,9 @@
     }
     function showError(title, msg) { $('err-title').textContent = title; $('err-msg').textContent = msg || ''; showScreen('error'); icon(); }
 
-    /* ============ CUSTOM CONFIRM ============ */
+    /* ============================================================
+       NEW — CUSTOM CONFIRM (pengganti native confirm)
+       ============================================================ */
     let _confirmCallback = null;
 
     function showConfirm(opts) {
@@ -3426,7 +3578,7 @@
       const okBtn = $('confirm-ok-btn');
       const cancelTextEl = $('confirm-cancel-text');
       const iconEl = $('confirm-icon');
-      const cardEl = $('confirm-card');
+      const cardEl = document.querySelector('#confirm-modal .confirm-card');
 
       if (titleEl) titleEl.textContent = opts.title || 'Konfirmasi';
       if (descEl) descEl.textContent = opts.desc || '';
@@ -3464,45 +3616,30 @@
     }
     window.confirmOk = confirmOk;
 
-    /* ============================================================
-       ⭐ KUNCI PERBAIKAN: Delegasi ke header button
-       (biar customer-auth.js & customer-tasks.js yang handle)
-       ============================================================ */
-    function triggerTasksButton() {
-      const btn = $('tasks-header-btn');
-      if (btn && !btn.classList.contains('hidden')) {
-        btn.click();
-        return true;
-      }
-      // Belum login → buka auth modal
-      if (window.CustomerAuth?.openAuthModal) {
-        window.CustomerAuth.openAuthModal('login');
-      } else {
-        toast('Silakan login dulu untuk akses Tugas', 'info');
-      }
-      return false;
+    /* ============ REVEAL ============ */
+    function setupRevealObserver() {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     }
 
-    function triggerOrdersButton() {
-      const btn = $('my-orders-header-btn');
-      if (btn && !btn.classList.contains('hidden')) {
-        btn.click();
-        return true;
-      }
-      if (window.CustomerAuth?.openAuthModal) {
-        window.CustomerAuth.openAuthModal('login');
-      } else {
-        toast('Silakan login dulu untuk akses Pesanan', 'info');
-      }
-      return false;
-    }
-
+    /* ============ NAVIGATION ============ */
     window.bnSwitch = function(tab) {
       document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === tab));
       if (tab === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
       if (tab === 'cat') document.querySelector('.cat-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (tab === 'tasks') triggerTasksButton();
-      if (tab === 'orders') triggerOrdersButton();
+      if (tab === 'tasks') { if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet(); }
+      if (tab === 'orders') {
+        if (window.CustomerAuth?.openMyOrders) window.CustomerAuth.openMyOrders();
+        else if (window.KRCustomer?.getSession?.()) toast('Memuat pesanan...');
+        else window.CustomerAuth?.openAuthModal('login');
+      }
     };
 
     window.dtNavClick = function(tab) {
@@ -3517,19 +3654,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (tab === 'cat') document.querySelector('.dt-categories')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (tab === 'tasks') {
-        triggerTasksButton();
-        // Reset active state
-        setTimeout(() => {
-          document.querySelectorAll('.dt-nav-item').forEach(b => b.classList.toggle('active', b.dataset.dtNav === 'home'));
-        }, 300);
-      }
-      if (tab === 'orders') {
-        triggerOrdersButton();
-        setTimeout(() => {
-          document.querySelectorAll('.dt-nav-item').forEach(b => b.classList.toggle('active', b.dataset.dtNav === 'home'));
-        }, 300);
-      }
       if (tab === 'fav') {
         state.showFavoritesOnly = !state.showFavoritesOnly;
         document.querySelectorAll('.dt-nav-item').forEach(b => b.classList.toggle('active', b.dataset.dtNav === (state.showFavoritesOnly ? 'fav' : 'home')));
@@ -3572,9 +3696,7 @@
     function openProfileOrAuth() {
       const session = window.KRCustomer?.getSession?.();
       if (session) {
-        // Delegate ke customer-header-btn (yang di-handle customer-auth.js)
-        const btn = $('customer-header-btn');
-        if (btn) btn.click();
+        if (window.CustomerAuth?.openMyOrders) window.CustomerAuth.openMyOrders();
       } else {
         window.CustomerAuth?.openAuthModal('login');
       }
@@ -3686,6 +3808,8 @@
       toast('Keranjang dikosongkan');
       closeCart();
     }
+
+    /* NEW — clearCartConfirm pakai custom modal */
     window.clearCartConfirm = function () {
       if (!state.cart.length) return;
       showConfirm({
@@ -3694,12 +3818,15 @@
         okText: 'Ya, Hapus',
         cancelText: 'Batal',
         icon: 'trash-2',
-        onOk: function () { clearCart(); }
+        onOk: function () {
+          clearCart();
+        }
       });
     };
 
     function updateCartBadge(withBounce = false) {
       const totals = getCartTotals();
+
       const badge = $('fab-cart-badge');
       if (badge) {
         if (totals.count > 0) {
@@ -3708,6 +3835,7 @@
           if (withBounce) { badge.classList.remove('bounce'); void badge.offsetWidth; badge.classList.add('bounce'); }
         } else badge.classList.add('hidden');
       }
+
       const dtBadge = $('dt-cart-badge');
       if (dtBadge) {
         if (totals.count > 0) {
@@ -3715,8 +3843,10 @@
           dtBadge.classList.remove('hidden');
         } else dtBadge.classList.add('hidden');
       }
+
       const rpCount = $('rp-cart-count');
       if (rpCount) rpCount.textContent = totals.count + ' item';
+
       const sbCount = $('sb-count-all');
       if (sbCount) sbCount.textContent = state.products.length;
     }
@@ -3741,6 +3871,7 @@
       } else {
         listEl.classList.remove('hidden');
         emptyEl.classList.add('hidden');
+
         listEl.innerHTML = state.cart.map((item, idx) => {
           const img = item.image_url ? `<img src="${esc(item.image_url)}" alt="">` : `<i data-lucide="package"></i>`;
           return `
@@ -3763,10 +3894,12 @@
               </button>
             </div>`;
         }).join('');
+
         if (subEl) subEl.textContent = fmt(totals.total);
         if (totalEl) totalEl.textContent = fmt(totals.total);
         if (btn) btn.disabled = false;
       }
+
       renderCartSidebar();
       icon();
     }
@@ -3776,7 +3909,9 @@
       const totalEl = $('rp-cart-total');
       const btn = $('rp-btn-checkout');
       if (!itemsEl) return;
+
       const totals = getCartTotals();
+
       if (!state.cart.length) {
         itemsEl.innerHTML = `
           <div class="rp-cart-empty">
@@ -3789,6 +3924,7 @@
         icon();
         return;
       }
+
       itemsEl.innerHTML = state.cart.map(item => {
         const img = item.image_url ? `<img src="${esc(item.image_url)}" alt="">` : `<i data-lucide="package"></i>`;
         return `
@@ -3804,12 +3940,19 @@
             </button>
           </div>`;
       }).join('');
+
       if (totalEl) totalEl.textContent = fmt(totals.total);
       if (btn) btn.disabled = false;
       icon();
     }
 
-    function openCart() { renderCartItems(); $('cart-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; icon(); }
+    /* ============ MODALS ============ */
+    function openCart() {
+      renderCartItems();
+      $('cart-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      icon();
+    }
     function closeCart() { $('cart-modal').classList.add('hidden'); document.body.style.overflow = ''; }
     function closeAllModals() {
       $('cart-modal').classList.add('hidden');
@@ -3860,7 +4003,9 @@
           </div>
         </div>
         <div class="pd-content">
-          <div class="pd-price-row"><span class="pd-price-main">${fmtNum(price)}</span></div>
+          <div class="pd-price-row">
+            <span class="pd-price-main">${fmtNum(price)}</span>
+          </div>
           <h2 class="pd-title">${esc(p.name)}</h2>
           <div class="pd-meta-row">
             ${p.sku ? `<div class="pd-meta-item"><i data-lucide="tag"></i><span>SKU <strong>${esc(p.sku)}</strong></span></div>` : ''}
@@ -3961,7 +4106,10 @@
       icon();
     }
     window.proceedToCheckout = proceedToCheckout;
-    function backToCart() { $('order-modal').classList.add('hidden'); openCart(); }
+    function backToCart() {
+      $('order-modal').classList.add('hidden');
+      openCart();
+    }
     window.backToCart = backToCart;
 
     function setupCheckoutForm() {
@@ -4019,6 +4167,7 @@
       const isCod = hasPhysical && state.deliveryMethod === 'cod';
       $('payment-section').classList.toggle('hidden', isCod);
       $('proof-section').classList.toggle('hidden', isCod);
+
       $('payment-info').textContent = state.seller.payment_info || 'Hubungi kasir via WA untuk info pembayaran.';
 
       state.useBalance = false; state.balanceUsed = 0; state.amountDue = totals.total;
@@ -4111,6 +4260,7 @@
 
         const storeName = profile.store_name || 'Toko Online';
         document.title = 'Order — ' + storeName;
+
         $('store-name').textContent = storeName;
         $('store-status').innerHTML = `<span class="live-dot"></span><span style="overflow:hidden;text-overflow:ellipsis;">${esc(profile.store_address || 'Order online')}</span>`;
         const dtName = $('dt-store-name');
@@ -4137,6 +4287,7 @@
 
     function updateGreetingCard() {
       const session = window.KRCustomer?.getSession?.();
+
       const hiEl = $('rp-greet-hi');
       const subEl = $('rp-greet-sub');
       const avEl = $('rp-greet-avatar');
@@ -4184,6 +4335,7 @@
 
     function renderCategoryChips() {
       const cats = [...new Set(state.products.map(p => p.category).filter(Boolean))].sort();
+
       const c = $('category-chips');
       let html = `<button data-cat="" class="cat-tab ${(!state.categoryFilter && !state.showFavoritesOnly) ? 'active' : ''}">Semua <span class="count">${state.products.length}</span></button>`;
       html += cats.map(cat => {
@@ -4283,6 +4435,7 @@
         else if (state.categoryFilter) titleEl.textContent = state.categoryFilter;
         else titleEl.textContent = 'Produk Tersedia';
       }
+
       if (countEl) countEl.textContent = list.length + ' produk';
 
       if (!list.length) {
@@ -4593,6 +4746,7 @@
         if (mob) mob.value = e.target.value;
         renderProducts();
       });
+
       $('inp-proof')?.addEventListener('change', handleProofChange);
       $('inp-target')?.addEventListener('input', () => $('err-target').classList.add('hidden'));
       $('inp-address')?.addEventListener('input', () => $('err-address').classList.add('hidden'));
@@ -4600,6 +4754,7 @@
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+          // NEW — prioritize confirm modal
           if (!$('confirm-modal').classList.contains('hidden')) closeConfirm();
           else if (!$('order-modal').classList.contains('hidden')) backToCart();
           else if (!$('pd-modal').classList.contains('hidden')) closePdModal();
