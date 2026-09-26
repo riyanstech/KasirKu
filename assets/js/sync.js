@@ -48,7 +48,7 @@ KR.sync = (function () {
     const q = getStockQueue();
     const existing = q.find(x => x.productId === productId);
     if (existing) {
-      existing.newStock = newStock; // overwrite — yang terbaru yang menang
+      existing.newStock = newStock;
       existing.queuedAt = Date.now();
     } else {
       q.push({ productId, newStock, queuedAt: Date.now() });
@@ -84,12 +84,11 @@ KR.sync = (function () {
           okTrx++;
         } catch (e) {
           console.warn('[Sync] Trx fail', item.localId, e);
-          // Kalau error duplicate (sudah pernah terkirim), anggap sukses
           if (e.code === '23505' || String(e.message || '').includes('duplicate')) {
             okTrx++;
           } else {
             item.retries = (item.retries || 0) + 1;
-            if (item.retries < 5) remaining.push(item); // max 5 kali retry
+            if (item.retries < 5) remaining.push(item);
             else failTrx++;
           }
         }
@@ -109,7 +108,6 @@ KR.sync = (function () {
       }
       saveStockQueue(remainingStock);
 
-      // Notifikasi hasil
       const totalOk = okTrx + okStock;
       const totalFail = failTrx + failStock;
       if (totalOk > 0 && !silent) {
@@ -138,12 +136,10 @@ KR.sync = (function () {
     const offlineBadge = document.getElementById('offline-badge');
     const online = isOnline();
 
-    // Offline indicator di header
     if (offlineBadge) {
       offlineBadge.classList.toggle('hidden', online);
     }
 
-    // Sync badge
     if (badge) {
       if (count > 0) {
         badge.textContent = count > 99 ? '99+' : count;
@@ -172,15 +168,12 @@ KR.sync = (function () {
       updateBadge();
     });
 
-    // Periodic sync setiap 60 detik kalau ada pending
     setInterval(() => {
       if (isOnline() && getPendingCount() > 0) syncAll(true);
     }, 60000);
 
-    // Initial state
     updateBadge();
 
-    // Hook ke login — kalau habis login dan ada pending, langsung sync
     window.addEventListener('kasirku:ready', () => {
       if (isOnline() && getPendingCount() > 0) {
         setTimeout(() => syncAll(true), 2000);
