@@ -478,7 +478,7 @@ document.addEventListener('change', async (e) => {
     if (statusEl) statusEl.innerHTML = `<div style="margin-top:8px;font-size:.78rem;color:var(--text-3);">Memproses foto...</div>`;
 
     try {
-      const data = await compressImage(file, 700, 0.78);
+      const data = await compressImage(file, 500, 0.72);
       if (!data || data.length < 50) throw new Error('Hasil kompres kosong');
       pfImageData = data;
       renderPfImage();
