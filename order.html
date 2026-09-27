@@ -14,7 +14,7 @@
 
   <script>
   window.compressImage = function(file, maxDim, quality) {
-    maxDim = maxDim || 800; quality = quality || 0.8;
+    maxDim = maxDim || 700; quality = quality || 0.78;
     return new Promise(function(resolve, reject) {
       if (!file) return reject(new Error('File tidak valid'));
       var reader = new FileReader();
