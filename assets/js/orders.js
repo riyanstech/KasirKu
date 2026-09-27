@@ -785,21 +785,48 @@ window.KR = window.KR || {};
     window.addEventListener('transactions:changed', () => {});
   }
 
-  // Pantau status login — kalau berubah, sync
-
-  setInterval(() => {
+  /* ============================================================
+     LOGIN STATE WATCHER — Event-based (bukan polling!)
+     Cek login state hanya saat:
+     - Tab kembali visible (user switch tab balik)
+     - Storage berubah (login/logout di tab lain)
+     - Online kembali
+     ============================================================ */
+  function checkLoginState() {
     const now = KR.auth?.isLoggedIn?.() || false;
-    if (now !== lastLoginState) {
-      lastLoginState = now;
-      if (now) {
-        loadOrders();
-        startAutoRefresh();
-        setupRealtime();
-      } else {
-        stopAutoRefresh();
-        teardownRealtime();
-      }
+    if (now === lastLoginState) return;
+    lastLoginState = now;
+
+    if (now) {
+      console.log('[Orders] Login detected → sync');
+      loadOrders();
+      startAutoRefresh();
+      setupRealtime();
+    } else {
+      console.log('[Orders] Logout detected → cleanup');
+      stopAutoRefresh();
+      teardownRealtime();
     }
-  }, 5000);
+  }
+
+  // 1. Tab balik visible
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkLoginState();
+  });
+
+  // 2. Storage berubah (login di tab lain)
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key.startsWith('kasir:')) checkLoginState();
+  });
+
+  // 3. Online kembali
+  window.addEventListener('online', checkLoginState);
+
+  // Init sekali saat load
+  lastLoginState = KR.auth?.isLoggedIn?.() || false;
+  if (lastLoginState) {
+    startAutoRefresh();
+    setupRealtime();
+  }
 
 })();
