@@ -424,7 +424,7 @@ window.KR = window.KR || {};
 
     // Thumbnail — produk foto (kalau ada) atau icon default
     const thumb = o.product_image_url
-      ? `<img src="${esc(o.product_image_url)}" alt="">`
+      ? `<img src="${esc(o.product_image_url)}" alt="" loading="lazy" decoding="async">`
       : `<i data-lucide="package"></i>`;
 
     // Meta items
@@ -439,7 +439,7 @@ window.KR = window.KR || {};
 
     // Proof (kecuali COD)
     const proofHtml = (!isCod && o.payment_proof_url)
-      ? `<img src="${esc(o.payment_proof_url)}" class="order-proof" onclick="window.open(this.src,'_blank')" alt="Bukti transfer">`
+      ? `<img src="${esc(o.payment_proof_url)}" class="order-proof" loading="lazy" decoding="async" onclick="window.open(this.src,'_blank')" alt="Bukti transfer">`
       : isCod
         ? `<div class="order-notes" style="background:var(--accent-soft);color:#4338ca;">💵 COD — Bayar di tempat (${fmt(o.product_price)})</div>`
         : `<div class="order-notes" style="background:var(--danger-soft);color:var(--danger);">⚠ Bukti transfer tidak ada</div>`;
