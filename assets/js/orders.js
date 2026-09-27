@@ -339,10 +339,18 @@ window.KR = window.KR || {};
 
   function startAutoRefresh() {
     if (refreshTimer) return;
-    // Fallback polling 60 detik — Realtime akan lebih cepat
+
+    // Realtime Supabase sudah handle sync instant.
+    // Polling di sini cuma sebagai fallback kalau Realtime terputus.
+    // Interval 5 menit sudah cukup (jarang kejadian).
     refreshTimer = setInterval(() => {
-      if (KR.auth.isLoggedIn()) loadOrders();
-    }, 60000);
+      if (!KR.auth.isLoggedIn()) return;
+      // Cuma polling kalau Realtime MATI (hemat bandwidth)
+      if (!realtimeChannel) {
+        console.log('[Orders] Fallback polling (Realtime off)');
+        loadOrders();
+      }
+    }, 300000); // 5 menit
   }
    
   function stopAutoRefresh() {
