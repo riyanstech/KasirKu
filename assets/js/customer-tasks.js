@@ -401,7 +401,7 @@
     if (file.size > 5 * 1024 * 1024) return toast('File max 5MB', 'error');
 
     try {
-      const dataUrl = await compressImage(file, 900, 0.82);
+      const dataUrl = await compressImage(file, 700, 0.78);
       window.__taskProofData = dataUrl;
       renderProofArea();
     } catch (err) {
@@ -629,7 +629,7 @@
     if (!file.type.startsWith('image/')) return toast('File harus gambar', 'error');
     if (file.size > 5 * 1024 * 1024) return toast('File max 5MB', 'error');
     try {
-      const dataUrl = await compressImage(file, 900, 0.82);
+      const dataUrl = await compressImage(file, 700, 0.78);
       window.__socialProofData = dataUrl;
       renderSocialProofArea();
     } catch (err) {
