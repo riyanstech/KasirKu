@@ -331,7 +331,9 @@ function renderProductList() {
   }
 
   container.innerHTML = filtered.map(p => {
-    const img = p.image ? `<img src="${p.image}" alt="">` : `<i data-lucide="package"></i>`;
+    const img = p.image
+      ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async">`
+      : `<i data-lucide="package"></i>`;
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
 
