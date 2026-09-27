@@ -338,208 +338,321 @@
                 <div class="page-header">
                     <div>
                         <h2>Pengaturan</h2>
-                        <p>Konfigurasi toko, akun, AI Vision & sinkronisasi</p>
+                        <p>Kelola toko, akun, dan preferensi aplikasi</p>
                     </div>
                 </div>
 
-                <div class="settings-grid">
-                    <div class="settings-card">
-                        <h3><i data-lucide="user-circle"></i> Akun Saya</h3>
-                        <div id="account-info"></div>
+                <!-- ============ SETTINGS TABS ============ -->
+                <div class="settings-tabs" role="tablist">
+                    <button class="settings-tab active" data-settings-tab="toko" onclick="switchSettingsTab('toko')" role="tab">
+                        <i data-lucide="store"></i>
+                        <span>Toko</span>
+                    </button>
+                    <button class="settings-tab" data-settings-tab="akun" onclick="switchSettingsTab('akun')" role="tab">
+                        <i data-lucide="user-circle"></i>
+                        <span>Akun</span>
+                    </button>
+                    <button class="settings-tab" data-settings-tab="fitur" onclick="switchSettingsTab('fitur')" role="tab">
+                        <i data-lucide="sparkles"></i>
+                        <span>Fitur</span>
+                    </button>
+                    <button class="settings-tab" data-settings-tab="sistem" onclick="switchSettingsTab('sistem')" role="tab">
+                        <i data-lucide="settings-2"></i>
+                        <span>Sistem</span>
+                    </button>
+                </div>
+
+                <!-- ============ PANEL: TOKO ============ -->
+                <div class="settings-panel active" data-settings-panel="toko">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro">
+                            <i data-lucide="info"></i>
+                            <div class="settings-panel-intro-text">
+                                <strong>Informasi Dasar Toko</strong>
+                                Data ini muncul di struk, halaman order online, dan notifikasi ke customer.
+                            </div>
+                        </div>
+
+                        <!-- Informasi Toko -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="store"></i> Informasi Toko</h3>
+                            <p class="settings-card-sub">Identitas toko yang tampil di struk & halaman order.</p>
+
+                            <div class="field">
+                                <label>Nama Toko</label>
+                                <input id="set-store-name" class="input" placeholder="Contoh: Warung Bu Sari">
+                            </div>
+                            <div class="field">
+                                <label>Alamat</label>
+                                <input id="set-store-address" class="input" placeholder="Jl. Contoh No. 1, Kota">
+                            </div>
+                            <div class="field">
+                                <label>No. Telepon</label>
+                                <input id="set-store-phone" class="input" placeholder="0812-xxxx-xxxx">
+                            </div>
+                            <div class="field">
+                                <label>Pesan Struk</label>
+                                <input id="set-receipt-footer" class="input" placeholder="Terima kasih, datang lagi!">
+                            </div>
+
+                            <div class="settings-card-divider"></div>
+
+                            <button class="btn btn-primary" onclick="saveStoreInfo()" style="width:100%;">
+                                <i data-lucide="save"></i> Simpan Informasi Toko
+                            </button>
+                        </div>
+
+                        <!-- Pesanan Online -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="globe"></i> Pesanan Online</h3>
+                            <p class="settings-card-sub">Aktifkan halaman order publik — customer pesan sendiri via link.</p>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="set-online-enabled">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Aktifkan Halaman Order</span>
+                            </label>
+
+                            <div class="field" style="margin-top:12px;">
+                                <label>Info Pembayaran</label>
+                                <textarea id="set-payment-info" class="textarea" rows="4" placeholder="DANA: 0858xxx (Nama)&#10;BCA: 123xxx a.n. Nama&#10;QRIS: scan QR"></textarea>
+                            </div>
+
+                            <div class="field">
+                                <label>Nomor WhatsApp (format 62)</label>
+                                <input id="set-whatsapp-number" class="input" placeholder="6285888082252">
+                            </div>
+
+                            <div class="field">
+                                <label>Slug Toko (URL)</label>
+                                <input id="set-store-slug" class="input" placeholder="warung-budi" maxlength="30" autocapitalize="off" autocorrect="off" spellcheck="false">
+                                <p class="settings-desc" style="margin-top:6px;font-size:.72rem;line-height:1.4">
+                                    Huruf kecil, angka, dan dash (-). Contoh: <code style="background:var(--bg-subtle);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.7rem">warung-budi</code>
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label>Link Halaman Order</label>
+                                <div class="online-preview-link">
+                                    <i data-lucide="link"></i>
+                                    <span id="online-order-link" style="flex:1;min-width:0;">—</span>
+                                    <button class="icon-btn" onclick="copyOrderLink()" title="Copy"><i data-lucide="copy"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="settings-card-divider"></div>
+
+                            <button class="btn btn-primary" onclick="saveOnlineSettings()" style="width:100%;">
+                                <i data-lucide="save"></i> Simpan Pesanan Online
+                            </button>
+                        </div>
+
                     </div>
+                </div>
 
-                    <div class="settings-card">
-                        <h3><i data-lucide="globe"></i> Pesanan Online</h3>
-                        <p class="settings-desc">Aktifkan halaman order publik, atur info pembayaran & WA toko.</p>
+                <!-- ============ PANEL: AKUN ============ -->
+                <div class="settings-panel" data-settings-panel="akun">
+                    <div class="settings-panel-grid">
 
-                        <label class="toggle-row" style="margin-bottom:12px;">
-                            <input type="checkbox" id="set-online-enabled">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">Aktifkan Halaman Order</span>
-                        </label>
-
-                        <div class="field">
-                            <label>Info Pembayaran</label>
-                            <textarea id="set-payment-info" class="textarea" rows="4" placeholder="DANA: 0858xxx (Nama)&#10;BCA: 123xxx a.n. Nama&#10;QRIS: scan QR"></textarea>
+                        <div class="settings-panel-intro">
+                            <i data-lucide="info"></i>
+                            <div class="settings-panel-intro-text">
+                                <strong>Akun & Keamanan</strong>
+                                Info akun yang sedang login. Logout jika ingin ganti akun.
+                            </div>
                         </div>
 
-                        <div class="field">
-                            <label>Nomor WhatsApp (format 62)</label>
-                            <input id="set-whatsapp-number" class="input" placeholder="6285888082252">
+                        <div class="settings-card">
+                            <h3><i data-lucide="user-circle"></i> Akun Saya</h3>
+                            <p class="settings-card-sub">Detail akun yang sedang aktif di perangkat ini.</p>
+                            <div id="account-info"></div>
                         </div>
 
-                        <div class="field">
-                            <label>Slug Toko (URL)</label>
-                            <input id="set-store-slug" class="input" placeholder="warung-budi" maxlength="30" autocapitalize="off" autocorrect="off" spellcheck="false">
-                            <p class="settings-desc" style="margin-top:6px;font-size:.72rem;line-height:1.4">
-                                Huruf kecil, angka, dan dash (-). Contoh: <code style="background:var(--bg-subtle);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.7rem">warung-budi</code>
+                    </div>
+                </div>
+
+                <!-- ============ PANEL: FITUR ============ -->
+                <div class="settings-panel" data-settings-panel="fitur">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro">
+                            <i data-lucide="sparkles"></i>
+                            <div class="settings-panel-intro-text">
+                                <strong>Fitur Tambahan</strong>
+                                Alat bantu untuk mempermudah kerja harian — opsional, aktifkan sesuai kebutuhan.
+                            </div>
+                        </div>
+
+                        <!-- AI Vision -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="brain-circuit"></i> AI Vision</h3>
+                            <p class="settings-card-sub">Kenali produk dari foto — cocok untuk input produk cepat di warung.</p>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="ai-enabled" onchange="toggleAiEnabled()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Aktifkan AI Vision</span>
+                            </label>
+
+                            <div id="ai-config-area" class="hidden" style="margin-top:12px;">
+                                <div class="field">
+                                    <label>Provider AI</label>
+                                    <select id="ai-provider" class="select" onchange="onAiProviderChange()"></select>
+                                    <p id="ai-provider-desc" class="settings-desc" style="margin-top:6px"></p>
+                                </div>
+                                <div class="field">
+                                    <label>API Key</label>
+                                    <div style="display:flex;gap:8px">
+                                        <input id="ai-key" type="password" class="input" placeholder="Masukkan API Key...">
+                                        <button class="btn btn-primary" onclick="saveAiKey()" style="min-width:48px;"><i data-lucide="check"></i></button>
+                                    </div>
+                                    <a id="ai-key-help" href="#" target="_blank" rel="noopener" class="settings-help">🔗 Cara mendapatkan API Key →</a>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-secondary" onclick="testAiConnection()">
+                                        <i data-lucide="plug"></i> Test Koneksi
+                                    </button>
+                                    <button class="btn btn-ghost" onclick="clearAiCache()">
+                                        <i data-lucide="trash-2"></i> Reset Cache
+                                    </button>
+                                </div>
+                                <div id="ai-status" class="gh-status warn" style="margin-top:12px">
+                                    <i data-lucide="alert-triangle"></i><span>Belum ada API Key</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Printer Thermal -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="printer"></i> Printer Thermal</h3>
+                            <p class="settings-card-sub">Cetak struk ke printer thermal via Bluetooth (BLE).</p>
+
+                            <div id="thermal-status" class="gh-status warn">
+                                <i data-lucide="bluetooth-off"></i><span>Belum terhubung</span>
+                            </div>
+
+                            <div class="field">
+                                <label>Ukuran Kertas</label>
+                                <select id="thermal-paper" class="select" onchange="saveThermalSettings()">
+                                    <option value="58">58 mm (32 karakter)</option>
+                                    <option value="80">80 mm (48 karakter)</option>
+                                </select>
+                            </div>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="thermal-auto" onchange="saveThermalSettings()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Auto-print setelah transaksi</span>
+                            </label>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="thermal-cut" onchange="saveThermalSettings()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Auto-cut kertas setelah cetak</span>
+                            </label>
+
+                            <div class="settings-card-divider"></div>
+
+                            <div class="btn-row">
+                                <button id="thermal-connect-btn" class="btn btn-primary" onclick="thermalConnect()">
+                                    <i data-lucide="bluetooth"></i> Hubungkan
+                                </button>
+                                <button id="thermal-test-btn" class="btn btn-secondary hidden" onclick="thermalTestPrint()">
+                                    <i data-lucide="printer"></i> Test Print
+                                </button>
+                                <button id="thermal-disconnect-btn" class="btn btn-ghost hidden" onclick="thermalDisconnect()">
+                                    <i data-lucide="x"></i> Putuskan
+                                </button>
+                            </div>
+
+                            <p class="settings-desc" style="margin-top:12px;font-size:.72rem;line-height:1.5">
+                                💡 <strong>Wajib Web Bluetooth</strong> — Chrome Android / Desktop / Edge. iOS Safari belum support.
+                                Printer harus BLE (bukan Bluetooth Classic). Contoh: <em>XP-P323B, Goojprt PT-210, RPP02N</em>.
                             </p>
                         </div>
 
-                        <div class="field">
-                            <label>Link Halaman Order</label>
-                            <div class="online-preview-link">
-                                <i data-lucide="link"></i>
-                                <span id="online-order-link" style="flex:1;min-width:0;">—</span>
-                                <button class="icon-btn" onclick="copyOrderLink()" title="Copy"><i data-lucide="copy"></i></button>
+                        <!-- Install Aplikasi -->
+                        <div class="settings-card full" id="install-app-card">
+                            <h3><i data-lucide="smartphone"></i> Install Aplikasi</h3>
+                            <p class="settings-card-sub">Install KasirKu di homescreen HP untuk akses lebih cepat + notifikasi order langsung.</p>
+
+                            <div id="install-app-status" class="gh-status warn" style="margin-bottom:12px">
+                                <i data-lucide="info"></i>
+                                <span id="install-app-status-text">Cek ketersediaan install...</span>
                             </div>
-                        </div>
 
-                        <button class="btn btn-primary" onclick="saveOnlineSettings()">
-                            <i data-lucide="save"></i> Simpan Pengaturan
-                        </button>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3><i data-lucide="store"></i> Informasi Toko</h3>
-                        <div class="field"><label>Nama Toko</label>
-                            <input id="set-store-name" class="input" placeholder="KasirKu Store"></div>
-                        <div class="field"><label>Alamat</label>
-                            <input id="set-store-address" class="input" placeholder="Jl. Contoh No. 1"></div>
-                        <div class="field"><label>No. Telepon</label>
-                            <input id="set-store-phone" class="input" placeholder="0812-xxxx-xxxx"></div>
-                        <div class="field"><label>Pesan Struk</label>
-                            <input id="set-receipt-footer" class="input" placeholder="Terima kasih, datang lagi!"></div>
-                        <button class="btn btn-primary" onclick="saveStoreInfo()">
-                            <i data-lucide="save"></i> Simpan
-                        </button>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3><i data-lucide="brain-circuit"></i> AI Vision</h3>
-                        <p class="settings-desc">Kenali produk dari foto untuk warung.</p>
-                        <label class="toggle-row">
-                            <input type="checkbox" id="ai-enabled" onchange="toggleAiEnabled()">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">Aktifkan AI Vision</span>
-                        </label>
-                        <div id="ai-config-area" class="hidden">
-                            <div class="field">
-                                <label>Provider AI</label>
-                                <select id="ai-provider" class="select" onchange="onAiProviderChange()"></select>
-                                <p id="ai-provider-desc" class="settings-desc" style="margin-top:6px"></p>
-                            </div>
-                            <div class="field">
-                                <label>API Key</label>
-                                <div style="display:flex;gap:8px">
-                                    <input id="ai-key" type="password" class="input" placeholder="Masukkan API Key...">
-                                    <button class="btn btn-primary" onclick="saveAiKey()"><i data-lucide="check"></i></button>
-                                </div>
-                                <a id="ai-key-help" href="#" target="_blank" rel="noopener" class="settings-help">🔗 Cara mendapatkan API Key →</a>
-                            </div>
-                            <div class="btn-row">
-                                <button class="btn btn-secondary" onclick="testAiConnection()">
-                                    <i data-lucide="plug"></i> Test
-                                </button>
-                                <button class="btn btn-ghost" onclick="clearAiCache()">
-                                    <i data-lucide="trash-2"></i> Reset Cache
-                                </button>
-                            </div>
-                            <div id="ai-status" class="gh-status warn" style="margin-top:12px">
-                                <i data-lucide="alert-triangle"></i><span>Belum ada API Key</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3><i data-lucide="cloud"></i> Sinkronisasi Cloud</h3>
-                        <p class="settings-desc">Data & foto produk tersimpan otomatis di Supabase Cloud.</p>
-                        <div class="gh-status ok">
-                            <i data-lucide="check-circle"></i><span>Terhubung ke Supabase</span>
-                        </div>
-                        <div class="btn-row" style="margin-top:12px">
-                            <button class="btn btn-success" onclick="KR.auth.reloadFromCloud()">
-                                <i data-lucide="cloud-download"></i> Ambil dari Cloud
-                            </button>
-                            <button class="btn btn-secondary" onclick="pushToGithub()">
-                                <i data-lucide="info"></i> Info Sync
+                            <button id="install-app-btn" class="btn btn-primary" style="width:100%;" onclick="triggerAppInstall()">
+                                <i data-lucide="download"></i> Install Sekarang
                             </button>
                         </div>
-                        <p class="settings-desc" style="margin-top:12px;font-size:.75rem">
-                            💡 Data otomatis tersimpan setiap kali kamu tambah/edit/hapus produk atau transaksi.
-                        </p>
-                    </div>
 
-                    <div class="settings-card">
-                        <h3><i data-lucide="database"></i> Backup Data</h3>
-                        <p class="settings-desc">Export & import data sebagai file JSON.</p>
-                        <div class="btn-row">
-                            <button class="btn btn-primary" onclick="exportData()">
-                                <i data-lucide="download"></i> Export JSON
-                            </button>
-                            <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">
-                                <i data-lucide="upload"></i> Import JSON
-                            </button>
-                        </div>
-                        <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
-                    </div>
-
-                    <div class="settings-card" id="install-app-card">
-                      <h3><i data-lucide="smartphone"></i> Install Aplikasi</h3>
-                      <p class="settings-desc">Install KasirKu di homescreen HP kamu untuk akses lebih cepat + notifikasi order langsung.</p>
-                      <div id="install-app-status" class="gh-status warn" style="margin-bottom:12px">
-                        <i data-lucide="info"></i>
-                        <span id="install-app-status-text">Cek ketersediaan install...</span>
-                      </div>
-                      <button id="install-app-btn" class="btn btn-primary btn-lg" style="width:100%" onclick="triggerAppInstall()">
-                        <i data-lucide="download"></i> Install Sekarang
-                      </button>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3><i data-lucide="printer"></i> Printer Thermal Bluetooth</h3>
-                        <p class="settings-desc">Cetak struk ke printer thermal 58mm/80mm via Bluetooth (BLE).</p>
-                    
-                        <div id="thermal-status" class="gh-status warn">
-                            <i data-lucide="bluetooth-off"></i><span>Belum terhubung</span>
-                        </div>
-                    
-                        <div class="field">
-                            <label>Ukuran Kertas</label>
-                            <select id="thermal-paper" class="select" onchange="saveThermalSettings()">
-                                <option value="58">58 mm (32 karakter)</option>
-                                <option value="80">80 mm (48 karakter)</option>
-                            </select>
-                        </div>
-                    
-                        <label class="toggle-row">
-                            <input type="checkbox" id="thermal-auto" onchange="saveThermalSettings()">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">Auto-print setelah transaksi</span>
-                        </label>
-                    
-                        <label class="toggle-row">
-                            <input type="checkbox" id="thermal-cut" onchange="saveThermalSettings()">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">Auto-cut kertas setelah cetak</span>
-                        </label>
-                    
-                        <div class="btn-row" style="margin-top:12px">
-                            <button id="thermal-connect-btn" class="btn btn-primary" onclick="thermalConnect()">
-                                <i data-lucide="bluetooth"></i> Hubungkan Printer
-                            </button>
-                            <button id="thermal-test-btn" class="btn btn-secondary hidden" onclick="thermalTestPrint()">
-                                <i data-lucide="printer"></i> Test Print
-                            </button>
-                            <button id="thermal-disconnect-btn" class="btn btn-ghost hidden" onclick="thermalDisconnect()">
-                                <i data-lucide="x"></i> Putuskan
-                            </button>
-                        </div>
-                    
-                        <p class="settings-desc" style="margin-top:12px;font-size:.75rem;line-height:1.5">
-                            💡 <strong>Wajib Web Bluetooth</strong> — Chrome Android / Chrome Desktop / Edge. iOS Safari belum support.<br>
-                            Printer harus yang support <strong>BLE</strong> (bukan Bluetooth Classic). Cek contoh: <em>XP-P323B, Goojprt PT-210, RPP02N</em>.
-                        </p>
-                    </div>
-
-                    <div class="settings-card danger">
-                        <h3><i data-lucide="alert-octagon"></i> Zona Bahaya</h3>
-                        <p class="settings-desc">Reset cache lokal. Data cloud tetap aman & akan diambil ulang saat reload.</p>
-                        <button class="btn btn-danger" onclick="confirmReset()">
-                            <i data-lucide="refresh-cw"></i> Reset Cache Lokal
-                        </button>
                     </div>
                 </div>
+
+                <!-- ============ PANEL: SISTEM ============ -->
+                <div class="settings-panel" data-settings-panel="sistem">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro" style="background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%);border-color:#cbd5e1;">
+                            <i data-lucide="shield" style="color:#475569;"></i>
+                            <div class="settings-panel-intro-text" style="color:#334155;">
+                                <strong style="color:#1e293b;">Pengaturan Sistem</strong>
+                                Sinkronisasi cloud, backup data, dan reset. Hati-hati saat mengubah bagian ini.
+                            </div>
+                        </div>
+
+                        <!-- Sinkronisasi Cloud -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="cloud"></i> Sinkronisasi Cloud</h3>
+                            <p class="settings-card-sub">Data & foto tersimpan otomatis di Supabase Cloud.</p>
+
+                            <div class="gh-status ok">
+                                <i data-lucide="check-circle"></i><span>Terhubung ke Supabase</span>
+                            </div>
+
+                            <div class="btn-row" style="margin-top:12px">
+                                <button class="btn btn-success" onclick="KR.auth.reloadFromCloud()">
+                                    <i data-lucide="cloud-download"></i> Ambil dari Cloud
+                                </button>
+                                <button class="btn btn-secondary" onclick="pushToGithub()">
+                                    <i data-lucide="info"></i> Info Sync
+                                </button>
+                            </div>
+
+                            <p class="settings-desc" style="margin-top:12px;font-size:.72rem">
+                                💡 Data otomatis tersimpan setiap kali kamu tambah/edit/hapus produk atau transaksi.
+                            </p>
+                        </div>
+
+                        <!-- Backup Data -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="database"></i> Backup Data</h3>
+                            <p class="settings-card-sub">Export & import data sebagai file JSON untuk backup mandiri.</p>
+
+                            <div class="btn-row">
+                                <button class="btn btn-primary" onclick="exportData()">
+                                    <i data-lucide="download"></i> Export JSON
+                                </button>
+                                <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">
+                                    <i data-lucide="upload"></i> Import JSON
+                                </button>
+                            </div>
+                            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                        </div>
+
+                        <!-- Zona Bahaya -->
+                        <div class="settings-card danger full">
+                            <h3><i data-lucide="alert-octagon"></i> Zona Bahaya</h3>
+                            <p class="settings-card-sub">Reset cache lokal. Data cloud tetap aman & akan diambil ulang saat reload.</p>
+                            <button class="btn btn-danger" onclick="confirmReset()">
+                                <i data-lucide="refresh-cw"></i> Reset Cache Lokal
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
             </section>
         </main>
             
