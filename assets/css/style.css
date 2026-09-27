@@ -4630,8 +4630,23 @@ body {
 
 /* ---------- Danger Zone Special ---------- */
 .settings-card.danger {
-  border-color: rgba(239,68,68,.3);
-  background: linear-gradient(180deg, var(--bg-elev) 0%, #fef2f2 100%);
+  border-color: rgba(239,68,68,.4);
+  background: var(--bg-elev);
+  position: relative;
+  overflow: hidden;
+}
+.settings-card.danger::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 40%, transparent 100%);
+  pointer-events: none;
+}
+.dark .settings-card.danger {
+  border-color: rgba(239,68,68,.5);
 }
 .settings-card.danger h3 i,
 .settings-card.danger h3 svg { color: var(--danger); }
