@@ -3902,7 +3902,9 @@
         emptyEl.classList.add('hidden');
 
         listEl.innerHTML = state.cart.map((item, idx) => {
-          const img = item.image_url ? `<img src="${esc(item.image_url)}" alt="">` : `<i data-lucide="package"></i>`;
+          const img = item.image_url
+            ? `<img src="${esc(item.image_url)}" alt="" loading="lazy" decoding="async">`
+            : `<i data-lucide="package"></i>`;
           return `
             <div class="cart-item" style="animation-delay:${idx * 40}ms">
               <div class="ci-img">${img}</div>
@@ -4012,7 +4014,9 @@
       if (!p) return;
       const out = p.stock !== null && p.stock !== undefined && p.stock <= 0;
       const low = !out && p.stock !== null && p.stock !== undefined && p.stock <= 5;
-      const img = p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : `<i data-lucide="package"></i>`;
+      const img = p.image_url
+        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" decoding="async">`
+        : `<i data-lucide="package"></i>`;
       const price = Number(p.online_price || p.price || 0);
       const stockClass = out ? 'out' : (low ? 'low' : 'ok');
       const stockText = out ? 'Stok habis' : (p.stock !== null && p.stock !== undefined ? `Stok: ${p.stock}` : 'Stok tersedia');
@@ -4489,7 +4493,9 @@
         const out = p.stock !== null && p.stock !== undefined && p.stock <= 0;
         const price = Number(p.online_price || p.price || 0);
         const inCartQty = cartMap[p.id] || 0;
-        const img = p.image_url ? `<img src="${esc(p.image_url)}" alt="">` : `<i data-lucide="package"></i>`;
+        const img = p.image_url
+          ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`
+          : `<i data-lucide="package"></i>`;
         const isFav = state.favorites.has(p.id);
 
         const stockBadge = out
