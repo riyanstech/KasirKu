@@ -317,6 +317,40 @@ async function deletePhotoFromCloud(imageUrl) {
   return await KR.sb.deletePhoto(imageUrl);
 }
 
+/* ==========================================
+   LAZY SCRIPT LOADER
+   Cache script yang sudah dimuat — biar tidak double-load
+   ========================================== */
+window.__scriptCache = window.__scriptCache || {};
+
+KR.loadScript = function (src) {
+  if (window.__scriptCache[src]) return window.__scriptCache[src];
+  window.__scriptCache[src] = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Gagal load: ' + src));
+    document.head.appendChild(s);
+  });
+  return window.__scriptCache[src];
+};
+
+/* Muat semua library export (Excel + PDF) saat dibutuhkan */
+KR.ensureExportLibs = async function () {
+  const tasks = [];
+
+  if (typeof XLSX === 'undefined') {
+    tasks.push(KR.loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'));
+  }
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    tasks.push(KR.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+      .then(() => KR.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js')));
+  }
+
+  if (tasks.length) await Promise.all(tasks);
+};
+
 /* ==================== EXPOSE ==================== */
 window.formatRupiah = formatRupiah;
 window.formatDate = formatDate;
