@@ -360,3 +360,44 @@ window.extractPhotoFilename = extractPhotoFilename;
 window.uploadPhotoToCloud = uploadPhotoToCloud;
 window.deletePhotoFromCloud = deletePhotoFromCloud;
 
+/* ==========================================
+   PATCH LUCIDE — Debounce via requestAnimationFrame
+   Supaya puluhan panggilan createIcons() dalam 1 frame = cuma jalan 1×
+   ========================================== */
+(function patchLucideDebounce() {
+  function patch() {
+    if (!window.lucide || !window.lucide.createIcons || window.lucide.__debounced) return false;
+    const orig = window.lucide.createIcons;
+
+    window.lucide.createIcons = function (...args) {
+      // Kalau user kasih argumen (jarang), langsung eksekusi
+      if (args.length > 0) return orig.apply(window.lucide, args);
+
+      // Kalau nggak ada argumen → debounce via RAF
+      if (window.lucide.__pending) return;
+      window.lucide.__pending = requestAnimationFrame(() => {
+        window.lucide.__pending = null;
+        try {
+          orig.call(window.lucide);
+        } catch (e) {
+          console.warn('[Lucide] refresh failed', e);
+        }
+      });
+    };
+
+    window.lucide.__debounced = true;
+    console.log('%c[Perf] Lucide.createIcons debounced ✓', 'color:#10b981;font-weight:700;');
+    return true;
+  }
+
+  if (patch()) return;
+
+  // Kalau lucide belum ready (CDN masih loading), retry
+  const t = setInterval(() => {
+    if (patch()) clearInterval(t);
+  }, 50);
+
+  // Safety: stop retry setelah 5 detik
+  setTimeout(() => clearInterval(t), 5000);
+})();
+
