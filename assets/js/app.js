@@ -786,6 +786,23 @@ function confirmDeleteTrx(id) {
 }
 window.confirmDeleteTrx = confirmDeleteTrx;
 
+/* ==================== SETTINGS TAB SWITCHER ==================== */
+function switchSettingsTab(tabId) {
+  // Update tab buttons
+  document.querySelectorAll('.settings-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.settingsTab === tabId);
+  });
+
+  // Update panels
+  document.querySelectorAll('.settings-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.dataset.settingsPanel === tabId);
+  });
+
+  // Refresh Lucide icons (dalam panel yang baru dibuka)
+  if (window.lucide) lucide.createIcons();
+}
+window.switchSettingsTab = switchSettingsTab;
+
 /* ==================== SETTINGS ==================== */
 function loadSettings() {
   const s = KR.store.getSettings();
