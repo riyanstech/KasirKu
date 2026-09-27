@@ -1,8 +1,9 @@
 /* ==========================================
    KasirKu — Service Worker
    Auto-update + Offline support
+   v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v8-unit-produk';
+const CACHE_VERSION = 'kasirku-v9-perf-sprint1';
 
 const ASSETS = [
   './',
@@ -29,6 +30,7 @@ const ASSETS = [
   './assets/js/app.js',
 ];
 
+/* ==================== INSTALL ==================== */
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then(cache => {
@@ -38,6 +40,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+/* ==================== ACTIVATE ==================== */
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
@@ -48,25 +51,123 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+/* ============================================================
+   FETCH STRATEGIES
+   ============================================================ */
+
+/**
+ * Cache-first: cek cache dulu, baru network.
+ * Cocok untuk: CSS, JS, font, gambar, icon (jarang berubah)
+ */
+async function cacheFirst(req) {
+  const cached = await caches.match(req);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(req);
+    if (res && res.status === 200 && res.type === 'basic') {
+      const cache = await caches.open(CACHE_VERSION);
+      cache.put(req, res.clone()).catch(() => {});
+    }
+    return res;
+  } catch (e) {
+    // Fallback: kalau HTML, kasih index.html; kalau bukan, biarkan gagal
+    const accept = req.headers.get('accept') || '';
+    if (accept.includes('text/html')) {
+      const fallback = await caches.match('./index.html');
+      if (fallback) return fallback;
+    }
+    throw e;
+  }
+}
+
+/**
+ * Network-first: coba network dulu, fallback ke cache.
+ * Cocok untuk: API data, JSON dinamis
+ */
+async function networkFirst(req) {
+  try {
+    const res = await fetch(req);
+    if (res && res.status === 200 && res.type === 'basic') {
+      const cache = await caches.open(CACHE_VERSION);
+      cache.put(req, res.clone()).catch(() => {});
+    }
+    return res;
+  } catch (e) {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+    const fallback = await caches.match('./index.html');
+    if (fallback) return fallback;
+    throw e;
+  }
+}
+
+/**
+ * Stale-while-revalidate: kasih cache INSTAN, update di background.
+ * Cocok untuk: HTML halaman (user dapat versi cepat, tapi tetap update)
+ */
+async function staleWhileRevalidate(req) {
+  const cache = await caches.open(CACHE_VERSION);
+  const cached = await cache.match(req);
+
+  const networkPromise = fetch(req)
+    .then((res) => {
+      if (res && res.status === 200 && res.type === 'basic') {
+        cache.put(req, res.clone()).catch(() => {});
+      }
+      return res;
+    })
+    .catch(() => null);
+
+  // Kalau ada cache → langsung return + update di background
+  // Kalau nggak ada cache → tunggu network
+  return cached || networkPromise || caches.match('./index.html');
+}
+
+/* ==================== FETCH ROUTER ==================== */
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+
+  // 1. Hanya handle GET
   if (req.method !== 'GET') return;
+
+  // 2. Hanya same-origin (skip Supabase, Google Fonts, CDN)
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    fetch(req)
-      .then(res => {
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put(req, clone)).catch(() => {});
-        }
-        return res;
-      })
-      .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
-  );
+  // 3. Skip protokol non-http(s)
+  if (!url.protocol.startsWith('http')) return;
+
+  // 4. Skip request khusus (range, upload, dll)
+  if (req.headers.has('range')) return;
+
+  const accept = req.headers.get('accept') || '';
+  const pathname = url.pathname;
+
+  // ---- HTML → stale-while-revalidate (instant load) ----
+  const isHtml = accept.includes('text/html')
+              || pathname === '/'
+              || pathname.endsWith('.html')
+              || !pathname.includes('.'); // route tanpa ekstensi (misal /toko/slug)
+
+  if (isHtml) {
+    event.respondWith(staleWhileRevalidate(req));
+    return;
+  }
+
+  // ---- Static assets → cache-first (JS, CSS, font, gambar) ----
+  const isStatic = /\.(css|js|mjs|woff2?|ttf|otf|eot|png|jpe?g|svg|webp|gif|ico|json|xml|txt)$/i.test(pathname);
+
+  if (isStatic) {
+    event.respondWith(cacheFirst(req));
+    return;
+  }
+
+  // ---- Default → network-first dengan fallback cache ----
+  event.respondWith(networkFirst(req));
 });
 
+/* ==================== MESSAGE HANDLER ==================== */
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
@@ -94,6 +195,7 @@ self.addEventListener('push', (event) => {
   );
 });
 
+/* ==================== NOTIFICATION CLICK ==================== */
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || '/index.html';
