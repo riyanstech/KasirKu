@@ -1322,7 +1322,7 @@ function getReportExportData() {
   };
 }
 
-/* ---------- EXPORT EXCEL (.xlsx) ---------- */
+/* ---------- EXPORT EXCEL (.xlsx) — Styled Version ---------- */
 async function exportReportExcel() {
   showLoading('Menyiapkan Excel...');
   try {
@@ -1335,69 +1335,378 @@ async function exportReportExcel() {
   }
   hideLoading();
 
+  if (typeof XLSX === 'undefined') {
+    KR.toast.error('Library Excel tidak tersedia');
+    return;
+  }
+
   try {
     const d = getReportExportData();
     const wb = XLSX.utils.book_new();
 
-    // -------- Sheet 1: Ringkasan --------
+    /* ==================== STYLE PRESETS ==================== */
+    const C = {
+      primary:      '10B981',
+      primaryDark:  '047857',
+      primarySoft:  'D1FAE5',
+      primaryBg:    'ECFDF5',
+      text:         '0F172A',
+      textMuted:    '64748B',
+      border:       'A7F3D0',
+      borderLight:  'D1FAE5',
+      bgAlt:        'F8FAFC',
+      white:        'FFFFFF',
+      amber:        'F59E0B',
+      danger:       'DC2626',
+    };
+
+    const border_thin = {
+      top:    { style: 'thin', color: { rgb: C.borderLight } },
+      bottom: { style: 'thin', color: { rgb: C.borderLight } },
+      left:   { style: 'thin', color: { rgb: C.borderLight } },
+      right:  { style: 'thin', color: { rgb: C.borderLight } },
+    };
+
+    const S = {
+      title: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.primary } },
+        font: { name: 'Calibri', sz: 18, bold: true, color: { rgb: C.white } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      },
+      subtitle: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.primaryDark } },
+        font: { name: 'Calibri', sz: 11, color: { rgb: C.white } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      },
+      sectionHead: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.primary } },
+        font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: C.white } },
+        alignment: { horizontal: 'left', vertical: 'center', indent: 1 },
+      },
+      tableHead: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.primaryDark } },
+        font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: C.white } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: border_thin,
+      },
+      cell: {
+        font: { name: 'Calibri', sz: 10, color: { rgb: C.text } },
+        alignment: { vertical: 'center', wrapText: true },
+        border: border_thin,
+      },
+      cellAlt: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.bgAlt } },
+        font: { name: 'Calibri', sz: 10, color: { rgb: C.text } },
+        alignment: { vertical: 'center', wrapText: true },
+        border: border_thin,
+      },
+      cellBold: {
+        font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: C.text } },
+        alignment: { vertical: 'center' },
+        border: border_thin,
+      },
+      cellMoney: {
+        font: { name: 'Calibri', sz: 10, color: { rgb: C.text } },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border: border_thin,
+        numFmt: '#,##0',
+      },
+      cellMoneyAlt: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.bgAlt } },
+        font: { name: 'Calibri', sz: 10, color: { rgb: C.text } },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border: border_thin,
+        numFmt: '#,##0',
+      },
+      cellCenter: {
+        font: { name: 'Calibri', sz: 10, color: { rgb: C.text } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: border_thin,
+      },
+      totalRow: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.primaryBg } },
+        font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: C.primaryDark } },
+        alignment: { vertical: 'center' },
+        border: border_thin,
+      },
+      totalMoney: {
+        fill: { patternType: 'solid', fgColor: { rgb: C.primaryBg } },
+        font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: C.primaryDark } },
+        alignment: { horizontal: 'right', vertical: 'center' },
+        border: border_thin,
+        numFmt: '#,##0',
+      },
+      textMuted: {
+        font: { name: 'Calibri', sz: 9, italic: true, color: { rgb: C.textMuted } },
+        alignment: { horizontal: 'right', vertical: 'center' },
+      },
+    };
+
+    /* Helper: apply style ke satu cell */
+    function setStyle(ws, addr, style) {
+      if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+      ws[addr].s = style;
+    }
+
+    /* Helper: apply style ke range */
+    function setStyleRange(ws, rangeStr, style) {
+      const range = XLSX.utils.decode_range(rangeStr);
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let Cc = range.s.c; Cc <= range.e.c; Cc++) {
+          const addr = XLSX.utils.encode_cell({ r: R, c: Cc });
+          setStyle(ws, addr, style);
+        }
+      }
+    }
+
+    /* Helper: set kolom width */
+    function setCols(ws, widths) {
+      ws['!cols'] = widths.map(w => ({ wch: w }));
+    }
+
+    /* ============================================================
+       SHEET 1: RINGKASAN
+       ============================================================ */
     const ws1Data = [
-      [d.storeName],
-      [d.storeAddress],
-      d.storePhone ? ['Telp: ' + d.storePhone] : [],
-      [],
-      ['LAPORAN PENJUALAN'],
-      ['Periode', d.periodLabel],
-      ['Diekspor', d.exportedAt],
-      [],
-      ['RINGKASAN'],
-      ['Pendapatan (Rp)', d.ringkasan.revenue],
-      ['Modal/HPP (Rp)', d.ringkasan.cost],
-      ['Laba Kotor (Rp)', d.ringkasan.profit],
-      ['Jumlah Transaksi', d.ringkasan.transactions],
-      ['Produk Terjual', d.ringkasan.itemsSold],
+      ['LAPORAN PENJUALAN', '', '', ''],                    // Row 1
+      ['', '', '', ''],                                      // Row 2
+      ['Nama Toko', d.storeName || '-', '', ''],             // Row 3
+      ['Alamat', d.storeAddress || '-', '', ''],             // Row 4
+      ['Telepon', d.storePhone || '-', '', ''],              // Row 5
+      ['Periode', d.periodLabel, '', ''],                    // Row 6
+      ['Diekspor', d.exportedAt, '', ''],                    // Row 7
+      ['', '', '', ''],                                      // Row 8
+      ['RINGKASAN', '', '', ''],                             // Row 9
+      ['Metrik', 'Nilai', 'Keterangan', ''],                 // Row 10
+      ['Pendapatan', d.ringkasan.revenue, 'Total penjualan', ''],         // Row 11
+      ['Modal/HPP', d.ringkasan.cost, 'Total modal barang terjual', ''],  // Row 12
+      ['Laba Kotor', d.ringkasan.profit, 'Pendapatan - Modal', ''],       // Row 13
+      ['Jumlah Transaksi', d.ringkasan.transactions, 'Berapa kali transaksi', ''],  // Row 14
+      ['Produk Terjual', d.ringkasan.itemsSold, 'Total qty item terjual', ''],      // Row 15
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
-    ws1['!cols'] = [{ wch: 24 }, { wch: 20 }];
+
+    // Merge title
+    ws1['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },   // Title
+      { s: { r: 8, c: 0 }, e: { r: 8, c: 3 } },   // Section head
+    ];
+
+    // Row heights
+    ws1['!rows'] = [
+      { hpt: 32 },  // Title
+      { hpt: 8 },   // spacer
+      { hpt: 18 }, { hpt: 18 }, { hpt: 18 }, { hpt: 18 }, { hpt: 18 },
+      { hpt: 8 },
+      { hpt: 24 },  // Section head
+      { hpt: 22 },  // Table head
+    ];
+
+    setCols(ws1, [22, 20, 32, 4]);
+
+    // Title & Subtitle
+    setStyle(ws1, 'A1', S.title);
+    setStyleRange(ws1, 'A1:D1', S.title);
+
+    // Store info
+    setStyle(ws1, 'A3', S.cellBold);
+    setStyle(ws1, 'A4', S.cellBold);
+    setStyle(ws1, 'A5', S.cellBold);
+    setStyle(ws1, 'A6', S.cellBold);
+    setStyle(ws1, 'A7', S.cellBold);
+    setStyle(ws1, 'B3', S.cell);
+    setStyle(ws1, 'B4', S.cell);
+    setStyle(ws1, 'B5', S.cell);
+    setStyle(ws1, 'B6', S.cell);
+    setStyle(ws1, 'B7', S.cell);
+    setStyle(ws1, 'B7', S.cell);
+
+    // Section head "RINGKASAN"
+    setStyleRange(ws1, 'A9:D9', S.sectionHead);
+
+    // Table head
+    setStyleRange(ws1, 'A10:C10', S.tableHead);
+
+    // Data rows
+    const kpiRows = [11, 12, 13, 14, 15];
+    kpiRows.forEach((r, i) => {
+      const altStyle = (i % 2 === 0) ? S.cell : S.cellAlt;
+      const altMoney = (i % 2 === 0) ? S.cellMoney : S.cellMoneyAlt;
+
+      setStyle(ws1, `A${r}`, altStyle);
+      setStyle(ws1, `B${r}`, altMoney);
+      setStyle(ws1, `C${r}`, altStyle);
+    });
+
+    // Highlight Laba Kotor (row 13) — emerald
+    setStyle(ws1, 'A13', S.totalRow);
+    setStyle(ws1, 'B13', S.totalMoney);
+    setStyle(ws1, 'C13', S.totalRow);
+
     XLSX.utils.book_append_sheet(wb, ws1, 'Ringkasan');
 
-    // -------- Sheet 2: Produk Terlaris --------
-    const ws2Data = [
+    /* ============================================================
+       SHEET 2: PRODUK TERLARIS
+       ============================================================ */
+    const prodData = [
+      ['PRODUK TERLARIS', '', '', '', ''],
+      ['', '', '', '', ''],
       ['No', 'Nama Produk', 'Qty Terjual', 'Pendapatan (Rp)', 'Laba (Rp)'],
-      ...d.topProducts.map((p, i) => [i + 1, p.name, p.qty, p.revenue, p.profit]),
     ];
-    const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
-    ws2['!cols'] = [{ wch: 5 }, { wch: 32 }, { wch: 12 }, { wch: 16 }, { wch: 16 }];
+    d.topProducts.forEach((p, i) => {
+      prodData.push([i + 1, p.name, p.qty, p.revenue, p.profit]);
+    });
+
+    // Grand total
+    if (d.topProducts.length > 0) {
+      const totQty = d.topProducts.reduce((s, p) => s + p.qty, 0);
+      const totRev = d.topProducts.reduce((s, p) => s + p.revenue, 0);
+      const totProf = d.topProducts.reduce((s, p) => s + p.profit, 0);
+      prodData.push(['', 'TOTAL', totQty, totRev, totProf]);
+    }
+
+    const ws2 = XLSX.utils.aoa_to_sheet(prodData);
+    ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }];
+    ws2['!rows'] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 22 }];
+    setCols(ws2, [6, 40, 14, 18, 18]);
+
+    setStyleRange(ws2, 'A1:E1', S.title);
+    setStyleRange(ws2, 'A3:E3', S.tableHead);
+
+    d.topProducts.forEach((_, i) => {
+      const r = 4 + i;
+      const alt = (i % 2 === 0) ? S.cell : S.cellAlt;
+      const altMoney = (i % 2 === 0) ? S.cellMoney : S.cellMoneyAlt;
+
+      setStyle(ws2, `A${r}`, S.cellCenter);
+      setStyle(ws2, `B${r}`, alt);
+      setStyle(ws2, `C${r}`, S.cellCenter);
+      setStyle(ws2, `D${r}`, altMoney);
+      setStyle(ws2, `E${r}`, altMoney);
+    });
+
+    // Total row
+    if (d.topProducts.length > 0) {
+      const totalRow = 4 + d.topProducts.length;
+      setStyle(ws2, `A${totalRow}`, S.totalRow);
+      setStyle(ws2, `B${totalRow}`, S.totalRow);
+      setStyle(ws2, `C${totalRow}`, S.totalRow);
+      setStyle(ws2, `D${totalRow}`, S.totalMoney);
+      setStyle(ws2, `E${totalRow}`, S.totalMoney);
+    }
+
     XLSX.utils.book_append_sheet(wb, ws2, 'Produk Terlaris');
 
-    // -------- Sheet 3: Per Kategori --------
-    const ws3Data = [
+    /* ============================================================
+       SHEET 3: PER KATEGORI
+       ============================================================ */
+    const catData = [
+      ['PENJUALAN PER KATEGORI', '', '', ''],
+      ['', '', '', ''],
       ['No', 'Kategori', 'Qty', 'Pendapatan (Rp)'],
-      ...d.categories.map((c, i) => [i + 1, c.name, c.qty, c.revenue]),
     ];
-    const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
-    ws3['!cols'] = [{ wch: 5 }, { wch: 24 }, { wch: 10 }, { wch: 16 }];
+    d.categories.forEach((c, i) => {
+      catData.push([i + 1, c.name, c.qty, c.revenue]);
+    });
+
+    if (d.categories.length > 0) {
+      const totQty = d.categories.reduce((s, c) => s + c.qty, 0);
+      const totRev = d.categories.reduce((s, c) => s + c.revenue, 0);
+      catData.push(['', 'TOTAL', totQty, totRev]);
+    }
+
+    const ws3 = XLSX.utils.aoa_to_sheet(catData);
+    ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+    ws3['!rows'] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 22 }];
+    setCols(ws3, [6, 30, 14, 20]);
+
+    setStyleRange(ws3, 'A1:D1', S.title);
+    setStyleRange(ws3, 'A3:D3', S.tableHead);
+
+    d.categories.forEach((_, i) => {
+      const r = 4 + i;
+      const alt = (i % 2 === 0) ? S.cell : S.cellAlt;
+      const altMoney = (i % 2 === 0) ? S.cellMoney : S.cellMoneyAlt;
+
+      setStyle(ws3, `A${r}`, S.cellCenter);
+      setStyle(ws3, `B${r}`, alt);
+      setStyle(ws3, `C${r}`, S.cellCenter);
+      setStyle(ws3, `D${r}`, altMoney);
+    });
+
+    if (d.categories.length > 0) {
+      const totalRow = 4 + d.categories.length;
+      setStyle(ws3, `A${totalRow}`, S.totalRow);
+      setStyle(ws3, `B${totalRow}`, S.totalRow);
+      setStyle(ws3, `C${totalRow}`, S.totalRow);
+      setStyle(ws3, `D${totalRow}`, S.totalMoney);
+    }
+
     XLSX.utils.book_append_sheet(wb, ws3, 'Per Kategori');
 
-    // -------- Sheet 4: Detail Transaksi --------
-    const ws4Data = [
-      ['No', 'No. Transaksi', 'Tanggal', 'Metode', 'Jml Item', 'Subtotal (Rp)', 'Diskon (Rp)', 'Total (Rp)', 'Bayar (Rp)', 'Kembali (Rp)'],
-      ...d.transactions.map((t, i) => [
+    /* ============================================================
+       SHEET 4: DETAIL TRANSAKSI
+       ============================================================ */
+    const trxData = [
+      ['DETAIL TRANSAKSI', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['No', 'No. Transaksi', 'Tanggal', 'Metode', 'Item', 'Subtotal (Rp)', 'Diskon (Rp)', 'Total (Rp)'],
+    ];
+    d.transactions.forEach((t, i) => {
+      trxData.push([
         i + 1, t.id, t.date, t.method, t.itemCount,
-        t.subtotal, t.discount, t.total, t.paid, t.change,
-      ]),
-    ];
-    const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
-    ws4['!cols'] = [
-      { wch: 5 }, { wch: 20 }, { wch: 18 }, { wch: 10 },
-      { wch: 9 }, { wch: 14 }, { wch: 12 }, { wch: 14 },
-      { wch: 14 }, { wch: 14 },
-    ];
+        t.subtotal, t.discount, t.total,
+      ]);
+    });
+
+    if (d.transactions.length > 0) {
+      const totSub = d.transactions.reduce((s, t) => s + (t.subtotal || 0), 0);
+      const totDisc = d.transactions.reduce((s, t) => s + (t.discount || 0), 0);
+      const totTotal = d.transactions.reduce((s, t) => s + (t.total || 0), 0);
+      trxData.push(['', 'TOTAL', '', '', '', totSub, totDisc, totTotal]);
+    }
+
+    const ws4 = XLSX.utils.aoa_to_sheet(trxData);
+    ws4['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+    ws4['!rows'] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 22 }];
+    setCols(ws4, [6, 22, 20, 12, 8, 16, 14, 16]);
+
+    setStyleRange(ws4, 'A1:H1', S.title);
+    setStyleRange(ws4, 'A3:H3', S.tableHead);
+
+    d.transactions.forEach((_, i) => {
+      const r = 4 + i;
+      const alt = (i % 2 === 0) ? S.cell : S.cellAlt;
+      const altMoney = (i % 2 === 0) ? S.cellMoney : S.cellMoneyAlt;
+
+      setStyle(ws4, `A${r}`, S.cellCenter);
+      setStyle(ws4, `B${r}`, alt);
+      setStyle(ws4, `C${r}`, alt);
+      setStyle(ws4, `D${r}`, S.cellCenter);
+      setStyle(ws4, `E${r}`, S.cellCenter);
+      setStyle(ws4, `F${r}`, altMoney);
+      setStyle(ws4, `G${r}`, altMoney);
+      setStyle(ws4, `H${r}`, altMoney);
+    });
+
+    if (d.transactions.length > 0) {
+      const totalRow = 4 + d.transactions.length;
+      setStyle(ws4, `A${totalRow}`, S.totalRow);
+      setStyle(ws4, `B${totalRow}`, S.totalRow);
+      setStyle(ws4, `C${totalRow}`, S.totalRow);
+      setStyle(ws4, `D${totalRow}`, S.totalRow);
+      setStyle(ws4, `E${totalRow}`, S.totalRow);
+      setStyle(ws4, `F${totalRow}`, S.totalMoney);
+      setStyle(ws4, `G${totalRow}`, S.totalMoney);
+      setStyle(ws4, `H${totalRow}`, S.totalMoney);
+    }
+
     XLSX.utils.book_append_sheet(wb, ws4, 'Detail Transaksi');
 
-    // -------- Save --------
+    /* ============ SAVE ============ */
     const filename = `Laporan_${d.periodLabel.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, filename);
-    KR.toast.success('Excel berhasil diunduh!');
+    KR.toast.success('Excel berhasil diunduh! 🎨');
   } catch (e) {
     console.error('[ExportExcel]', e);
     KR.toast.error('Gagal export Excel: ' + e.message);
