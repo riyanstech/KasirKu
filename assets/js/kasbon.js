@@ -447,9 +447,19 @@ KR.kasbon = (function () {
      EXPORT PDF
      ========================================== */
   async function exportCustomerPDF(customerName) {
+    showLoading('Menyiapkan PDF...');
+    try {
+      await KR.ensureExportLibs();
+    } catch (e) {
+      hideLoading();
+      console.error('[KasbonPDF] lib load failed', e);
+      return KR.toast.error('Gagal memuat library PDF — cek koneksi');
+    }
+    hideLoading();
+
     const jspdfNS = window.jspdf || window.jsPDF;
     if (!jspdfNS || !jspdfNS.jsPDF) {
-      return KR.toast.error('Library PDF belum dimuat, coba refresh halaman');
+      return KR.toast.error('Library PDF tidak tersedia');
     }
     const { jsPDF } = jspdfNS;
 
