@@ -388,7 +388,7 @@ function renderCart() {
   } else {
     container.innerHTML = cart.map(item => {
       const img = item.image
-        ? `<img src="${item.image}" alt="">`
+        ? `<img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy" decoding="async">`
         : `<i data-lucide="package"></i>`;
       const sub = item.price * item.qty;
       return `
@@ -484,7 +484,9 @@ function renderPosGrid() {
   container.innerHTML = filtered.map(p => {
     const out = p.stock !== undefined && p.stock !== null && p.stock <= 0;
     const low = !out && p.stock !== undefined && p.stock !== null && p.stock <= 5;
-    const img = p.image ? `<img src="${p.image}" alt="">` : `<i data-lucide="package"></i>`;
+    const img = p.image
+      ? `<img src="${p.image}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async">`
+      : `<i data-lucide="package"></i>`;
     const stockClass = out ? 'empty' : (low ? 'low' : '');
     const unitText = p.unit ? ` ${p.unit}` : '';
     const stockLabel = out ? 'Habis' : `Stok: ${p.stock != null ? p.stock : '∞'}${unitText}`;
