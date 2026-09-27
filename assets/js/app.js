@@ -1304,11 +1304,18 @@ function getReportExportData() {
 }
 
 /* ---------- EXPORT EXCEL (.xlsx) ---------- */
-function exportReportExcel() {
-  if (typeof XLSX === 'undefined') {
-    KR.toast.error('Library Excel belum dimuat, coba refresh halaman');
+async function exportReportExcel() {
+  showLoading('Menyiapkan Excel...');
+  try {
+    await KR.ensureExportLibs();
+  } catch (e) {
+    hideLoading();
+    console.error('[Excel] lib load failed', e);
+    KR.toast.error('Gagal memuat library Excel — cek koneksi');
     return;
   }
+  hideLoading();
+
   try {
     const d = getReportExportData();
     const wb = XLSX.utils.book_new();
@@ -1450,11 +1457,22 @@ function exportReportCSV() {
 window.exportReportCSV = exportReportCSV;
 
 /* ---------- EXPORT PDF ---------- */
-function exportReportPDF() {
+async function exportReportPDF() {
+  showLoading('Menyiapkan PDF...');
+  try {
+    await KR.ensureExportLibs();
+  } catch (e) {
+    hideLoading();
+    console.error('[PDF] lib load failed', e);
+    KR.toast.error('Gagal memuat library PDF — cek koneksi');
+    return;
+  }
+  hideLoading();
+
   try {
     const jspdfNS = window.jspdf || window.jsPDF;
     if (!jspdfNS || !jspdfNS.jsPDF) {
-      KR.toast.error('Library PDF belum dimuat, coba refresh halaman');
+      KR.toast.error('Library PDF tidak tersedia');
       return;
     }
     const { jsPDF } = jspdfNS;
