@@ -340,7 +340,6 @@ KR.loadScript = function (src) {
 KR.ensureExportLibs = async function () {
   const tasks = [];
 
-  }
   if (typeof XLSX === 'undefined') {
   // xlsx-js-style: fork dari xlsx yang support styling (fill, font, border, dll)
      tasks.push(KR.loadScript('https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js'));
