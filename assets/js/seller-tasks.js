@@ -1,6 +1,7 @@
 /* ==========================================
-   KasirKu — Seller Tasks Admin Module (v3)
-   Multi-type tasks + Poster Upload + Responsive Modal
+   KasirKu — Seller Tasks Admin Module (v4)
+   Multi-type + Poster Upload + Responsive Modal
+   + Target opsional untuk tipe Posting
    ========================================== */
 window.KR = window.KR || {};
 
@@ -108,7 +109,7 @@ window.KR = window.KR || {};
     like:        { label: 'Like',         icon: 'thumbs-up',      color: '#E1306C', desc: 'Like postingan',    needsPlatform: true,  needsTarget: true,  customerLink: false },
     comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', desc: 'Komentari post',    needsPlatform: true,  needsTarget: true,  customerLink: false },
     share:       { label: 'Share',        icon: 'share-2',        color: '#10b981', desc: 'Share postingan',   needsPlatform: true,  needsTarget: true,  customerLink: false },
-    post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', desc: 'Posting baru',      needsPlatform: true,  needsTarget: true,  customerLink: true,  extra: 'post_fields' },
+    post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', desc: 'Posting baru',      needsPlatform: true,  needsTarget: true,  targetOptional: true, customerLink: true,  extra: 'post_fields' },
     subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', desc: 'Subscribe channel', needsPlatform: true,  needsTarget: true,  customerLink: false },
     review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', desc: 'Ulas Google Maps',  needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'maps_fields' },
     review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', desc: 'Ulas App Store',    needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'app_fields' },
@@ -420,8 +421,13 @@ window.KR = window.KR || {};
           watch:       { label: 'Link Video', placeholder: 'https://youtube.com/watch?v=xxx' },
         };
         const lbl = labels[typeId] || { label: 'Target', placeholder: '' };
-        targetLabel.innerHTML = lbl.label + ' <span class="req">*</span>';
-        targetInput.placeholder = lbl.placeholder;
+        const reqMark = cfg.targetOptional
+          ? ' <span style="color:#64748b;font-weight:600;font-size:.68rem;text-transform:none;letter-spacing:0;">(opsional)</span>'
+          : ' <span class="req">*</span>';
+        targetLabel.innerHTML = lbl.label + reqMark;
+        targetInput.placeholder = cfg.targetOptional
+          ? lbl.placeholder + ' (boleh dikosongkan)'
+          : lbl.placeholder;
       }
 
       const extraEl = $('ct-extra-fields');
@@ -498,7 +504,7 @@ window.KR = window.KR || {};
 
     const cfg = TASK_TYPES[taskType];
     if (cfg.needsPlatform && !platform) return KR.toast.error('Pilih platform dulu');
-    if (cfg.needsTarget && !target) return KR.toast.error('Target wajib diisi');
+    if (cfg.needsTarget && !cfg.targetOptional && !target) return KR.toast.error('Target wajib diisi');
     if (reward < 1) return KR.toast.error('Reward minimal Rp 1');
 
     const taskMeta = {};
@@ -541,7 +547,7 @@ window.KR = window.KR || {};
         description: desc || null,
         platform: cfg.needsPlatform ? platform : taskType,
         target_username: target || '-',
-        target_url: cfg.needsTarget ? target : null,
+        target_url: (cfg.needsTarget && target) ? target : null,
         reward_amount: reward,
         max_completions: max,
         current_completions: 0,
