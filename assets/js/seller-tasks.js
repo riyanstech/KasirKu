@@ -1,6 +1,6 @@
 /* ==========================================
    KasirKu — Seller Tasks Admin Module (v3)
-   Multi-type tasks + Poster Upload untuk tipe Posting
+   Multi-type tasks + Poster Upload + Responsive Modal
    ========================================== */
 window.KR = window.KR || {};
 
@@ -24,6 +24,76 @@ window.KR = window.KR || {};
   })[c]);
   const parse = (d) => { if (typeof d === 'string') { try { return JSON.parse(d); } catch { return null; } } return d; };
 
+  /* ============ RESPONSIVE STYLES ============ */
+  function injectTaskModalStyles() {
+    if (document.getElementById('kr-task-modal-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'kr-task-modal-styles';
+    s.textContent = `
+      .task-type-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .task-type-opt {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        background: #fff;
+        cursor: pointer;
+        transition: all .2s;
+        font-family: inherit;
+      }
+      .task-type-opt .task-icon {
+        width: 40px; height: 40px;
+        border-radius: 11px;
+        display: grid; place-items: center;
+        flex-shrink: 0;
+      }
+      .task-type-opt .task-icon svg { width: 18px; height: 18px; }
+      .task-type-opt .task-body { flex: 1; min-width: 0; }
+      .task-type-opt .task-label {
+        font-weight: 800;
+        font-size: .88rem;
+        color: #0f172a;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .task-type-opt .task-desc {
+        font-size: .72rem;
+        color: #64748b;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .task-type-opt .type-check { width: 20px; height: 20px; color: #cbd5e1; flex-shrink: 0; }
+
+      @media (max-width: 520px) {
+        .task-type-grid { gap: 6px; }
+        .task-type-opt { padding: 10px 9px; gap: 9px; border-radius: 11px; }
+        .task-type-opt .task-icon { width: 34px; height: 34px; border-radius: 10px; }
+        .task-type-opt .task-icon svg { width: 16px; height: 16px; }
+        .task-type-opt .task-label { font-size: .8rem; }
+        .task-type-opt .task-desc { font-size: .65rem; }
+        .task-type-opt .type-check { width: 17px; height: 17px; }
+      }
+
+      @media (max-width: 380px) {
+        .task-type-grid { grid-template-columns: 1fr; }
+        .task-type-opt .task-label { white-space: normal; }
+        .task-type-opt .task-desc { white-space: normal; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
   const PLATFORMS = {
     tiktok:    { name: 'TikTok',      icon: 'music-2',        color: '#000000', placeholder: '@username' },
     instagram: { name: 'Instagram',   icon: 'camera',         color: '#E1306C', placeholder: '@username' },
@@ -32,19 +102,21 @@ window.KR = window.KR || {};
     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
   };
 
+  /* ============ TASK TYPES (10 tipe) ============ */
   const TASK_TYPES = {
-    follow:      { label: 'Follow',       icon: 'user-plus',      color: '#000000', desc: 'Follow akun sosmed',              needsPlatform: true,  needsTarget: true,  customerLink: false },
-    like:        { label: 'Like',         icon: 'thumbs-up',      color: '#E1306C', desc: 'Like postingan sosmed',           needsPlatform: true,  needsTarget: true,  customerLink: false },
-    comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', desc: 'Komentari postingan',             needsPlatform: true,  needsTarget: true,  customerLink: false },
-    share:       { label: 'Share',        icon: 'share-2',        color: '#10b981', desc: 'Share postingan',                 needsPlatform: true,  needsTarget: true,  customerLink: false },
-    post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', desc: 'Buat postingan baru',             needsPlatform: true,  needsTarget: true,  customerLink: true,  extra: 'post_fields' },
-    subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', desc: 'Subscribe channel YouTube',       needsPlatform: true,  needsTarget: true,  customerLink: false },
-    review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', desc: 'Ulas tempat di Google Maps',      needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'maps_fields' },
-    review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', desc: 'Ulas aplikasi di Play/App Store', needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'app_fields' },
-    watch:       { label: 'Tonton Video', icon: 'monitor-play',   color: '#FF0000', desc: 'Tonton video sampai selesai',     needsPlatform: false, needsTarget: true,  customerLink: false, extra: 'watch_fields' },
-    custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', desc: 'Tugas bebas apapun',              needsPlatform: false, needsTarget: false, customerLink: true },
+    follow:      { label: 'Follow',       icon: 'user-plus',      color: '#000000', desc: 'Follow akun',       needsPlatform: true,  needsTarget: true,  customerLink: false },
+    like:        { label: 'Like',         icon: 'thumbs-up',      color: '#E1306C', desc: 'Like postingan',    needsPlatform: true,  needsTarget: true,  customerLink: false },
+    comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', desc: 'Komentari post',    needsPlatform: true,  needsTarget: true,  customerLink: false },
+    share:       { label: 'Share',        icon: 'share-2',        color: '#10b981', desc: 'Share postingan',   needsPlatform: true,  needsTarget: true,  customerLink: false },
+    post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', desc: 'Posting baru',      needsPlatform: true,  needsTarget: true,  customerLink: true,  extra: 'post_fields' },
+    subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', desc: 'Subscribe channel', needsPlatform: true,  needsTarget: true,  customerLink: false },
+    review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', desc: 'Ulas Google Maps',  needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'maps_fields' },
+    review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', desc: 'Ulas App Store',    needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'app_fields' },
+    watch:       { label: 'Tonton Video', icon: 'monitor-play',   color: '#FF0000', desc: 'Tonton video',      needsPlatform: false, needsTarget: true,  customerLink: false, extra: 'watch_fields' },
+    custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', desc: 'Tugas bebas',       needsPlatform: false, needsTarget: false, customerLink: true },
   };
 
+  /* ============ EXTRA FIELDS per tipe ============ */
   const TYPE_EXTRA_FIELDS = {
     comment: [
       { key: 'comment_text', label: 'Teks Komentar Wajib', type: 'textarea', required: true, placeholder: 'Contoh: Menarik banget!' },
@@ -69,6 +141,7 @@ window.KR = window.KR || {};
     ],
   };
 
+  /* ============ HELPERS ============ */
   function _buildFilterTabs(fnName, currentFilter, options) {
     const labels = { pending: 'Pending', verified: 'Verified', approved: 'Approved', rejected: 'Rejected', done: 'Selesai', cancelled: 'Dibatalkan', all: 'Semua' };
     return '<div class="filter-tabs-row">' +
@@ -211,6 +284,7 @@ window.KR = window.KR || {};
 
   /* ============ TASKS: CREATE MODAL ============ */
   window.openCreateTaskModal = function () {
+    injectTaskModalStyles();
     const existing = $('create-task-modal');
     if (existing) existing.remove();
 
@@ -219,20 +293,23 @@ window.KR = window.KR || {};
     window.__newTaskPlatform = null;
 
     const typeOptions = Object.entries(TASK_TYPES).map(([id, t]) =>
-      '<label class="task-type-opt" data-type="' + id + '" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;margin-bottom:8px;">' +
+      '<label class="task-type-opt" data-type="' + id + '">' +
         '<input type="radio" name="task-type" value="' + id + '" style="display:none;">' +
-        '<div style="width:40px;height:40px;border-radius:11px;background:' + t.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="' + t.icon + '" style="width:18px;height:18px;"></i></div>' +
-        '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:.88rem;color:#0f172a;">' + t.label + '</div><div style="font-size:.72rem;color:#64748b;margin-top:2px;">' + t.desc + '</div></div>' +
-        '<i data-lucide="circle" class="type-check" style="width:20px;height:20px;color:#cbd5e1;"></i>' +
+        '<div class="task-icon" style="background:' + t.color + ';color:#fff;"><i data-lucide="' + t.icon + '"></i></div>' +
+        '<div class="task-body">' +
+          '<div class="task-label">' + t.label + '</div>' +
+          '<div class="task-desc">' + t.desc + '</div>' +
+        '</div>' +
+        '<i data-lucide="circle" class="type-check"></i>' +
       '</label>'
     ).join('');
 
     const platformOptions = Object.entries(PLATFORMS).map(([id, p]) =>
-      '<label class="task-plat-opt" data-platform="' + id + '" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;">' +
+      '<label class="task-type-opt" data-platform="' + id + '">' +
         '<input type="radio" name="task-platform" value="' + id + '" style="display:none;">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:' + p.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="' + p.icon + '" style="width:16px;height:16px;"></i></div>' +
-        '<div style="flex:1;font-weight:700;font-size:.82rem;">' + p.name + '</div>' +
-        '<i data-lucide="circle" class="plat-check" style="width:18px;height:18px;color:#cbd5e1;"></i>' +
+        '<div class="task-icon" style="background:' + p.color + ';color:#fff;"><i data-lucide="' + p.icon + '"></i></div>' +
+        '<div class="task-body"><div class="task-label">' + p.name + '</div></div>' +
+        '<i data-lucide="circle" class="plat-check type-check"></i>' +
       '</label>'
     ).join('');
 
@@ -244,10 +321,10 @@ window.KR = window.KR || {};
       '<div class="modal-card modal-card-md">' +
         '<div class="modal-head"><h3><i data-lucide="plus-circle"></i> Buat Tugas Baru</h3><button class="icon-btn" onclick="this.closest(\'.modal\').remove()"><i data-lucide="x"></i></button></div>' +
         '<div class="modal-body">' +
-          '<div class="field" style="margin-bottom:16px;"><label style="font-weight:900;color:#0f172a;font-size:.8rem;">1. Pilih Tipe Tugas <span class="req">*</span></label><div id="ct-type-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + typeOptions + '</div></div>' +
+          '<div class="field" style="margin-bottom:16px;"><label style="font-weight:900;color:#0f172a;font-size:.8rem;">1. Pilih Tipe Tugas <span class="req">*</span></label><div id="ct-type-list" class="task-type-grid">' + typeOptions + '</div></div>' +
           '<div class="field"><label>Judul Tugas <span class="req">*</span></label><input id="ct-title" class="input" placeholder="Contoh: Follow TikTok @tokosaya"></div>' +
           '<div class="field"><label>Deskripsi (opsional)</label><textarea id="ct-desc" class="textarea" rows="2" placeholder="Instruksi tambahan untuk customer"></textarea></div>' +
-          '<div class="field" id="ct-platform-wrap" style="display:none;margin-bottom:16px;"><label>Platform <span class="req">*</span></label><div id="ct-platform-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + platformOptions + '</div></div>' +
+          '<div class="field" id="ct-platform-wrap" style="display:none;margin-bottom:16px;"><label>Platform <span class="req">*</span></label><div id="ct-platform-list" class="task-type-grid">' + platformOptions + '</div></div>' +
           '<div class="field" id="ct-target-wrap"><label id="ct-target-label">Target / Username <span class="req">*</span></label><input id="ct-target" class="input" placeholder="@username"></div>' +
           '<div id="ct-extra-fields"></div>' +
           '<div class="field-grid" style="margin-top:12px;">' +
@@ -264,11 +341,11 @@ window.KR = window.KR || {};
     document.body.appendChild(modal);
     if (window.lucide) lucide.createIcons();
 
-    modal.querySelectorAll('.task-type-opt').forEach(opt => {
+    modal.querySelectorAll('.task-type-opt[data-type]').forEach(opt => {
       opt.addEventListener('click', () => {
         const typeId = opt.dataset.type;
         window.__newTaskType = typeId;
-        modal.querySelectorAll('.task-type-opt').forEach(o => {
+        modal.querySelectorAll('.task-type-opt[data-type]').forEach(o => {
           const sel = o.dataset.type === typeId;
           o.style.borderColor = sel ? '#10b981' : '#e2e8f0';
           o.style.background = sel ? '#ecfdf5' : '#fff';
@@ -280,11 +357,11 @@ window.KR = window.KR || {};
       });
     });
 
-    modal.querySelectorAll('.task-plat-opt').forEach(opt => {
+    modal.querySelectorAll('.task-type-opt[data-platform]').forEach(opt => {
       opt.addEventListener('click', () => {
         const platId = opt.dataset.platform;
         window.__newTaskPlatform = platId;
-        modal.querySelectorAll('.task-plat-opt').forEach(o => {
+        modal.querySelectorAll('.task-type-opt[data-platform]').forEach(o => {
           const sel = o.dataset.platform === platId;
           o.style.borderColor = sel ? '#10b981' : '#e2e8f0';
           o.style.background = sel ? '#ecfdf5' : '#fff';
@@ -401,7 +478,7 @@ window.KR = window.KR || {};
       if (window.lucide) lucide.createIcons();
     }
 
-    const firstType = modal.querySelector('.task-type-opt');
+    const firstType = modal.querySelector('.task-type-opt[data-type]');
     if (firstType) firstType.click();
   };
 
