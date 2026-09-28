@@ -1,7 +1,6 @@
 /* ==========================================
-   KasirKu — Seller Tasks Admin Module (v2)
-   Multi-type tasks: follow, like, comment, share, post,
-   subscribe, review_maps, review_app, watch, custom
+   KasirKu — Seller Tasks Admin Module (v3)
+   Multi-type tasks + Poster Upload untuk tipe Posting
    ========================================== */
 window.KR = window.KR || {};
 
@@ -25,7 +24,6 @@ window.KR = window.KR || {};
   })[c]);
   const parse = (d) => { if (typeof d === 'string') { try { return JSON.parse(d); } catch { return null; } } return d; };
 
-  /* ============ PLATFORMS (sosmed) ============ */
   const PLATFORMS = {
     tiktok:    { name: 'TikTok',      icon: 'music-2',        color: '#000000', placeholder: '@username' },
     instagram: { name: 'Instagram',   icon: 'camera',         color: '#E1306C', placeholder: '@username' },
@@ -34,11 +32,10 @@ window.KR = window.KR || {};
     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
   };
 
-  /* ============ TASK TYPES (10 tipe) ============ */
   const TASK_TYPES = {
     follow:      { label: 'Follow',       icon: 'user-plus',      color: '#000000', desc: 'Follow akun sosmed',              needsPlatform: true,  needsTarget: true,  customerLink: false },
     like:        { label: 'Like',         icon: 'thumbs-up',      color: '#E1306C', desc: 'Like postingan sosmed',           needsPlatform: true,  needsTarget: true,  customerLink: false },
-    comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', desc: 'Komentari postingan',             needsPlatform: true,  needsTarget: true,  customerLink: false, extra: 'comment_text' },
+    comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', desc: 'Komentari postingan',             needsPlatform: true,  needsTarget: true,  customerLink: false },
     share:       { label: 'Share',        icon: 'share-2',        color: '#10b981', desc: 'Share postingan',                 needsPlatform: true,  needsTarget: true,  customerLink: false },
     post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', desc: 'Buat postingan baru',             needsPlatform: true,  needsTarget: true,  customerLink: true,  extra: 'post_fields' },
     subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', desc: 'Subscribe channel YouTube',       needsPlatform: true,  needsTarget: true,  customerLink: false },
@@ -48,14 +45,14 @@ window.KR = window.KR || {};
     custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', desc: 'Tugas bebas apapun',              needsPlatform: false, needsTarget: false, customerLink: true },
   };
 
-  /* ============ EXTRA FIELDS per tipe ============ */
   const TYPE_EXTRA_FIELDS = {
     comment: [
       { key: 'comment_text', label: 'Teks Komentar Wajib', type: 'textarea', required: true, placeholder: 'Contoh: Menarik banget!' },
     ],
     post: [
-      { key: 'platform_name', label: 'Platform Posting', type: 'select', options: ['Facebook Grup', 'Facebook Page', 'Instagram Feed', 'Instagram Story', 'TikTok', 'Twitter/X'], required: true },
-      { key: 'caption_template', label: 'Template Caption (opsional)', type: 'textarea', placeholder: 'Teks yang harus dipakai customer...' },
+      { key: 'platform_name', label: 'Platform Target', type: 'select', options: ['Facebook Grup', 'Facebook Page', 'Instagram Feed', 'Instagram Story', 'TikTok', 'Twitter/X'], required: true },
+      { key: 'poster_image', label: 'Gambar Poster yang Harus Diposting', type: 'image_upload', required: true, helper: 'Customer wajib posting gambar ini. Ukuran ideal: 1080x1080 px.' },
+      { key: 'caption_template', label: 'Caption Wajib', type: 'textarea', required: true, placeholder: 'Teks lengkap yang harus dipakai customer saat posting...' },
       { key: 'required_hashtag', label: 'Hashtag Wajib (opsional)', type: 'text', placeholder: '#kasirku #promo' },
     ],
     review_maps: [
@@ -72,56 +69,20 @@ window.KR = window.KR || {};
     ],
   };
 
-  /* ============ HELPERS ============ */
   function _buildFilterTabs(fnName, currentFilter, options) {
-    const labels = {
-      pending:   'Pending',
-      verified:  'Verified',
-      approved:  'Approved',
-      rejected:  'Rejected',
-      done:      'Selesai',
-      cancelled: 'Dibatalkan',
-      all:       'Semua',
-    };
+    const labels = { pending: 'Pending', verified: 'Verified', approved: 'Approved', rejected: 'Rejected', done: 'Selesai', cancelled: 'Dibatalkan', all: 'Semua' };
     return '<div class="filter-tabs-row">' +
       options.map(s => {
         const isActive = currentFilter === s;
         const label = labels[s] || (s.charAt(0).toUpperCase() + s.slice(1));
-        return '<button type="button" onclick="' + fnName + '(\'' + s + '\')" ' +
-          'class="filter-tab-pill' + (isActive ? ' active' : '') + '">' +
-          label +
-        '</button>';
+        return '<button type="button" onclick="' + fnName + '(\'' + s + '\')" class="filter-tab-pill' + (isActive ? ' active' : '') + '">' + label + '</button>';
       }).join('') +
     '</div>';
   }
 
   function _buildProofThumb(url) {
-    return '<div style="' +
-      'margin-top:8px;' +
-      'padding:10px;' +
-      'background:#f8fafc;' +
-      'border:1.5px solid #e2e8f0;' +
-      'border-radius:12px;' +
-      'display:flex;' +
-      'justify-content:center;' +
-      'align-items:center;' +
-      'overflow:hidden;' +
-    '">' +
-      '<img src="' + esc(url) + '" ' +
-        'onclick="viewSocialProof(\'' + esc(url) + '\')" ' +
-        'style="' +
-          'max-width:100%;' +
-          'max-height:320px;' +
-          'width:auto;' +
-          'height:auto;' +
-          'object-fit:contain;' +
-          'border-radius:8px;' +
-          'cursor:zoom-in;' +
-          'background:#fff;' +
-          'display:block;' +
-        '" ' +
-        'alt="Bukti" ' +
-      '/>' +
+    return '<div style="margin-top:8px;padding:10px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;display:flex;justify-content:center;align-items:center;overflow:hidden;">' +
+      '<img src="' + esc(url) + '" onclick="viewSocialProof(\'' + esc(url) + '\')" style="max-width:100%;max-height:320px;width:auto;height:auto;object-fit:contain;border-radius:8px;cursor:zoom-in;background:#fff;display:block;" alt="Bukti" />' +
     '</div>';
   }
 
@@ -139,7 +100,6 @@ window.KR = window.KR || {};
   /* ============ PROOF VIEWER ============ */
   window.viewSocialProof = function (url) {
     if (!url) return KR.toast.error('Bukti tidak tersedia');
-
     const existing = document.getElementById('proof-viewer-modal');
     if (existing) existing.remove();
 
@@ -151,33 +111,17 @@ window.KR = window.KR || {};
       '<div class="modal-backdrop" onclick="closeProofViewer()"></div>' +
       '<div style="position:relative;z-index:1;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:12px;">' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;">' +
-          '<button onclick="closeProofViewer()" class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.95);color:#0f172a;">' +
-            '<i data-lucide="x"></i> Tutup' +
-          '</button>' +
-          '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm">' +
-            '<i data-lucide="external-link"></i> Buka di Tab Baru' +
-          '</a>' +
-          '<a href="' + esc(url) + '" download class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.95);color:#0f172a;">' +
-            '<i data-lucide="download"></i> Download' +
-          '</a>' +
+          '<button onclick="closeProofViewer()" class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.95);color:#0f172a;"><i data-lucide="x"></i> Tutup</button>' +
+          '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm"><i data-lucide="external-link"></i> Buka di Tab Baru</a>' +
+          '<a href="' + esc(url) + '" download class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.95);color:#0f172a;"><i data-lucide="download"></i> Download</a>' +
         '</div>' +
-        '<img src="' + esc(url) + '" ' +
-          'style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff;" ' +
-          'onerror="this.style.display=&quot;none&quot;; this.nextElementSibling.style.display=&quot;block&quot;;">' +
-        '<div style="display:none;padding:40px;background:#fff;border-radius:12px;text-align:center;color:#991b1b;max-width:400px;">' +
-          'Gambar gagal dimuat. Coba buka di tab baru atau download.' +
-        '</div>' +
+        '<img src="' + esc(url) + '" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff;" onerror="this.style.display=&quot;none&quot;; this.nextElementSibling.style.display=&quot;block&quot;;">' +
+        '<div style="display:none;padding:40px;background:#fff;border-radius:12px;text-align:center;color:#991b1b;max-width:400px;">Gambar gagal dimuat.</div>' +
       '</div>';
 
     document.body.appendChild(modal);
     if (window.lucide) lucide.createIcons();
-
-    const escHandler = (e) => {
-      if (e.key === 'Escape') {
-        closeProofViewer();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
+    const escHandler = (e) => { if (e.key === 'Escape') { closeProofViewer(); document.removeEventListener('keydown', escHandler); } };
     document.addEventListener('keydown', escHandler);
   };
 
@@ -190,18 +134,11 @@ window.KR = window.KR || {};
   async function loadTasks() {
     try {
       const uid = await getUid();
-      const { data, error } = await KR.sb.client
-        .from('reward_tasks')
-        .select('*')
-        .eq('seller_id', uid)
-        .order('created_at', { ascending: false });
+      const { data, error } = await KR.sb.client.from('reward_tasks').select('*').eq('seller_id', uid).order('created_at', { ascending: false });
       if (error) throw error;
       tasks = data || [];
       renderTasks();
-    } catch (e) {
-      console.error(e);
-      KR.toast.error('Gagal memuat tugas');
-    }
+    } catch (e) { console.error(e); KR.toast.error('Gagal memuat tugas'); }
   }
 
   /* ============ TASKS: RENDER ============ */
@@ -212,21 +149,16 @@ window.KR = window.KR || {};
     if (!el) return;
 
     if (countEl) countEl.textContent = tasks.length + ' tugas';
-
     const active = tasks.filter(t => t.is_active).length;
     const inactive = tasks.filter(t => !t.is_active).length;
     const totalSubs = tasks.reduce((s, t) => s + (t.current_completions || 0), 0);
 
     if (statsEl) {
       statsEl.innerHTML =
-        '<div class="order-stat clickable ' + (taskFilter === 'all' ? 'active' : '') + '" onclick="setTaskFilter(\'all\')">' +
-          '<div class="order-stat-label">Total</div><div class="order-stat-value">' + tasks.length + '</div></div>' +
-        '<div class="order-stat clickable ' + (taskFilter === 'active' ? 'active' : '') + '" onclick="setTaskFilter(\'active\')">' +
-          '<div class="order-stat-label">Aktif</div><div class="order-stat-value done">' + active + '</div></div>' +
-        '<div class="order-stat clickable ' + (taskFilter === 'inactive' ? 'active' : '') + '" onclick="setTaskFilter(\'inactive\')">' +
-          '<div class="order-stat-label">Nonaktif</div><div class="order-stat-value pending">' + inactive + '</div></div>' +
-        '<div class="order-stat">' +
-          '<div class="order-stat-label">Dikerjakan</div><div class="order-stat-value verified">' + totalSubs + '</div></div>';
+        '<div class="order-stat clickable ' + (taskFilter === 'all' ? 'active' : '') + '" onclick="setTaskFilter(\'all\')"><div class="order-stat-label">Total</div><div class="order-stat-value">' + tasks.length + '</div></div>' +
+        '<div class="order-stat clickable ' + (taskFilter === 'active' ? 'active' : '') + '" onclick="setTaskFilter(\'active\')"><div class="order-stat-label">Aktif</div><div class="order-stat-value done">' + active + '</div></div>' +
+        '<div class="order-stat clickable ' + (taskFilter === 'inactive' ? 'active' : '') + '" onclick="setTaskFilter(\'inactive\')"><div class="order-stat-label">Nonaktif</div><div class="order-stat-value pending">' + inactive + '</div></div>' +
+        '<div class="order-stat"><div class="order-stat-label">Dikerjakan</div><div class="order-stat-value verified">' + totalSubs + '</div></div>';
     }
 
     let filtered = tasks;
@@ -242,10 +174,13 @@ window.KR = window.KR || {};
     el.innerHTML = filtered.map(t => {
       const type = t.task_type || 'follow';
       const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
+      const meta = t.task_meta || {};
       const plat = PLATFORMS[t.platform] || { name: t.platform || 'Custom', icon: cfg.icon, color: cfg.color };
-      const progress = t.max_completions > 0
-        ? t.current_completions + '/' + t.max_completions + ' slot'
-        : t.current_completions + ' selesai';
+      const progress = t.max_completions > 0 ? t.current_completions + '/' + t.max_completions + ' slot' : t.current_completions + ' selesai';
+
+      const posterThumb = (type === 'post' && meta.poster_image_url)
+        ? '<div style="margin-top:8px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;background:#f8fafc;max-width:120px;"><img src="' + esc(meta.poster_image_url) + '" style="width:100%;height:auto;display:block;" /></div>'
+        : '';
 
       return '<div class="customer-card">' +
         '<div style="width:52px;height:52px;border-radius:14px;background:' + cfg.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
@@ -261,12 +196,11 @@ window.KR = window.KR || {};
             '<div><strong>' + fmt(t.reward_amount) + '</strong> / tugas</div>' +
             '<div>' + progress + '</div>' +
           '</div>' +
+          posterThumb +
         '</div>' +
         '<div class="customer-actions">' +
-          '<button class="icon-btn" onclick="toggleTask(\'' + t.id + '\', ' + !t.is_active + ')" title="' + (t.is_active ? 'Nonaktifkan' : 'Aktifkan') + '">' +
-            '<i data-lucide="' + (t.is_active ? 'eye-off' : 'eye') + '"></i></button>' +
-          '<button class="icon-btn-danger" onclick="deleteTask(\'' + t.id + '\')" title="Hapus">' +
-            '<i data-lucide="trash-2"></i></button>' +
+          '<button class="icon-btn" onclick="toggleTask(\'' + t.id + '\', ' + !t.is_active + ')" title="' + (t.is_active ? 'Nonaktifkan' : 'Aktifkan') + '"><i data-lucide="' + (t.is_active ? 'eye-off' : 'eye') + '"></i></button>' +
+          '<button class="icon-btn-danger" onclick="deleteTask(\'' + t.id + '\')" title="Hapus"><i data-lucide="trash-2"></i></button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -280,34 +214,23 @@ window.KR = window.KR || {};
     const existing = $('create-task-modal');
     if (existing) existing.remove();
 
-    // Radio pilihan tipe
+    window.__posterData = null;
+    window.__newTaskType = null;
+    window.__newTaskPlatform = null;
+
     const typeOptions = Object.entries(TASK_TYPES).map(([id, t]) =>
-      '<label class="task-type-opt" data-type="' + id + '" style="' +
-        'display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;' +
-        'border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;margin-bottom:8px;' +
-      '">' +
+      '<label class="task-type-opt" data-type="' + id + '" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;margin-bottom:8px;">' +
         '<input type="radio" name="task-type" value="' + id + '" style="display:none;">' +
-        '<div style="width:40px;height:40px;border-radius:11px;background:' + t.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="' + t.icon + '" style="width:18px;height:18px;"></i>' +
-        '</div>' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="font-weight:800;font-size:.88rem;color:#0f172a;">' + t.label + '</div>' +
-          '<div style="font-size:.72rem;color:#64748b;margin-top:2px;">' + t.desc + '</div>' +
-        '</div>' +
+        '<div style="width:40px;height:40px;border-radius:11px;background:' + t.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="' + t.icon + '" style="width:18px;height:18px;"></i></div>' +
+        '<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:.88rem;color:#0f172a;">' + t.label + '</div><div style="font-size:.72rem;color:#64748b;margin-top:2px;">' + t.desc + '</div></div>' +
         '<i data-lucide="circle" class="type-check" style="width:20px;height:20px;color:#cbd5e1;"></i>' +
       '</label>'
     ).join('');
 
-    // Radio pilihan platform (untuk tipe sosmed)
     const platformOptions = Object.entries(PLATFORMS).map(([id, p]) =>
-      '<label class="task-plat-opt" data-platform="' + id + '" style="' +
-        'display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;' +
-        'border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;' +
-      '">' +
+      '<label class="task-plat-opt" data-platform="' + id + '" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;">' +
         '<input type="radio" name="task-platform" value="' + id + '" style="display:none;">' +
-        '<div style="width:32px;height:32px;border-radius:9px;background:' + p.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="' + p.icon + '" style="width:16px;height:16px;"></i>' +
-        '</div>' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:' + p.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="' + p.icon + '" style="width:16px;height:16px;"></i></div>' +
         '<div style="flex:1;font-weight:700;font-size:.82rem;">' + p.name + '</div>' +
         '<i data-lucide="circle" class="plat-check" style="width:18px;height:18px;color:#cbd5e1;"></i>' +
       '</label>'
@@ -319,41 +242,18 @@ window.KR = window.KR || {};
     modal.innerHTML =
       '<div class="modal-backdrop" onclick="this.parentNode.remove()"></div>' +
       '<div class="modal-card modal-card-md">' +
-        '<div class="modal-head">' +
-          '<h3><i data-lucide="plus-circle"></i> Buat Tugas Baru</h3>' +
-          '<button class="icon-btn" onclick="this.closest(\'.modal\').remove()"><i data-lucide="x"></i></button>' +
-        '</div>' +
+        '<div class="modal-head"><h3><i data-lucide="plus-circle"></i> Buat Tugas Baru</h3><button class="icon-btn" onclick="this.closest(\'.modal\').remove()"><i data-lucide="x"></i></button></div>' +
         '<div class="modal-body">' +
-
-          '<div class="field" style="margin-bottom:16px;">' +
-            '<label style="font-weight:900;color:#0f172a;font-size:.8rem;">1. Pilih Tipe Tugas <span class="req">*</span></label>' +
-            '<div id="ct-type-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + typeOptions + '</div>' +
-          '</div>' +
-
-          '<div class="field"><label>Judul Tugas <span class="req">*</span></label>' +
-            '<input id="ct-title" class="input" placeholder="Contoh: Follow TikTok @tokosaya"></div>' +
-          '<div class="field"><label>Deskripsi (opsional)</label>' +
-            '<textarea id="ct-desc" class="textarea" rows="2" placeholder="Instruksi tambahan untuk customer"></textarea></div>' +
-
-          '<div class="field" id="ct-platform-wrap" style="display:none;margin-bottom:16px;">' +
-            '<label>Platform <span class="req">*</span></label>' +
-            '<div id="ct-platform-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + platformOptions + '</div>' +
-          '</div>' +
-
-          '<div class="field" id="ct-target-wrap">' +
-            '<label id="ct-target-label">Target / Username <span class="req">*</span></label>' +
-            '<input id="ct-target" class="input" placeholder="@username">' +
-          '</div>' +
-
+          '<div class="field" style="margin-bottom:16px;"><label style="font-weight:900;color:#0f172a;font-size:.8rem;">1. Pilih Tipe Tugas <span class="req">*</span></label><div id="ct-type-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + typeOptions + '</div></div>' +
+          '<div class="field"><label>Judul Tugas <span class="req">*</span></label><input id="ct-title" class="input" placeholder="Contoh: Follow TikTok @tokosaya"></div>' +
+          '<div class="field"><label>Deskripsi (opsional)</label><textarea id="ct-desc" class="textarea" rows="2" placeholder="Instruksi tambahan untuk customer"></textarea></div>' +
+          '<div class="field" id="ct-platform-wrap" style="display:none;margin-bottom:16px;"><label>Platform <span class="req">*</span></label><div id="ct-platform-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + platformOptions + '</div></div>' +
+          '<div class="field" id="ct-target-wrap"><label id="ct-target-label">Target / Username <span class="req">*</span></label><input id="ct-target" class="input" placeholder="@username"></div>' +
           '<div id="ct-extra-fields"></div>' +
-
           '<div class="field-grid" style="margin-top:12px;">' +
-            '<div class="field"><label>Reward (Rp) <span class="req">*</span></label>' +
-              '<input id="ct-reward" type="number" class="input" value="5000" min="1"></div>' +
-            '<div class="field"><label>Kuota (0 = unlimited)</label>' +
-              '<input id="ct-max" type="number" class="input" value="0" min="0"></div>' +
+            '<div class="field"><label>Reward (Rp) <span class="req">*</span></label><input id="ct-reward" type="number" class="input" value="5000" min="1"></div>' +
+            '<div class="field"><label>Kuota (0 = unlimited)</label><input id="ct-max" type="number" class="input" value="0" min="0"></div>' +
           '</div>' +
-
         '</div>' +
         '<div class="modal-foot">' +
           '<button class="btn btn-ghost" onclick="this.closest(\'.modal\').remove()">Batal</button>' +
@@ -364,10 +264,6 @@ window.KR = window.KR || {};
     document.body.appendChild(modal);
     if (window.lucide) lucide.createIcons();
 
-    window.__newTaskType = null;
-    window.__newTaskPlatform = null;
-
-    // Handler pilih tipe
     modal.querySelectorAll('.task-type-opt').forEach(opt => {
       opt.addEventListener('click', () => {
         const typeId = opt.dataset.type;
@@ -384,7 +280,6 @@ window.KR = window.KR || {};
       });
     });
 
-    // Handler pilih platform
     modal.querySelectorAll('.task-plat-opt').forEach(opt => {
       opt.addEventListener('click', () => {
         const platId = opt.dataset.platform;
@@ -400,7 +295,27 @@ window.KR = window.KR || {};
       });
     });
 
-    // Update dynamic fields saat pilih tipe
+    function renderPosterArea() {
+      const area = $('ct-poster-area');
+      if (!area) return;
+      if (window.__posterData) {
+        area.innerHTML = '<div style="position:relative;border-radius:12px;overflow:hidden;border:2px solid #10b981;">' +
+          '<img src="' + window.__posterData + '" style="width:100%;max-height:280px;object-fit:contain;background:#f8fafc;display:block;">' +
+          '<button type="button" onclick="window.__posterData=null; window.__renderPosterArea && window.__renderPosterArea();" style="position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:8px;background:rgba(15,23,42,.8);color:#fff;border:none;cursor:pointer;font-size:18px;line-height:1;">×</button>' +
+          '<div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:linear-gradient(90deg,#10b981,#059669);color:#fff;font-size:.7rem;font-weight:800;display:flex;align-items:center;gap:6px;"><i data-lucide="check-circle" style="width:14px;height:14px;"></i> Gambar siap</div>' +
+        '</div>';
+        if (window.lucide) lucide.createIcons();
+      } else {
+        area.innerHTML = '<button type="button" onclick="document.getElementById(\'ct-poster-input\').click()" style="width:100%;padding:26px 16px;border-radius:12px;border:2px dashed #cbd5e1;background:#f8fafc;color:#64748b;font-family:inherit;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;">' +
+          '<i data-lucide="image-plus" style="width:28px;height:28px;"></i>' +
+          '<span style="font-size:.84rem;">Upload Gambar Poster</span>' +
+          '<span style="font-size:.68rem;opacity:.7;font-weight:600;">JPG / PNG, max 5MB</span>' +
+        '</button>';
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+    window.__renderPosterArea = renderPosterArea;
+
     function updateDynamicFields(typeId) {
       const cfg = TASK_TYPES[typeId];
       if (!cfg) return;
@@ -440,19 +355,22 @@ window.KR = window.KR || {};
       }
 
       extraEl.innerHTML = '<div style="margin-top:12px;padding:14px;border-radius:12px;background:#f8fafc;border:1.5px dashed #cbd5e1;">' +
-        '<div style="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:10px;">' +
-          'Pengaturan Khusus ' + cfg.label +
-        '</div>' +
+        '<div style="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:10px;">Pengaturan Khusus ' + cfg.label + '</div>' +
         extraDef.map(f => {
+          if (f.type === 'image_upload') {
+            return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
+              '<input type="file" accept="image/*" id="ct-poster-input" style="display:none;">' +
+              '<div id="ct-poster-area"></div>' +
+              (f.helper ? '<p style="font-size:.7rem;color:#64748b;margin-top:6px;line-height:1.4;">' + f.helper + '</p>' : '') +
+            '</div>';
+          }
           if (f.type === 'textarea') {
             return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
-              '<textarea class="textarea" rows="2" data-extra-key="' + f.key + '" placeholder="' + (f.placeholder || '') + '">' + (f.default || '') + '</textarea></div>';
+              '<textarea class="textarea" rows="3" data-extra-key="' + f.key + '" placeholder="' + (f.placeholder || '') + '">' + (f.default || '') + '</textarea></div>';
           }
           if (f.type === 'select') {
             return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
-              '<select class="select" data-extra-key="' + f.key + '">' +
-                f.options.map(o => '<option value="' + o + '"' + (f.default === o ? ' selected' : '') + '>' + o + '</option>').join('') +
-              '</select></div>';
+              '<select class="select" data-extra-key="' + f.key + '">' + f.options.map(o => '<option value="' + o + '"' + (f.default === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select></div>';
           }
           if (f.type === 'number') {
             return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
@@ -462,10 +380,27 @@ window.KR = window.KR || {};
             '<input type="text" class="input" data-extra-key="' + f.key + '" placeholder="' + (f.placeholder || '') + '" value="' + (f.default || '') + '"></div>';
         }).join('') +
       '</div>';
+
+      const posterInput = $('ct-poster-input');
+      if (posterInput) {
+        posterInput.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          if (!file) return;
+          if (file.size > 5 * 1024 * 1024) return KR.toast.error('File max 5MB');
+          try {
+            const data = await compressImage(file, 800, 0.82);
+            window.__posterData = data;
+            renderPosterArea();
+          } catch (err) {
+            KR.toast.error('Gagal proses gambar: ' + err.message);
+          }
+        });
+        renderPosterArea();
+      }
       if (window.lucide) lucide.createIcons();
     }
 
-    // Default: pilih tipe pertama (follow)
     const firstType = modal.querySelector('.task-type-opt');
     if (firstType) firstType.click();
   };
@@ -500,10 +435,29 @@ window.KR = window.KR || {};
       if (val) taskMeta[key] = val;
     }
 
+    if (taskType === 'post') {
+      if (!window.__posterData) return KR.toast.error('Upload gambar poster dulu');
+      showLoading('Uploading poster...');
+      try {
+        const uid = await getUid();
+        const blob = await (await fetch(window.__posterData)).blob();
+        const filename = 'task-posters/' + uid + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
+        const { error: upErr } = await KR.sb.client.storage.from('payment-proofs').upload(filename, blob, {
+          contentType: 'image/jpeg', cacheControl: '3600', upsert: false,
+        });
+        if (upErr) throw upErr;
+        const { data: urlData } = KR.sb.client.storage.from('payment-proofs').getPublicUrl(filename);
+        taskMeta.poster_image_url = urlData.publicUrl;
+      } catch (e) {
+        hideLoading();
+        console.error('[Upload poster]', e);
+        return KR.toast.error('Upload poster gagal: ' + (e.message || 'Unknown'));
+      }
+    }
+
     showLoading('Membuat tugas...');
     try {
       const uid = await getUid();
-
       const insertData = {
         seller_id: uid,
         title: title,
@@ -525,6 +479,7 @@ window.KR = window.KR || {};
 
       KR.toast.success('Tugas berhasil dibuat');
       $('create-task-modal')?.remove();
+      window.__posterData = null;
       await loadTasks();
     } catch (e) {
       console.error('[CreateTask]', e);
@@ -539,18 +494,11 @@ window.KR = window.KR || {};
     showLoading('Memperbarui...');
     try {
       const uid = await getUid();
-      await rpc('seller_task_toggle', {
-        p_task_id: id,
-        p_seller_id: uid,
-        p_is_active: activate,
-      });
+      await rpc('seller_task_toggle', { p_task_id: id, p_seller_id: uid, p_is_active: activate });
       KR.toast.success(activate ? 'Tugas diaktifkan' : 'Tugas dinonaktifkan');
       await loadTasks();
-    } catch (e) {
-      KR.toast.error('Gagal: ' + e.message);
-    } finally {
-      hideLoading();
-    }
+    } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+    finally { hideLoading(); }
   };
 
   window.deleteTask = function (id) {
@@ -561,11 +509,8 @@ window.KR = window.KR || {};
         await rpc('seller_task_delete', { p_task_id: id, p_seller_id: uid });
         KR.toast.success('Tugas dihapus');
         await loadTasks();
-      } catch (e) {
-        KR.toast.error('Gagal: ' + e.message);
-      } finally {
-        hideLoading();
-      }
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
     });
   };
 
@@ -573,16 +518,10 @@ window.KR = window.KR || {};
   async function loadSocials() {
     try {
       const uid = await getUid();
-      const data = await rpc('seller_social_list', {
-        p_seller_id: uid,
-        p_status: socialFilter,
-      });
+      const data = await rpc('seller_social_list', { p_seller_id: uid, p_status: socialFilter });
       socials = (data || []).map(parse).filter(Boolean);
       renderSocials();
-    } catch (e) {
-      console.error(e);
-      KR.toast.error('Gagal memuat akun sosmed');
-    }
+    } catch (e) { console.error(e); KR.toast.error('Gagal memuat akun sosmed'); }
   }
 
   function renderSocials() {
@@ -591,7 +530,6 @@ window.KR = window.KR || {};
     if (!el) return;
 
     if (countEl) countEl.textContent = socials.length + ' akun';
-
     const tabs = _buildFilterTabs('setSocialFilter', socialFilter, ['pending', 'verified', 'rejected', 'all']);
 
     if (!socials.length) {
@@ -608,20 +546,15 @@ window.KR = window.KR || {};
         rejected: '<span class="customer-badge" style="background:#fee2e2;color:#991b1b;">Rejected</span>',
       }[s.status] || '';
 
-      const proofThumb = s.proof_url
-        ? _buildProofThumb(s.proof_url)
-        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">Bukti tidak ada</div>';
+      const proofThumb = s.proof_url ? _buildProofThumb(s.proof_url) : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">Bukti tidak ada</div>';
 
       const actions = s.status === 'pending'
-        ? '<button class="btn btn-primary btn-sm" onclick="verifySocial(\'' + s.id + '\', true)"><i data-lucide="check"></i> Setujui</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="verifySocial(\'' + s.id + '\', false)"><i data-lucide="x"></i> Tolak</button>'
+        ? '<button class="btn btn-primary btn-sm" onclick="verifySocial(\'' + s.id + '\', true)"><i data-lucide="check"></i> Setujui</button><button class="btn btn-danger btn-sm" onclick="verifySocial(\'' + s.id + '\', false)"><i data-lucide="x"></i> Tolak</button>'
         : '<button class="btn btn-secondary btn-sm" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')"><i data-lucide="image"></i> Lihat Besar</button>';
 
       return '<div class="customer-card" style="flex-direction:column;align-items:stretch;">' +
         '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-          '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-            '<i data-lucide="' + plat.icon + '" class="w-5 h-5"></i>' +
-          '</div>' +
+          '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="' + plat.icon + '" class="w-5 h-5"></i></div>' +
           '<div class="customer-body" style="flex:1;min-width:0;">' +
             '<div class="customer-name">' + esc(s.username) + ' ' + statusBadge + '</div>' +
             '<div class="customer-username">' + plat.name + ' - Customer: ' + esc(s.customer_name || '-') + '</div>' +
@@ -645,19 +578,11 @@ window.KR = window.KR || {};
       showLoading('Memverifikasi...');
       try {
         const uid = await getUid();
-        await rpc('seller_social_verify', {
-          p_social_id: id,
-          p_seller_id: uid,
-          p_approve: approve,
-          p_reason: reason || null,
-        });
+        await rpc('seller_social_verify', { p_social_id: id, p_seller_id: uid, p_approve: approve, p_reason: reason || null });
         KR.toast.success(approve ? 'Akun diverifikasi' : 'Akun ditolak');
         await loadSocials();
-      } catch (e) {
-        KR.toast.error('Gagal: ' + e.message);
-      } finally {
-        hideLoading();
-      }
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
     };
 
     if (approve) {
@@ -673,16 +598,10 @@ window.KR = window.KR || {};
   async function loadSubmissions() {
     try {
       const uid = await getUid();
-      const data = await rpc('seller_submissions_list', {
-        p_seller_id: uid,
-        p_status: submissionFilter,
-      });
+      const data = await rpc('seller_submissions_list', { p_seller_id: uid, p_status: submissionFilter });
       submissions = (data || []).map(parse).filter(Boolean);
       renderSubmissions();
-    } catch (e) {
-      console.error(e);
-      KR.toast.error('Gagal memuat bukti');
-    }
+    } catch (e) { console.error(e); KR.toast.error('Gagal memuat bukti'); }
   }
 
   function renderSubmissions() {
@@ -691,7 +610,6 @@ window.KR = window.KR || {};
     if (!el) return;
 
     if (countEl) countEl.textContent = submissions.length + ' submission';
-
     const tabs = _buildFilterTabs('setSubmissionFilter', submissionFilter, ['pending', 'approved', 'rejected', 'all']);
 
     if (!submissions.length) {
@@ -703,11 +621,8 @@ window.KR = window.KR || {};
     el.innerHTML = tabs + '<div class="space-y-3">' + submissions.map(s => {
       const type = s.task_type || 'follow';
       const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
-      const plat = PLATFORMS[s.platform] || { name: s.platform || cfg.label, icon: cfg.icon, color: cfg.color };
 
-      const proofThumb = s.proof_url
-        ? _buildProofThumb(s.proof_url)
-        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">Bukti tidak ada</div>';
+      const proofThumb = s.proof_url ? _buildProofThumb(s.proof_url) : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">Bukti tidak ada</div>';
 
       const proofLinkHtml = s.proof_link
         ? '<div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:.75rem;">' +
@@ -717,24 +632,16 @@ window.KR = window.KR || {};
         : (cfg.customerLink ? '<div style="margin-top:10px;padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:.72rem;color:#92400e;">Link bukti belum dikirim customer</div>' : '');
 
       const actions = s.status === 'pending'
-        ? '<button class="btn btn-primary btn-sm" onclick="verifySubmission(\'' + s.id + '\', true)"><i data-lucide="check"></i> Approve +' + fmt(s.reward_amount) + '</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="verifySubmission(\'' + s.id + '\', false)"><i data-lucide="x"></i> Tolak</button>'
+        ? '<button class="btn btn-primary btn-sm" onclick="verifySubmission(\'' + s.id + '\', true)"><i data-lucide="check"></i> Approve +' + fmt(s.reward_amount) + '</button><button class="btn btn-danger btn-sm" onclick="verifySubmission(\'' + s.id + '\', false)"><i data-lucide="x"></i> Tolak</button>'
         : '<button class="btn btn-secondary btn-sm" onclick="viewSocialProof(\'' + esc(s.proof_url) + '\')"><i data-lucide="image"></i> Lihat Besar</button>';
 
       return '<div class="customer-card" style="flex-direction:column;align-items:stretch;">' +
         '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-          '<div style="width:48px;height:48px;border-radius:12px;background:' + cfg.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-            '<i data-lucide="' + cfg.icon + '" class="w-5 h-5"></i>' +
-          '</div>' +
+          '<div style="width:48px;height:48px;border-radius:12px;background:' + cfg.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="' + cfg.icon + '" class="w-5 h-5"></i></div>' +
           '<div class="customer-body" style="flex:1;min-width:0;">' +
-            '<div class="customer-name">' + esc(s.task_title) +
-              '<span class="customer-badge" style="background:' + cfg.color + '15;color:' + cfg.color + ';border:1px solid ' + cfg.color + '40;">' + cfg.label + '</span>' +
-            '</div>' +
+            '<div class="customer-name">' + esc(s.task_title) + '<span class="customer-badge" style="background:' + cfg.color + '15;color:' + cfg.color + ';border:1px solid ' + cfg.color + '40;">' + cfg.label + '</span></div>' +
             '<div class="customer-username">Target: ' + esc(s.target_username || '-') + '</div>' +
-            '<div class="customer-stats">' +
-              '<div><strong>' + esc(s.customer_name || '-') + '</strong></div>' +
-              '<div>' + fmt(s.reward_amount) + '</div>' +
-            '</div>' +
+            '<div class="customer-stats"><div><strong>' + esc(s.customer_name || '-') + '</strong></div><div>' + fmt(s.reward_amount) + '</div></div>' +
             (s.notes ? '<div style="font-size:.75rem;color:#64748b;margin-top:4px;">Catatan: ' + esc(s.notes) + '</div>' : '') +
           '</div>' +
           '<div class="customer-actions">' + actions + '</div>' +
@@ -756,19 +663,11 @@ window.KR = window.KR || {};
       showLoading('Memverifikasi...');
       try {
         const uid = await getUid();
-        await rpc('seller_submission_verify', {
-          p_submission_id: id,
-          p_seller_id: uid,
-          p_approve: approve,
-          p_reason: reason || null,
-        });
+        await rpc('seller_submission_verify', { p_submission_id: id, p_seller_id: uid, p_approve: approve, p_reason: reason || null });
         KR.toast.success(approve ? 'Disetujui - saldo customer bertambah' : 'Bukti ditolak');
         await loadSubmissions();
-      } catch (e) {
-        KR.toast.error('Gagal: ' + e.message);
-      } finally {
-        hideLoading();
-      }
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
     };
 
     if (approve) {
@@ -784,16 +683,10 @@ window.KR = window.KR || {};
   async function loadWithdrawals() {
     try {
       const uid = await getUid();
-      const data = await rpc('seller_withdrawals_list', {
-        p_seller_id: uid,
-        p_status: withdrawalFilter,
-      });
+      const data = await rpc('seller_withdrawals_list', { p_seller_id: uid, p_status: withdrawalFilter });
       withdrawals = (data || []).map(parse).filter(Boolean);
       renderWithdrawals();
-    } catch (e) {
-      console.error(e);
-      KR.toast.error('Gagal memuat penarikan');
-    }
+    } catch (e) { console.error(e); KR.toast.error('Gagal memuat penarikan'); }
   }
 
   function renderWithdrawals() {
@@ -802,7 +695,6 @@ window.KR = window.KR || {};
     if (!el) return;
 
     if (countEl) countEl.textContent = withdrawals.length + ' penarikan';
-
     const tabs = _buildFilterTabs('setWithdrawalFilter', withdrawalFilter, ['pending', 'done', 'cancelled', 'all']);
 
     if (!withdrawals.length) {
@@ -819,21 +711,15 @@ window.KR = window.KR || {};
       }[w.status] || '';
 
       const actions = w.status === 'pending'
-        ? '<button class="btn btn-primary btn-sm" onclick="markWithdrawalDone(\'' + w.id + '\')"><i data-lucide="check"></i> Sudah Transfer</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="cancelWithdrawal(\'' + w.id + '\')"><i data-lucide="x"></i> Tolak</button>'
+        ? '<button class="btn btn-primary btn-sm" onclick="markWithdrawalDone(\'' + w.id + '\')"><i data-lucide="check"></i> Sudah Transfer</button><button class="btn btn-danger btn-sm" onclick="cancelWithdrawal(\'' + w.id + '\')"><i data-lucide="x"></i> Tolak</button>'
         : '<button class="btn btn-secondary btn-sm" onclick="waWithdrawal(\'' + esc(w.customer_phone || '') + '\')"><i data-lucide="message-circle"></i> WA</button>';
 
       return '<div class="customer-card">' +
-        '<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="banknote" class="w-5 h-5"></i>' +
-        '</div>' +
+        '<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;display:grid;place-items:center;flex-shrink:0;"><i data-lucide="banknote" class="w-5 h-5"></i></div>' +
         '<div class="customer-body">' +
           '<div class="customer-name">' + fmt(w.amount) + ' ' + statusBadge + '</div>' +
           '<div class="customer-username">' + esc(w.customer_name || '-') + ' - ' + esc(w.customer_phone || '') + '</div>' +
-          '<div class="customer-stats">' +
-            '<div><strong>' + esc(w.withdrawal_bank) + '</strong> ' + esc(w.withdrawal_account) + '</div>' +
-            '<div>a.n. ' + esc(w.withdrawal_holder) + '</div>' +
-          '</div>' +
+          '<div class="customer-stats"><div><strong>' + esc(w.withdrawal_bank) + '</strong> ' + esc(w.withdrawal_account) + '</div><div>a.n. ' + esc(w.withdrawal_holder) + '</div></div>' +
           '<div class="customer-timeline"><span>Diajukan: ' + new Date(w.created_at).toLocaleString('id-ID') + '</span></div>' +
         '</div>' +
         '<div class="customer-actions">' + actions + '</div>' +
@@ -859,11 +745,8 @@ window.KR = window.KR || {};
         await KR.sb.updateOnlineOrderStatus(id, 'done');
         KR.toast.success('Penarikan selesai');
         await loadWithdrawals();
-      } catch (e) {
-        KR.toast.error('Gagal: ' + e.message);
-      } finally {
-        hideLoading();
-      }
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
     });
   };
 
@@ -874,27 +757,18 @@ window.KR = window.KR || {};
         await KR.sb.updateOnlineOrderStatus(id, 'cancelled');
         KR.toast.success('Penarikan ditolak - saldo dikembalikan');
         await loadWithdrawals();
-      } catch (e) {
-        KR.toast.error('Gagal: ' + e.message);
-      } finally {
-        hideLoading();
-      }
+      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
+      finally { hideLoading(); }
     });
   };
 
-  /* ============ MAIN TAB SWITCHER ============ */
+  /* ============ MAIN TAB ============ */
   window.switchTaskTab = function (tab) {
     mainTab = tab;
-
-    document.querySelectorAll('[data-task-tab]').forEach(b => {
-      b.classList.toggle('active', b.dataset.taskTab === tab);
-    });
-
+    document.querySelectorAll('[data-task-tab]').forEach(b => { b.classList.toggle('active', b.dataset.taskTab === tab); });
     if (window.lucide) lucide.createIcons();
-
     const btnNew = $('create-task-btn');
     if (btnNew) btnNew.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
-
     if (tab === 'tasks') loadTasks();
     if (tab === 'socials') loadSocials();
     if (tab === 'submissions') loadSubmissions();
@@ -904,7 +778,6 @@ window.KR = window.KR || {};
   async function loadTaskTab(evt) {
     const btn = evt?.target?.closest('button') || document.getElementById('task-refresh-btn');
     const orig = btn ? btn.innerHTML : null;
-
     if (btn) {
       btn.disabled = true;
       btn.style.opacity = '.7';
@@ -912,17 +785,10 @@ window.KR = window.KR || {};
       btn.innerHTML = '<i data-lucide="loader-circle" style="animation:krSpin 1s linear infinite;"></i> Memuat...';
       if (window.lucide) lucide.createIcons();
     }
-
     try {
-      tasks = [];
-      socials = [];
-      submissions = [];
-      withdrawals = [];
-
+      tasks = []; socials = []; submissions = []; withdrawals = [];
       switchTaskTab(mainTab);
-
       await new Promise(r => setTimeout(r, 400));
-
       if (KR.toast) KR.toast.success('Data diperbarui');
     } catch (e) {
       console.error('[Refresh Tasks]', e);
@@ -939,7 +805,6 @@ window.KR = window.KR || {};
   }
   window.loadTaskTab = loadTaskTab;
 
-  /* ============ INIT ============ */
   window.addEventListener('kasirku:ready', () => {
     setTimeout(() => {
       if (KR.auth.isLoggedIn() && $('tasks-list')) loadTasks();
