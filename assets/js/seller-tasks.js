@@ -44,7 +44,7 @@ window.KR = window.KR || {};
     subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', desc: 'Subscribe channel YouTube',       needsPlatform: true,  needsTarget: true,  customerLink: false },
     review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', desc: 'Ulas tempat di Google Maps',      needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'maps_fields' },
     review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', desc: 'Ulas aplikasi di Play/App Store', needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'app_fields' },
-    watch:       { label: 'Tonton Video', icon: 'youtube',        color: '#FF0000', desc: 'Tonton video sampai selesai',     needsPlatform: false, needsTarget: true,  customerLink: false, extra: 'watch_fields' },
+    watch:       { label: 'Tonton Video', icon: 'monitor-play',   color: '#FF0000', desc: 'Tonton video sampai selesai',     needsPlatform: false, needsTarget: true,  customerLink: false, extra: 'watch_fields' },
     custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', desc: 'Tugas bebas apapun',              needsPlatform: false, needsTarget: false, customerLink: true },
   };
 
