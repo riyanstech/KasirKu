@@ -3,7 +3,7 @@
    Auto-update + Offline support
    v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v20-fav-gold-theme';
+const CACHE_VERSION = 'kasirku-v22-poster-posting';
 
 const ASSETS = [
   './',
