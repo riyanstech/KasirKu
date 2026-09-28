@@ -37,7 +37,7 @@
     subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', needsLink: false },
     review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', needsLink: true  },
     review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', needsLink: true  },
-    watch:       { label: 'Tonton Video', icon: 'youtube',        color: '#FF0000', needsLink: false },
+    watch:       { label: 'Tonton Video', icon: 'monitor-play',   color: '#FF0000', needsLink: false },
     custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', needsLink: true  },
   };
 
