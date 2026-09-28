@@ -3,7 +3,7 @@
    Auto-update + Offline support
    v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v26-target-fallback-dash';
+const CACHE_VERSION = 'kasirku-v27-fix-copy-download';
 
 const ASSETS = [
   './',
