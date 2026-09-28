@@ -3,7 +3,7 @@
    Auto-update + Offline support
    v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v14-fix-button-layout';
+const CACHE_VERSION = 'kasirku-v15-fix-order-css-path';
 
 const ASSETS = [
   './',
