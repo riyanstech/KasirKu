@@ -1,6 +1,7 @@
 /* ==========================================
-   KasirKu — Customer Tasks (v3)
-   Support 10 tipe + Poster preview + Caption copy
+   KasirKu — Customer Tasks (v4)
+   Support 10 tipe + Poster download + Caption copy
+   Fix: inline onclick removed, pakai event listener
    ========================================== */
 (function () {
   'use strict';
@@ -297,7 +298,7 @@
       posterThumb +
       '<div class="flex items-center justify-between gap-2 mt-3">' +
         '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg ' + statusBadge.bg + ' ' + statusBadge.text + ' text-[10px] font-extrabold uppercase tracking-wide"><i data-lucide="' + statusBadge.icon + '" class="w-3 h-3"></i>' + statusBadge.label + '</span>' +
-        (t.target_url ? '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="text-[11px] font-bold text-amber-600 hover:underline inline-flex items-center gap-1">Buka Link <i data-lucide="external-link" class="w-3 h-3"></i></a>' : '') +
+        (t.target_url && t.target_url !== '-' ? '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="text-[11px] font-bold text-amber-600 hover:underline inline-flex items-center gap-1">Buka Link <i data-lucide="external-link" class="w-3 h-3"></i></a>' : '') +
       '</div>' +
       actionBtn +
     '</div>';
@@ -319,6 +320,9 @@
 
     const stepsHtml = instr.steps.map(s => '<li>' + s + '</li>').join('');
 
+    // Poster + caption
+    const captionText = (meta.caption_template || '') + (meta.required_hashtag ? '\n\n' + meta.required_hashtag : '');
+
     const posterBox = (type === 'post' && meta.poster_image_url) ? `
       <div class="rounded-2xl border-2 border-violet-200 overflow-hidden">
         <div class="px-3 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-2">
@@ -326,14 +330,13 @@
           Gambar yang Harus Diposting
         </div>
         <img src="${esc(meta.poster_image_url)}" style="width:100%;max-height:280px;object-fit:contain;background:#f8fafc;display:block;">
-        <a href="${esc(meta.poster_image_url)}" download="poster.jpg" target="_blank" rel="noopener" class="w-full flex items-center justify-center gap-2 py-3 bg-violet-500 text-white font-extrabold text-xs hover:bg-violet-600 transition">
+        <button type="button" id="kr-download-poster-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:#8b5cf6;color:#fff;font-weight:800;font-size:.75rem;border:none;cursor:pointer;font-family:inherit;transition:background .2s;">
           <i data-lucide="download" class="w-3.5 h-3.5"></i>
           Download Gambar Poster
-        </a>
+        </button>
       </div>
     ` : '';
 
-    const captionText = (meta.caption_template || '') + (meta.required_hashtag ? '\n\n' + meta.required_hashtag : '');
     const captionBox = (type === 'post' && meta.caption_template) ? `
       <div class="rounded-2xl border-2 border-blue-200 overflow-hidden">
         <div class="px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-2">
@@ -341,7 +344,7 @@
           Caption Wajib
         </div>
         <div style="padding:12px;background:#eff6ff;font-size:.78rem;color:#1e3a8a;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${esc(captionText)}</div>
-        <button type="button" onclick="navigator.clipboard.writeText(${JSON.stringify(captionText)}).then(()=>window.__customerToast('Caption disalin!','success')).catch(()=>{})" class="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-500 text-white font-extrabold text-xs hover:bg-blue-600 transition">
+        <button type="button" id="kr-copy-caption-btn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:#3b82f6;color:#fff;font-weight:800;font-size:.75rem;border:none;cursor:pointer;font-family:inherit;transition:background .2s;">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i>
           Copy Caption
         </button>
@@ -379,7 +382,7 @@
               <ol class="space-y-2 text-xs text-amber-900 leading-relaxed list-decimal list-inside">
                 ${stepsHtml}
               </ol>
-              ${t.target_url ? '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> ' + instr.openLabel + '</a>' : ''}
+              ${t.target_url && t.target_url !== '-' ? '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> ' + instr.openLabel + '</a>' : ''}
             </div>
 
             <div>
@@ -414,6 +417,51 @@
       </div>
     `;
     document.body.appendChild(modal);
+
+    // ===== EVENT LISTENER: COPY CAPTION =====
+    const copyBtn = document.getElementById('kr-copy-caption-btn');
+    if (copyBtn && captionText) {
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(captionText)
+          .then(() => toast('Caption disalin!', 'success'))
+          .catch(() => toast('Gagal menyalin caption', 'error'));
+      });
+    }
+
+    // ===== EVENT LISTENER: DOWNLOAD POSTER =====
+    const downloadBtn = document.getElementById('kr-download-poster-btn');
+    if (downloadBtn && meta.poster_image_url) {
+      downloadBtn.addEventListener('click', async () => {
+        try {
+          downloadBtn.innerHTML = '<i data-lucide="loader-circle" style="width:14px;height:14px;animation:krSpin 1s linear infinite;"></i> Downloading...';
+          if (window.lucide) lucide.createIcons();
+          const res = await fetch(meta.poster_image_url);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'poster-kasirku-' + Date.now() + '.jpg';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          toast('Gambar berhasil didownload', 'success');
+          downloadBtn.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Downloaded';
+          if (window.lucide) lucide.createIcons();
+          setTimeout(() => {
+            downloadBtn.innerHTML = '<i data-lucide="download" class="w-3.5 h-3.5"></i> Download Gambar Poster';
+            if (window.lucide) lucide.createIcons();
+          }, 2000);
+        } catch (err) {
+          console.error('[Download]', err);
+          toast('Gagal download, membuka di tab baru...', 'warn');
+          window.open(meta.poster_image_url, '_blank');
+          downloadBtn.innerHTML = '<i data-lucide="download" class="w-3.5 h-3.5"></i> Download Gambar Poster';
+          if (window.lucide) lucide.createIcons();
+        }
+      });
+    }
+
     window.__taskProofData = null;
     renderProofArea();
     if (window.lucide) lucide.createIcons();
