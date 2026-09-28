@@ -547,7 +547,7 @@ window.KR = window.KR || {};
         description: desc || null,
         platform: cfg.needsPlatform ? platform : taskType,
         target_username: target || '-',
-        target_url: (cfg.needsTarget && target) ? target : null,
+        target_url: (cfg.needsTarget && target) ? target : '-',
         reward_amount: reward,
         max_completions: max,
         current_completions: 0,
