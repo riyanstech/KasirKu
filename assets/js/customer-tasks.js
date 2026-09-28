@@ -1,6 +1,7 @@
 /* ==========================================
-   KasirKu — Customer Tasks (Tugas Berhadiah)
-   Dipakai di order.html
+   KasirKu — Customer Tasks (v2)
+   Support 10 tipe tugas: follow, like, comment, share, post,
+   subscribe, review_maps, review_app, watch, custom
    ========================================== */
 (function () {
   'use strict';
@@ -10,7 +11,7 @@
     sb: null,
     tasks: [],
     social: [],
-    filter: 'all', // all | available | pending | approved
+    filter: 'all',
   };
 
   const $ = (id) => document.getElementById(id);
@@ -19,13 +20,26 @@
   })[c]);
   const fmt = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 
-   const PLATFORMS = {
-     tiktok:    { name: 'TikTok',      icon: 'music-2',      color: '#000000', placeholder: '@username' },
-     instagram: { name: 'Instagram',   icon: 'camera',       color: '#E1306C', placeholder: '@username' },
-     youtube:   { name: 'YouTube',     icon: 'play-circle',  color: '#FF0000', placeholder: '@channel' },
-     facebook:  { name: 'Facebook',    icon: 'thumbs-up',    color: '#1877F2', placeholder: 'username' },
-     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
-   };
+  const PLATFORMS = {
+    tiktok:    { name: 'TikTok',      icon: 'music-2',        color: '#000000', placeholder: '@username' },
+    instagram: { name: 'Instagram',   icon: 'camera',         color: '#E1306C', placeholder: '@username' },
+    youtube:   { name: 'YouTube',     icon: 'play-circle',    color: '#FF0000', placeholder: '@channel' },
+    facebook:  { name: 'Facebook',    icon: 'thumbs-up',      color: '#1877F2', placeholder: 'username' },
+    twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
+  };
+
+  const TASK_TYPES = {
+    follow:      { label: 'Follow',       icon: 'user-plus',      color: '#000000', needsLink: false },
+    like:        { label: 'Like',         icon: 'thumbs-up',      color: '#E1306C', needsLink: false },
+    comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', needsLink: false },
+    share:       { label: 'Share',        icon: 'share-2',        color: '#10b981', needsLink: false },
+    post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', needsLink: true  },
+    subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', needsLink: false },
+    review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', needsLink: true  },
+    review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', needsLink: true  },
+    watch:       { label: 'Tonton Video', icon: 'youtube',        color: '#FF0000', needsLink: false },
+    custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', needsLink: true  },
+  };
 
   function toast(msg, type) {
     if (window.__customerToast) return window.__customerToast(msg, type || 'info');
@@ -48,7 +62,7 @@
     return window.KRCustomer?.getSession?.() || null;
   }
 
-  /* ---------- MAIN SHEET ---------- */
+  /* ============ MAIN SHEET ============ */
   function openTasksSheet() {
     const s = getSession();
     if (!s) {
@@ -73,7 +87,7 @@
               </div>
               <div>
                 <h3 class="font-extrabold text-base">Tugas Berhadiah</h3>
-                <p class="text-[11px] text-slate-500">Follow akun & dapat saldo</p>
+                <p class="text-[11px] text-slate-500">Selesaikan tugas, dapat saldo</p>
               </div>
             </div>
             <button onclick="document.getElementById('tasks-sheet').remove()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center transition">
@@ -81,24 +95,24 @@
             </button>
           </div>
 
-         <div class="px-5 pt-4 pb-2 flex-shrink-0" id="tasks-summary-wrap">
-           <div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
-             <div class="flex items-center justify-between mb-3">
-               <div>
-                 <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Saldo Kamu</div>
-                 <div id="task-balance" class="font-mono font-black text-2xl text-amber-700 mt-1">Rp 0</div>
-                 <div id="task-earned" class="text-[10px] text-amber-600 mt-0.5">Total earned: Rp 0</div>
-               </div>
-               <div class="text-right">
-                 <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 mb-1">Progress</div>
-                 <div id="task-progress" class="font-mono font-black text-sm text-amber-700">0/0</div>
-               </div>
-             </div>
-             <button onclick="CustomerTasks.openWithdrawalModal()" class="w-full py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md hover:brightness-110 transition active:scale-[.98]">
-               <i data-lucide="banknote" class="w-3.5 h-3.5 inline mr-1"></i> Tarik Saldo ke Rekening
-             </button>
-           </div>
-         </div>
+          <div class="px-5 pt-4 pb-2 flex-shrink-0" id="tasks-summary-wrap">
+            <div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Saldo Kamu</div>
+                  <div id="task-balance" class="font-mono font-black text-2xl text-amber-700 mt-1">Rp 0</div>
+                  <div id="task-earned" class="text-[10px] text-amber-600 mt-0.5">Total earned: Rp 0</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 mb-1">Progress</div>
+                  <div id="task-progress" class="font-mono font-black text-sm text-amber-700">0/0</div>
+                </div>
+              </div>
+              <button onclick="CustomerTasks.openWithdrawalModal()" class="w-full py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md hover:brightness-110 transition active:scale-[.98]">
+                <i data-lucide="banknote" class="w-3.5 h-3.5 inline mr-1"></i> Tarik Saldo ke Rekening
+              </button>
+            </div>
+          </div>
 
           <div class="px-5 pb-2 flex-shrink-0">
             <div class="flex gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto no-scrollbar">
@@ -151,57 +165,54 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  /* ---------- TASKS TAB ---------- */
-   async function loadTasks() {
-     const s = getSession();
-     if (!s) return;
-     const content = $('tasks-tab-content');
-     if (!content) return;
-   
-     content.innerHTML = '<div class="py-12 text-center"><div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-amber-500 rounded-full animate-spin"></div><p class="mt-4 text-sm font-bold text-slate-600">Memuat...</p></div>';
-   
-     try {
-       // 1. Cek dulu apakah ada akun sosmed yang verified
-       const socialData = await rpc('customer_social_list', { p_customer_id: s.id });
-       const socials = (socialData || []).map(parse).filter(Boolean);
-       const hasVerified = socials.some(x => x.status === 'verified');
-   
-       if (!hasVerified) {
-         // Tampilkan warning — customer wajib verifikasi akun dulu
-         const hasPending = socials.some(x => x.status === 'pending');
-         content.innerHTML =
-           '<div class="py-12 text-center">' +
-             '<div class="w-20 h-20 mx-auto rounded-3xl bg-amber-100 grid place-items-center mb-4">' +
-               '<i data-lucide="shield-alert" class="w-10 h-10 text-amber-600"></i>' +
-             '</div>' +
-             '<h3 class="font-extrabold text-slate-800 mb-2">Verifikasi Akun Sosmed Dulu</h3>' +
-             '<p class="text-slate-500 text-sm max-w-xs mx-auto mb-5">' +
-               (hasPending
-                 ? 'Akun sosmed kamu sedang menunggu verifikasi admin. Sabar ya 🙏'
-                 : 'Daftarkan dan verifikasi akun sosmed kamu (TikTok/IG/YouTube) untuk bisa ikut tugas berhadiah.') +
-             '</p>' +
-             '<button onclick="CustomerTasks.switchTab(\'social\')" class="px-6 py-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-sm shadow-lg shadow-amber-500/30">' +
-               '<i data-lucide="share-2" class="w-4 h-4 inline mr-1"></i> ' +
-               (hasPending ? 'Lihat Status Akun' : 'Daftarkan Akun Sekarang') +
-             '</button>' +
-           '</div>';
-         if (window.lucide) lucide.createIcons();
-         state.tasks = [];
-         return;
-       }
-   
-       // 2. Sudah ada yang verified → load tugas
-       const data = await rpc('customer_tasks_list', {
-         p_seller_id: state.sellerId,
-         p_customer_id: s.id,
-       });
-       state.tasks = (data || []).map(parse).filter(Boolean);
-       renderTasks();
-     } catch (e) {
-       console.error('[LoadTasks]', e);
-       content.innerHTML = errorBlock(e.message || 'Gagal memuat');
-     }
-   }
+  /* ============ TASKS TAB ============ */
+  async function loadTasks() {
+    const s = getSession();
+    if (!s) return;
+    const content = $('tasks-tab-content');
+    if (!content) return;
+
+    content.innerHTML = '<div class="py-12 text-center"><div class="inline-block w-10 h-10 border-4 border-slate-200 border-t-amber-500 rounded-full animate-spin"></div><p class="mt-4 text-sm font-bold text-slate-600">Memuat...</p></div>';
+
+    try {
+      const socialData = await rpc('customer_social_list', { p_customer_id: s.id });
+      const socials = (socialData || []).map(parse).filter(Boolean);
+      const hasVerified = socials.some(x => x.status === 'verified');
+
+      if (!hasVerified) {
+        const hasPending = socials.some(x => x.status === 'pending');
+        content.innerHTML =
+          '<div class="py-12 text-center">' +
+            '<div class="w-20 h-20 mx-auto rounded-3xl bg-amber-100 grid place-items-center mb-4">' +
+              '<i data-lucide="shield-alert" class="w-10 h-10 text-amber-600"></i>' +
+            '</div>' +
+            '<h3 class="font-extrabold text-slate-800 mb-2">Verifikasi Akun Sosmed Dulu</h3>' +
+            '<p class="text-slate-500 text-sm max-w-xs mx-auto mb-5">' +
+              (hasPending
+                ? 'Akun sosmed kamu sedang menunggu verifikasi admin. Sabar ya.'
+                : 'Daftarkan dan verifikasi akun sosmed kamu untuk bisa ikut tugas berhadiah.') +
+            '</p>' +
+            '<button onclick="CustomerTasks.switchTab(\'social\')" class="px-6 py-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-sm shadow-lg shadow-amber-500/30">' +
+              '<i data-lucide="share-2" class="w-4 h-4 inline mr-1"></i> ' +
+              (hasPending ? 'Lihat Status Akun' : 'Daftarkan Akun Sekarang') +
+            '</button>' +
+          '</div>';
+        if (window.lucide) lucide.createIcons();
+        state.tasks = [];
+        return;
+      }
+
+      const data = await rpc('customer_tasks_list', {
+        p_seller_id: state.sellerId,
+        p_customer_id: s.id,
+      });
+      state.tasks = (data || []).map(parse).filter(Boolean);
+      renderTasks();
+    } catch (e) {
+      console.error('[LoadTasks]', e);
+      content.innerHTML = errorBlock(e.message || 'Gagal memuat');
+    }
+  }
 
   function renderTasks() {
     const content = $('tasks-tab-content');
@@ -218,8 +229,127 @@
     if (window.lucide) lucide.createIcons();
   }
 
+  /* ============ TYPE-SPECIFIC INSTRUCTION ============ */
+  function getTaskInstructions(t) {
+    const type = t.task_type || 'follow';
+    const meta = t.task_meta || {};
+    const plat = PLATFORMS[t.platform] || { name: 'Platform', icon: 'globe' };
+
+    switch (type) {
+      case 'follow':
+        return {
+          steps: [
+            'Klik tombol "Buka ' + plat.name + '" di bawah',
+            'Follow akun <strong>' + esc(t.target_username) + '</strong>',
+            'Screenshot profil target (harus kelihatan tombol "Following"/"Diikuti")',
+            'Upload screenshot di form bawah',
+          ],
+          openLabel: 'Buka ' + plat.name,
+        };
+      case 'like':
+        return {
+          steps: [
+            'Klik tombol "Buka Postingan" di bawah',
+            'Like postingan tersebut',
+            'Screenshot postingan yang sudah di-like (harus kelihatan tombol "Liked")',
+            'Upload screenshot di form bawah',
+          ],
+          openLabel: 'Buka Postingan',
+        };
+      case 'comment':
+        return {
+          steps: [
+            'Klik tombol "Buka Postingan" di bawah',
+            'Tulis komentar: <strong style="background:#fef3c7;padding:2px 6px;border-radius:4px;">' + esc(meta.comment_text || 'Tulis komentar menarik') + '</strong>',
+            'Kirim komentar',
+            'Screenshot komentar kamu (harus kelihatan nama + isi komentar)',
+            'Upload screenshot di form bawah',
+          ],
+          openLabel: 'Buka Postingan',
+        };
+      case 'share':
+        return {
+          steps: [
+            'Klik tombol "Buka Postingan" di bawah',
+            'Klik tombol Share postingan (ke story atau feed kamu)',
+            'Screenshot notifikasi "Berhasil dibagikan" atau story kamu',
+            'Upload screenshot di form bawah',
+          ],
+          openLabel: 'Buka Postingan',
+        };
+      case 'post':
+        return {
+          steps: [
+            'Buat postingan di <strong>' + esc(meta.platform_name || 'platform target') + '</strong>',
+            meta.caption_template ? 'Caption: <strong>' + esc(meta.caption_template) + '</strong>' : '',
+            meta.required_hashtag ? 'Wajib pakai hashtag: <strong>' + esc(meta.required_hashtag) + '</strong>' : '',
+            'Setelah posting, screenshot postingan kamu',
+            'Copy <strong>link postingan</strong> lalu paste di form bawah',
+          ].filter(Boolean),
+          openLabel: 'Buka Target',
+        };
+      case 'subscribe':
+        return {
+          steps: [
+            'Klik tombol "Buka YouTube" di bawah',
+            'Subscribe channel <strong>' + esc(t.target_username) + '</strong>',
+            'Screenshot channel yang sudah di-subscribe',
+            'Upload screenshot di form bawah',
+          ],
+          openLabel: 'Buka YouTube',
+        };
+      case 'review_maps':
+        return {
+          steps: [
+            'Klik tombol "Buka Google Maps" di bawah',
+            'Beri rating <strong>' + esc(meta.min_rating || '5') + ' bintang</strong> untuk <strong>' + esc(meta.place_name || 'tempat ini') + '</strong>',
+            meta.min_chars ? 'Tulis ulasan minimal <strong>' + esc(meta.min_chars) + ' karakter</strong>' : '',
+            'Kirim ulasan, lalu screenshot',
+            'Copy <strong>link review kamu</strong> dan paste di form bawah',
+          ].filter(Boolean),
+          openLabel: 'Buka Google Maps',
+        };
+      case 'review_app':
+        return {
+          steps: [
+            'Klik tombol "Buka Play Store" di bawah',
+            'Beri rating <strong>' + esc(meta.min_rating || '5') + ' bintang</strong> untuk aplikasi <strong>' + esc(meta.app_name || 'ini') + '</strong>',
+            'Tulis ulasan, kirim',
+            'Screenshot ulasan kamu',
+            'Copy <strong>link review kamu</strong> dan paste di form bawah',
+          ],
+          openLabel: 'Buka Play Store',
+        };
+      case 'watch':
+        return {
+          steps: [
+            'Klik tombol "Buka Video" di bawah',
+            'Tonton video sampai selesai (minimal <strong>' + esc(meta.min_duration || 60) + ' detik</strong>)',
+            'Screenshot video yang sudah ditonton (harus kelihatan progress bar)',
+            'Upload screenshot di form bawah',
+          ],
+          openLabel: 'Buka Video',
+        };
+      case 'custom':
+      default:
+        return {
+          steps: [
+            t.description ? 'Instruksi: <strong>' + esc(t.description) + '</strong>' : 'Ikuti instruksi dari admin',
+            t.target_username && t.target_username !== '-' ? 'Link/Target: <strong>' + esc(t.target_username) + '</strong>' : '',
+            'Kerjakan tugas sesuai instruksi',
+            'Screenshot bukti pekerjaan kamu',
+            'Kirim screenshot + link (kalau ada) di form bawah',
+          ].filter(Boolean),
+          openLabel: 'Buka Link',
+        };
+    }
+  }
+
+  /* ============ TASK CARD ============ */
   function renderTaskCard(t) {
-    const plat = PLATFORMS[t.platform] || { name: t.platform, icon: 'globe', color: '#64748b' };
+    const type = t.task_type || 'follow';
+    const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
+    const plat = PLATFORMS[t.platform] || { name: t.platform || cfg.label, icon: cfg.icon, color: cfg.color };
     const status = t.submission_status || 'new';
 
     const statusBadge = {
@@ -242,7 +372,7 @@
         '<i data-lucide="clock" class="w-3.5 h-3.5 inline mr-1"></i> Menunggu Verifikasi Admin</div>';
     } else if (status === 'approved') {
       actionBtn = '<div class="mt-3 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center text-xs font-bold text-emerald-700">' +
-        '<i data-lucide="check-circle" class="w-3.5 h-3.5 inline mr-1"></i> Selesai • +' + fmt(t.reward_amount) + '</div>';
+        '<i data-lucide="check-circle" class="w-3.5 h-3.5 inline mr-1"></i> Selesai +' + fmt(t.reward_amount) + '</div>';
     } else if (status === 'rejected') {
       actionBtn = '<div class="mt-3 py-2 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">' +
         '<i data-lucide="alert-circle" class="w-3.5 h-3.5 inline mr-1"></i> Ditolak: ' + esc(t.rejection_reason || 'Bukti tidak valid') + '</div>';
@@ -251,12 +381,12 @@
     return '<div class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-amber-300 transition">' +
       '<div class="flex items-start justify-between gap-3 mb-3">' +
         '<div class="flex items-center gap-2.5 min-w-0">' +
-          '<div style="width:36px;height:36px;border-radius:10px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-            '<i data-lucide="' + plat.icon + '" class="w-4 h-4"></i>' +
+          '<div style="width:36px;height:36px;border-radius:10px;background:' + cfg.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+            '<i data-lucide="' + cfg.icon + '" class="w-4 h-4"></i>' +
           '</div>' +
           '<div class="min-w-0">' +
             '<div class="font-extrabold text-sm text-slate-800 truncate">' + esc(t.title) + '</div>' +
-            '<div class="text-[10px] text-slate-500 mt-0.5">' + plat.name + ' • ' + esc(t.target_username) + '</div>' +
+            '<div class="text-[10px] text-slate-500 mt-0.5">' + cfg.label + ' - ' + esc(t.target_username || '-') + '</div>' +
           '</div>' +
         '</div>' +
         '<div class="text-right flex-shrink-0">' +
@@ -269,22 +399,28 @@
         '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg ' + statusBadge.bg + ' ' + statusBadge.text + ' text-[10px] font-extrabold uppercase tracking-wide">' +
           '<i data-lucide="' + statusBadge.icon + '" class="w-3 h-3"></i>' + statusBadge.label +
         '</span>' +
-        '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="text-[11px] font-bold text-amber-600 hover:underline inline-flex items-center gap-1">' +
-          'Buka ' + plat.name + ' <i data-lucide="external-link" class="w-3 h-3"></i>' +
-        '</a>' +
+        (t.target_url ? '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="text-[11px] font-bold text-amber-600 hover:underline inline-flex items-center gap-1">' +
+          'Buka Link <i data-lucide="external-link" class="w-3 h-3"></i>' +
+        '</a>' : '') +
       '</div>' +
       actionBtn +
     '</div>';
   }
 
-  /* ---------- SUBMIT MODAL ---------- */
+  /* ============ SUBMIT MODAL ============ */
   function openSubmitModal(taskId) {
     const t = state.tasks.find(x => x.id === taskId);
     if (!t) return;
-    const plat = PLATFORMS[t.platform] || { name: t.platform, icon: 'globe', color: '#64748b' };
+
+    const type = t.task_type || 'follow';
+    const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
+    const plat = PLATFORMS[t.platform] || { name: t.platform || cfg.label, icon: cfg.icon, color: cfg.color };
+    const instr = getTaskInstructions(t);
 
     const existing = $('task-submit-modal');
     if (existing) existing.remove();
+
+    const stepsHtml = instr.steps.map(s => '<li>' + s + '</li>').join('');
 
     const modal = document.createElement('div');
     modal.id = 'task-submit-modal';
@@ -295,12 +431,12 @@
         <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[94dvh] flex flex-col shadow-2xl anim-up">
           <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div class="flex items-center gap-3">
-              <div style="width:36px;height:36px;border-radius:10px;background:${plat.color};color:#fff;display:grid;place-items:center;">
-                <i data-lucide="${plat.icon}" class="w-4 h-4"></i>
+              <div style="width:36px;height:36px;border-radius:10px;background:${cfg.color};color:#fff;display:grid;place-items:center;">
+                <i data-lucide="${cfg.icon}" class="w-4 h-4"></i>
               </div>
               <div>
                 <h3 class="font-extrabold text-sm">${esc(t.title)}</h3>
-                <p class="text-[11px] text-slate-500">${plat.name} • ${esc(t.target_username)}</p>
+                <p class="text-[11px] text-slate-500">${cfg.label} - ${esc(t.target_username || '-')}</p>
               </div>
             </div>
             <button onclick="CustomerTasks.closeSubmitModal()" class="w-9 h-9 rounded-xl hover:bg-slate-100 grid place-items-center">
@@ -312,15 +448,11 @@
             <div class="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-4">
               <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 mb-2">Langkah-langkah</div>
               <ol class="space-y-2 text-xs text-amber-900 leading-relaxed list-decimal list-inside">
-                <li>Klik tombol <strong>"Buka ${plat.name}"</strong> di bawah</li>
-                <li>Follow akun <strong>${esc(t.target_username)}</strong></li>
-                <li>Screenshot profil target (harus kelihatan tombol "Following"/"Diikuti")</li>
-                <li>Upload screenshot di form bawah</li>
-                <li>Klik <strong>Kirim</strong> dan tunggu verifikasi admin</li>
+                ${stepsHtml}
               </ol>
-              <a href="${esc(t.target_url)}" target="_blank" rel="noopener" class="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md">
-                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka ${plat.name}
-              </a>
+              ${t.target_url ? '<a href="' + esc(t.target_url) + '" target="_blank" rel="noopener" class="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-md">' +
+                '<i data-lucide="external-link" class="w-3.5 h-3.5"></i> ' + instr.openLabel +
+              '</a>' : ''}
             </div>
 
             <div>
@@ -328,6 +460,21 @@
               <input id="task-proof-input" type="file" accept="image/*" class="hidden">
               <div id="task-proof-area"></div>
             </div>
+
+            ${cfg.needsLink ? `
+              <div>
+                <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+                  Link Bukti <span class="text-red-500">*</span>
+                </label>
+                <input id="task-proof-link" type="url" placeholder="https://..." class="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none text-sm">
+                <p style="font-size:.68rem;color:#64748b;margin-top:4px;line-height:1.4;">
+                  ${type === 'post' ? 'Paste link postingan kamu di sini' :
+                    type === 'review_maps' ? 'Paste link review Google Maps kamu di sini' :
+                    type === 'review_app' ? 'Paste link review Play Store kamu di sini' :
+                    'Paste link bukti (kalau ada)'}
+                </p>
+              </div>
+            ` : ''}
 
             <div>
               <label class="block text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">Catatan (opsional)</label>
@@ -349,7 +496,6 @@
     renderProofArea();
     if (window.lucide) lucide.createIcons();
 
-    // ⬇️ TAMBAH: Attach event listener untuk file input
     const proofInput = $('task-proof-input');
     if (proofInput) proofInput.addEventListener('change', handleProofChange);
   }
@@ -414,6 +560,19 @@
     if (!s) return toast('Silakan login dulu', 'error');
     if (!window.__taskProofData) return toast('Upload bukti dulu', 'error');
 
+    const t = state.tasks.find(x => x.id === taskId);
+    if (!t) return toast('Tugas tidak ditemukan', 'error');
+    const type = t.task_type || 'follow';
+    const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
+
+    let proofLink = null;
+    if (cfg.needsLink) {
+      const linkEl = $('task-proof-link');
+      proofLink = linkEl?.value.trim() || '';
+      if (!proofLink) return toast('Link bukti wajib diisi', 'error');
+      if (!/^https?:\/\/.+/i.test(proofLink)) return toast('Link harus diawali http:// atau https://', 'error');
+    }
+
     const btn = $('task-submit-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = 'Mengunggah...'; }
 
@@ -426,6 +585,7 @@
         p_customer_id: s.id,
         p_proof_url: proofUrl,
         p_notes: notes || null,
+        p_proof_link: proofLink || null,
       });
 
       toast('Tugas berhasil dikirim! Tunggu verifikasi admin.', 'success');
@@ -452,7 +612,7 @@
     return data.publicUrl;
   }
 
-  /* ---------- SOCIAL TAB ---------- */
+  /* ============ SOCIAL TAB ============ */
   async function loadSocial() {
     const s = getSession();
     if (!s) return;
@@ -571,7 +731,6 @@
     renderSocialProofArea();
     if (window.lucide) lucide.createIcons();
 
-    // Listen untuk pilihan platform
     document.querySelectorAll('input[name="social-platform"]').forEach(input => {
       input.addEventListener('change', (e) => {
         window.__socialPlatform = e.target.value;
@@ -684,7 +843,7 @@
       .catch(e => toast('Gagal: ' + e.message, 'error'));
   }
 
-  /* ---------- HISTORY TAB ---------- */
+  /* ============ HISTORY TAB ============ */
   async function loadHistory() {
     const s = getSession();
     if (!s) return;
@@ -703,7 +862,8 @@
       }
 
       const cards = rows.map(r => {
-        const plat = PLATFORMS[r.platform] || { name: r.platform, icon: 'globe', color: '#64748b' };
+        const type = r.task_type || 'follow';
+        const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
         const statusMap = {
           pending:  { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Menunggu', icon: 'clock' },
           approved: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Disetujui', icon: 'check-circle' },
@@ -714,7 +874,7 @@
           '<div class="flex items-start justify-between gap-2">' +
             '<div class="flex-1 min-w-0">' +
               '<div class="font-bold text-xs text-slate-800 truncate">' + esc(r.title) + '</div>' +
-              '<div class="text-[10px] text-slate-500 mt-0.5">' + plat.name + ' • ' + esc(r.target_username) + '</div>' +
+              '<div class="text-[10px] text-slate-500 mt-0.5">' + cfg.label + ' - ' + esc(r.target_username || '-') + '</div>' +
               '<div class="text-[10px] text-slate-400 mt-1">' + new Date(r.created_at).toLocaleString('id-ID') + '</div>' +
               (r.rejection_reason ? '<div class="text-[10px] text-red-600 mt-1">Alasan: ' + esc(r.rejection_reason) + '</div>' : '') +
             '</div>' +
@@ -735,7 +895,7 @@
     }
   }
 
-  /* ---------- HELPERS ---------- */
+  /* ============ HELPERS ============ */
   function emptyBlock(icon, title, sub) {
     return '<div class="py-12 text-center">' +
       '<div class="w-16 h-16 mx-auto rounded-2xl bg-slate-100 grid place-items-center mb-3">' +
@@ -756,7 +916,7 @@
     '</div>';
   }
 
-     /* ---------- WITHDRAWAL ---------- */
+  /* ============ WITHDRAWAL ============ */
   let currentBalance = 0;
 
   async function loadSummary() {
@@ -861,7 +1021,7 @@
             <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 flex gap-2">
               <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
               <div class="text-[11px] text-amber-800 leading-relaxed">
-                Setelah dikirim, admin akan verifikasi & transfer <strong>1×24 jam</strong>. Cek status di tab <strong>Pesanan Saya</strong>.
+                Setelah dikirim, admin akan verifikasi & transfer <strong>1x24 jam</strong>. Cek status di tab <strong>Pesanan Saya</strong>.
               </div>
             </div>
           </div>
@@ -928,7 +1088,6 @@
       toast('Pengajuan terkirim! Kode: #' + (r.order_code || ''), 'success');
       closeWithdrawalModal();
       await loadSummary();
-      // Buka Pesanan Saya biar user lihat
       setTimeout(() => {
         if (window.CustomerAuth?.openMyOrders) window.CustomerAuth.openMyOrders();
       }, 700);
@@ -939,12 +1098,11 @@
     }
   }
 
-  /* ---------- INIT ---------- */
+  /* ============ INIT ============ */
   function init(sellerId, sb) {
     state.sellerId = sellerId;
     state.sb = sb;
 
-    // Show/hide tombol gift di header berdasarkan session
     const updateHeaderBtn = () => {
       const btn = document.getElementById('tasks-header-btn');
       if (!btn) return;
@@ -956,7 +1114,6 @@
       }
     };
     updateHeaderBtn();
-    // Delay 500ms jaga-jaga kalau customer-auth init belakangan
     setTimeout(updateHeaderBtn, 500);
 
     window.CustomerTasks = {
