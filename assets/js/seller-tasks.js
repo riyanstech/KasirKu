@@ -1,6 +1,7 @@
 /* ==========================================
-   KasirKu — Seller Tasks Admin Module
-   Kelola tugas, verifikasi akun sosmed & bukti, withdrawal
+   KasirKu — Seller Tasks Admin Module (v2)
+   Multi-type tasks: follow, like, comment, share, post,
+   subscribe, review_maps, review_app, watch, custom
    ========================================== */
 window.KR = window.KR || {};
 
@@ -24,6 +25,7 @@ window.KR = window.KR || {};
   })[c]);
   const parse = (d) => { if (typeof d === 'string') { try { return JSON.parse(d); } catch { return null; } } return d; };
 
+  /* ============ PLATFORMS (sosmed) ============ */
   const PLATFORMS = {
     tiktok:    { name: 'TikTok',      icon: 'music-2',        color: '#000000', placeholder: '@username' },
     instagram: { name: 'Instagram',   icon: 'camera',         color: '#E1306C', placeholder: '@username' },
@@ -32,59 +34,96 @@ window.KR = window.KR || {};
     twitter:   { name: 'X / Twitter', icon: 'message-circle', color: '#000000', placeholder: '@username' },
   };
 
-   /* ---------- FILTER TABS HELPER (fix: warna tidak muncul karena primary-* tidak ada di Tailwind) ---------- */
-   function _buildFilterTabs(fnName, currentFilter, options) {
-     const labels = {
-       pending:   'Pending',
-       verified:  'Verified',
-       approved:  'Approved',
-       rejected:  'Rejected',
-       done:      'Selesai',
-       cancelled: 'Dibatalkan',
-       all:       'Semua',
-     };
-     return '<div class="filter-tabs-row">' +
-       options.map(s => {
-         const isActive = currentFilter === s;
-         const label = labels[s] || (s.charAt(0).toUpperCase() + s.slice(1));
-         return '<button type="button" onclick="' + fnName + '(\'' + s + '\')" ' +
-           'class="filter-tab-pill' + (isActive ? ' active' : '') + '">' +
-           label +
-         '</button>';
-       }).join('') +
-     '</div>';
-   }
+  /* ============ TASK TYPES (10 tipe) ============ */
+  const TASK_TYPES = {
+    follow:      { label: 'Follow',       icon: 'user-plus',      color: '#000000', desc: 'Follow akun sosmed',              needsPlatform: true,  needsTarget: true,  customerLink: false },
+    like:        { label: 'Like',         icon: 'thumbs-up',      color: '#E1306C', desc: 'Like postingan sosmed',           needsPlatform: true,  needsTarget: true,  customerLink: false },
+    comment:     { label: 'Komentar',     icon: 'message-square', color: '#3b82f6', desc: 'Komentari postingan',             needsPlatform: true,  needsTarget: true,  customerLink: false, extra: 'comment_text' },
+    share:       { label: 'Share',        icon: 'share-2',        color: '#10b981', desc: 'Share postingan',                 needsPlatform: true,  needsTarget: true,  customerLink: false },
+    post:        { label: 'Posting',      icon: 'file-text',      color: '#8b5cf6', desc: 'Buat postingan baru',             needsPlatform: true,  needsTarget: true,  customerLink: true,  extra: 'post_fields' },
+    subscribe:   { label: 'Subscribe',    icon: 'play-circle',    color: '#FF0000', desc: 'Subscribe channel YouTube',       needsPlatform: true,  needsTarget: true,  customerLink: false },
+    review_maps: { label: 'Review Maps',  icon: 'map-pin',        color: '#ea4335', desc: 'Ulas tempat di Google Maps',      needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'maps_fields' },
+    review_app:  { label: 'Review App',   icon: 'smartphone',     color: '#10b981', desc: 'Ulas aplikasi di Play/App Store', needsPlatform: false, needsTarget: true,  customerLink: true,  extra: 'app_fields' },
+    watch:       { label: 'Tonton Video', icon: 'youtube',        color: '#FF0000', desc: 'Tonton video sampai selesai',     needsPlatform: false, needsTarget: true,  customerLink: false, extra: 'watch_fields' },
+    custom:      { label: 'Custom',       icon: 'sparkles',       color: '#64748b', desc: 'Tugas bebas apapun',              needsPlatform: false, needsTarget: false, customerLink: true },
+  };
 
-   /* ---------- PROOF THUMB HELPER (fix: layout gambar meluber) ---------- */
-function _buildProofThumb(url) {
-  return '<div style="' +
-    'margin-top:8px;' +
-    'padding:10px;' +
-    'background:#f8fafc;' +
-    'border:1.5px solid #e2e8f0;' +
-    'border-radius:12px;' +
-    'display:flex;' +
-    'justify-content:center;' +
-    'align-items:center;' +
-    'overflow:hidden;' +
-  '">' +
-    '<img src="' + esc(url) + '" ' +
-      'onclick="viewSocialProof(\'' + esc(url) + '\')" ' +
-      'style="' +
-        'max-width:100%;' +
-        'max-height:320px;' +
-        'width:auto;' +
-        'height:auto;' +
-        'object-fit:contain;' +
-        'border-radius:8px;' +
-        'cursor:zoom-in;' +
-        'background:#fff;' +
-        'display:block;' +
-      '" ' +
-      'alt="Bukti" ' +
-    '/>' +
-  '</div>';
-}
+  /* ============ EXTRA FIELDS per tipe ============ */
+  const TYPE_EXTRA_FIELDS = {
+    comment: [
+      { key: 'comment_text', label: 'Teks Komentar Wajib', type: 'textarea', required: true, placeholder: 'Contoh: Menarik banget!' },
+    ],
+    post: [
+      { key: 'platform_name', label: 'Platform Posting', type: 'select', options: ['Facebook Grup', 'Facebook Page', 'Instagram Feed', 'Instagram Story', 'TikTok', 'Twitter/X'], required: true },
+      { key: 'caption_template', label: 'Template Caption (opsional)', type: 'textarea', placeholder: 'Teks yang harus dipakai customer...' },
+      { key: 'required_hashtag', label: 'Hashtag Wajib (opsional)', type: 'text', placeholder: '#kasirku #promo' },
+    ],
+    review_maps: [
+      { key: 'place_name', label: 'Nama Tempat', type: 'text', required: true, placeholder: 'Warung Bu Sari' },
+      { key: 'min_rating', label: 'Rating Minimum', type: 'select', options: ['4', '5'], required: true, default: '5' },
+      { key: 'min_chars', label: 'Min. Karakter Ulasan', type: 'number', default: 50 },
+    ],
+    review_app: [
+      { key: 'app_name', label: 'Nama Aplikasi', type: 'text', required: true, placeholder: 'KasirKu POS' },
+      { key: 'min_rating', label: 'Rating Minimum', type: 'select', options: ['4', '5'], required: true, default: '5' },
+    ],
+    watch: [
+      { key: 'min_duration', label: 'Durasi Minimum (detik)', type: 'number', default: 60 },
+    ],
+  };
+
+  /* ============ HELPERS ============ */
+  function _buildFilterTabs(fnName, currentFilter, options) {
+    const labels = {
+      pending:   'Pending',
+      verified:  'Verified',
+      approved:  'Approved',
+      rejected:  'Rejected',
+      done:      'Selesai',
+      cancelled: 'Dibatalkan',
+      all:       'Semua',
+    };
+    return '<div class="filter-tabs-row">' +
+      options.map(s => {
+        const isActive = currentFilter === s;
+        const label = labels[s] || (s.charAt(0).toUpperCase() + s.slice(1));
+        return '<button type="button" onclick="' + fnName + '(\'' + s + '\')" ' +
+          'class="filter-tab-pill' + (isActive ? ' active' : '') + '">' +
+          label +
+        '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  function _buildProofThumb(url) {
+    return '<div style="' +
+      'margin-top:8px;' +
+      'padding:10px;' +
+      'background:#f8fafc;' +
+      'border:1.5px solid #e2e8f0;' +
+      'border-radius:12px;' +
+      'display:flex;' +
+      'justify-content:center;' +
+      'align-items:center;' +
+      'overflow:hidden;' +
+    '">' +
+      '<img src="' + esc(url) + '" ' +
+        'onclick="viewSocialProof(\'' + esc(url) + '\')" ' +
+        'style="' +
+          'max-width:100%;' +
+          'max-height:320px;' +
+          'width:auto;' +
+          'height:auto;' +
+          'object-fit:contain;' +
+          'border-radius:8px;' +
+          'cursor:zoom-in;' +
+          'background:#fff;' +
+          'display:block;' +
+        '" ' +
+        'alt="Bukti" ' +
+      '/>' +
+    '</div>';
+  }
 
   async function rpc(fn, params) {
     const { data, error } = await KR.sb.client.rpc(fn, params);
@@ -97,7 +136,7 @@ function _buildProofThumb(url) {
     return u.id;
   }
 
-  /* ---------- PROOF VIEWER ---------- */
+  /* ============ PROOF VIEWER ============ */
   window.viewSocialProof = function (url) {
     if (!url) return KR.toast.error('Bukti tidak tersedia');
 
@@ -126,7 +165,7 @@ function _buildProofThumb(url) {
           'style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);background:#fff;" ' +
           'onerror="this.style.display=&quot;none&quot;; this.nextElementSibling.style.display=&quot;block&quot;;">' +
         '<div style="display:none;padding:40px;background:#fff;border-radius:12px;text-align:center;color:#991b1b;max-width:400px;">' +
-          '⚠ Gambar gagal dimuat. Coba buka di tab baru atau download.' +
+          'Gambar gagal dimuat. Coba buka di tab baru atau download.' +
         '</div>' +
       '</div>';
 
@@ -147,7 +186,7 @@ function _buildProofThumb(url) {
     if (modal) modal.remove();
   };
 
-  /* ---------- TASKS ---------- */
+  /* ============ TASKS: LOAD ============ */
   async function loadTasks() {
     try {
       const uid = await getUid();
@@ -159,9 +198,13 @@ function _buildProofThumb(url) {
       if (error) throw error;
       tasks = data || [];
       renderTasks();
-    } catch (e) { console.error(e); KR.toast.error('Gagal memuat tugas'); }
+    } catch (e) {
+      console.error(e);
+      KR.toast.error('Gagal memuat tugas');
+    }
   }
 
+  /* ============ TASKS: RENDER ============ */
   function renderTasks() {
     const el = $('tasks-list');
     const countEl = $('tasks-count-label');
@@ -197,20 +240,23 @@ function _buildProofThumb(url) {
     }
 
     el.innerHTML = filtered.map(t => {
-      const plat = PLATFORMS[t.platform] || { name: t.platform, icon: 'globe', color: '#64748b' };
+      const type = t.task_type || 'follow';
+      const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
+      const plat = PLATFORMS[t.platform] || { name: t.platform || 'Custom', icon: cfg.icon, color: cfg.color };
       const progress = t.max_completions > 0
         ? t.current_completions + '/' + t.max_completions + ' slot'
         : t.current_completions + ' selesai';
 
       return '<div class="customer-card">' +
-        '<div style="width:52px;height:52px;border-radius:14px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="' + plat.icon + '" class="w-6 h-6"></i>' +
+        '<div style="width:52px;height:52px;border-radius:14px;background:' + cfg.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+          '<i data-lucide="' + cfg.icon + '" class="w-6 h-6"></i>' +
         '</div>' +
         '<div class="customer-body">' +
           '<div class="customer-name">' + esc(t.title) +
             '<span class="customer-badge ' + (t.is_active ? 'member' : 'guest') + '">' + (t.is_active ? 'Aktif' : 'Nonaktif') + '</span>' +
+            '<span class="customer-badge" style="background:' + cfg.color + '15;color:' + cfg.color + ';border:1px solid ' + cfg.color + '40;">' + cfg.label + '</span>' +
           '</div>' +
-          '<div class="customer-username">' + plat.name + ' • ' + esc(t.target_username) + '</div>' +
+          '<div class="customer-username">' + plat.name + ' - ' + esc(t.target_username || '-') + '</div>' +
           '<div class="customer-stats">' +
             '<div><strong>' + fmt(t.reward_amount) + '</strong> / tugas</div>' +
             '<div>' + progress + '</div>' +
@@ -229,19 +275,41 @@ function _buildProofThumb(url) {
 
   window.setTaskFilter = (f) => { taskFilter = f; renderTasks(); };
 
-  /* ---------- CREATE TASK ---------- */
+  /* ============ TASKS: CREATE MODAL ============ */
   window.openCreateTaskModal = function () {
     const existing = $('create-task-modal');
     if (existing) existing.remove();
 
-    const options = Object.entries(PLATFORMS).map(([id, p]) =>
-      '<label class="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 cursor-pointer transition task-plat-opt" style="transition:all .2s;" onmouseover="this.style.borderColor=\'#10b981\'" onmouseout="this.style.borderColor=this.querySelector(\'input\').checked?\'#10b981\':\'#e2e8f0\'">' +
-        '<input type="radio" name="task-platform" value="' + id + '" class="hidden">' +
-        '<div style="width:36px;height:36px;border-radius:10px;background:' + p.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-          '<i data-lucide="' + p.icon + '" class="w-4 h-4"></i>' +
+    // Radio pilihan tipe
+    const typeOptions = Object.entries(TASK_TYPES).map(([id, t]) =>
+      '<label class="task-type-opt" data-type="' + id + '" style="' +
+        'display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;' +
+        'border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;margin-bottom:8px;' +
+      '">' +
+        '<input type="radio" name="task-type" value="' + id + '" style="display:none;">' +
+        '<div style="width:40px;height:40px;border-radius:11px;background:' + t.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+          '<i data-lucide="' + t.icon + '" style="width:18px;height:18px;"></i>' +
         '</div>' +
-        '<div class="flex-1"><div class="font-bold text-sm">' + p.name + '</div></div>' +
-        '<i data-lucide="circle" class="w-5 h-5 text-slate-300"></i>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-weight:800;font-size:.88rem;color:#0f172a;">' + t.label + '</div>' +
+          '<div style="font-size:.72rem;color:#64748b;margin-top:2px;">' + t.desc + '</div>' +
+        '</div>' +
+        '<i data-lucide="circle" class="type-check" style="width:20px;height:20px;color:#cbd5e1;"></i>' +
+      '</label>'
+    ).join('');
+
+    // Radio pilihan platform (untuk tipe sosmed)
+    const platformOptions = Object.entries(PLATFORMS).map(([id, p]) =>
+      '<label class="task-plat-opt" data-platform="' + id + '" style="' +
+        'display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;' +
+        'border:2px solid #e2e8f0;background:#fff;cursor:pointer;transition:all .2s;' +
+      '">' +
+        '<input type="radio" name="task-platform" value="' + id + '" style="display:none;">' +
+        '<div style="width:32px;height:32px;border-radius:9px;background:' + p.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+          '<i data-lucide="' + p.icon + '" style="width:16px;height:16px;"></i>' +
+        '</div>' +
+        '<div style="flex:1;font-weight:700;font-size:.82rem;">' + p.name + '</div>' +
+        '<i data-lucide="circle" class="plat-check" style="width:18px;height:18px;color:#cbd5e1;"></i>' +
       '</label>'
     ).join('');
 
@@ -251,85 +319,222 @@ function _buildProofThumb(url) {
     modal.innerHTML =
       '<div class="modal-backdrop" onclick="this.parentNode.remove()"></div>' +
       '<div class="modal-card modal-card-md">' +
-        '<div class="modal-head"><h3><i data-lucide="plus-circle"></i> Buat Tugas Baru</h3>' +
-          '<button class="icon-btn" onclick="this.closest(\'.modal\').remove()"><i data-lucide="x"></i></button></div>' +
+        '<div class="modal-head">' +
+          '<h3><i data-lucide="plus-circle"></i> Buat Tugas Baru</h3>' +
+          '<button class="icon-btn" onclick="this.closest(\'.modal\').remove()"><i data-lucide="x"></i></button>' +
+        '</div>' +
         '<div class="modal-body">' +
+
+          '<div class="field" style="margin-bottom:16px;">' +
+            '<label style="font-weight:900;color:#0f172a;font-size:.8rem;">1. Pilih Tipe Tugas <span class="req">*</span></label>' +
+            '<div id="ct-type-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + typeOptions + '</div>' +
+          '</div>' +
+
           '<div class="field"><label>Judul Tugas <span class="req">*</span></label>' +
             '<input id="ct-title" class="input" placeholder="Contoh: Follow TikTok @tokosaya"></div>' +
-          '<div class="field"><label>Deskripsi</label>' +
-            '<textarea id="ct-desc" class="textarea" rows="2" placeholder="Instruksi tambahan (opsional)"></textarea></div>' +
-          '<div class="field"><label>Platform <span class="req">*</span></label>' +
-            '<div id="ct-platform-list" class="space-y-2">' + options + '</div></div>' +
-          '<div class="field"><label>Username Target <span class="req">*</span></label>' +
-            '<input id="ct-username" class="input" placeholder="@tokosaya"></div>' +
-          '<div class="field"><label>Link Target <span class="req">*</span></label>' +
-            '<input id="ct-url" class="input" placeholder="https://tiktok.com/@tokosaya"></div>' +
-          '<div class="field-grid">' +
+          '<div class="field"><label>Deskripsi (opsional)</label>' +
+            '<textarea id="ct-desc" class="textarea" rows="2" placeholder="Instruksi tambahan untuk customer"></textarea></div>' +
+
+          '<div class="field" id="ct-platform-wrap" style="display:none;margin-bottom:16px;">' +
+            '<label>Platform <span class="req">*</span></label>' +
+            '<div id="ct-platform-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">' + platformOptions + '</div>' +
+          '</div>' +
+
+          '<div class="field" id="ct-target-wrap">' +
+            '<label id="ct-target-label">Target / Username <span class="req">*</span></label>' +
+            '<input id="ct-target" class="input" placeholder="@username">' +
+          '</div>' +
+
+          '<div id="ct-extra-fields"></div>' +
+
+          '<div class="field-grid" style="margin-top:12px;">' +
             '<div class="field"><label>Reward (Rp) <span class="req">*</span></label>' +
-              '<input id="ct-reward" type="number" class="input" value="50" min="1"></div>' +
+              '<input id="ct-reward" type="number" class="input" value="5000" min="1"></div>' +
             '<div class="field"><label>Kuota (0 = unlimited)</label>' +
               '<input id="ct-max" type="number" class="input" value="0" min="0"></div>' +
           '</div>' +
+
         '</div>' +
         '<div class="modal-foot">' +
           '<button class="btn btn-ghost" onclick="this.closest(\'.modal\').remove()">Batal</button>' +
-          '<button class="btn btn-primary" onclick="submitCreateTask()"><i data-lucide="check"></i> Buat</button>' +
+          '<button class="btn btn-primary" onclick="submitCreateTask()"><i data-lucide="check"></i> Buat Tugas</button>' +
         '</div>' +
       '</div>';
+
     document.body.appendChild(modal);
     if (window.lucide) lucide.createIcons();
 
+    window.__newTaskType = null;
     window.__newTaskPlatform = null;
-    modal.querySelectorAll('input[name="task-platform"]').forEach(inp => {
-      inp.addEventListener('change', (e) => {
-        window.__newTaskPlatform = e.target.value;
-        modal.querySelectorAll('.task-plat-opt').forEach(opt => {
-          const sel = opt.querySelector('input').checked;
-          opt.style.borderColor = sel ? '#10b981' : '#e2e8f0';
-          opt.style.background = sel ? '#ecfdf5' : '#fff';
-          const icon = opt.querySelector('.w-5.h-5');
+
+    // Handler pilih tipe
+    modal.querySelectorAll('.task-type-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const typeId = opt.dataset.type;
+        window.__newTaskType = typeId;
+        modal.querySelectorAll('.task-type-opt').forEach(o => {
+          const sel = o.dataset.type === typeId;
+          o.style.borderColor = sel ? '#10b981' : '#e2e8f0';
+          o.style.background = sel ? '#ecfdf5' : '#fff';
+          const icon = o.querySelector('.type-check');
+          if (icon) icon.setAttribute('data-lucide', sel ? 'check-circle' : 'circle');
+        });
+        if (window.lucide) lucide.createIcons();
+        updateDynamicFields(typeId);
+      });
+    });
+
+    // Handler pilih platform
+    modal.querySelectorAll('.task-plat-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const platId = opt.dataset.platform;
+        window.__newTaskPlatform = platId;
+        modal.querySelectorAll('.task-plat-opt').forEach(o => {
+          const sel = o.dataset.platform === platId;
+          o.style.borderColor = sel ? '#10b981' : '#e2e8f0';
+          o.style.background = sel ? '#ecfdf5' : '#fff';
+          const icon = o.querySelector('.plat-check');
           if (icon) icon.setAttribute('data-lucide', sel ? 'check-circle' : 'circle');
         });
         if (window.lucide) lucide.createIcons();
       });
     });
+
+    // Update dynamic fields saat pilih tipe
+    function updateDynamicFields(typeId) {
+      const cfg = TASK_TYPES[typeId];
+      if (!cfg) return;
+
+      const platWrap = $('ct-platform-wrap');
+      if (platWrap) platWrap.style.display = cfg.needsPlatform ? '' : 'none';
+
+      const targetWrap = $('ct-target-wrap');
+      const targetLabel = $('ct-target-label');
+      const targetInput = $('ct-target');
+
+      if (!cfg.needsTarget) {
+        targetWrap.style.display = 'none';
+      } else {
+        targetWrap.style.display = '';
+        const labels = {
+          follow:      { label: 'Username Target', placeholder: '@username' },
+          like:        { label: 'Link Postingan', placeholder: 'https://instagram.com/p/xxx' },
+          comment:     { label: 'Link Postingan', placeholder: 'https://instagram.com/p/xxx' },
+          share:       { label: 'Link Postingan', placeholder: 'https://instagram.com/p/xxx' },
+          post:        { label: 'Link Grup/Page Target', placeholder: 'https://facebook.com/groups/xxx' },
+          subscribe:   { label: 'Channel / Username', placeholder: '@channel' },
+          review_maps: { label: 'Link Google Maps Tempat', placeholder: 'https://maps.google.com/...' },
+          review_app:  { label: 'Link Aplikasi', placeholder: 'https://play.google.com/store/apps/...' },
+          watch:       { label: 'Link Video', placeholder: 'https://youtube.com/watch?v=xxx' },
+        };
+        const lbl = labels[typeId] || { label: 'Target', placeholder: '' };
+        targetLabel.innerHTML = lbl.label + ' <span class="req">*</span>';
+        targetInput.placeholder = lbl.placeholder;
+      }
+
+      const extraEl = $('ct-extra-fields');
+      const extraDef = TYPE_EXTRA_FIELDS[typeId] || [];
+      if (extraDef.length === 0) {
+        extraEl.innerHTML = '';
+        return;
+      }
+
+      extraEl.innerHTML = '<div style="margin-top:12px;padding:14px;border-radius:12px;background:#f8fafc;border:1.5px dashed #cbd5e1;">' +
+        '<div style="font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:10px;">' +
+          'Pengaturan Khusus ' + cfg.label +
+        '</div>' +
+        extraDef.map(f => {
+          if (f.type === 'textarea') {
+            return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
+              '<textarea class="textarea" rows="2" data-extra-key="' + f.key + '" placeholder="' + (f.placeholder || '') + '">' + (f.default || '') + '</textarea></div>';
+          }
+          if (f.type === 'select') {
+            return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
+              '<select class="select" data-extra-key="' + f.key + '">' +
+                f.options.map(o => '<option value="' + o + '"' + (f.default === o ? ' selected' : '') + '>' + o + '</option>').join('') +
+              '</select></div>';
+          }
+          if (f.type === 'number') {
+            return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
+              '<input type="number" class="input" data-extra-key="' + f.key + '" value="' + (f.default || '') + '"></div>';
+          }
+          return '<div class="field"><label>' + f.label + (f.required ? ' <span class="req">*</span>' : '') + '</label>' +
+            '<input type="text" class="input" data-extra-key="' + f.key + '" placeholder="' + (f.placeholder || '') + '" value="' + (f.default || '') + '"></div>';
+        }).join('') +
+      '</div>';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Default: pilih tipe pertama (follow)
+    const firstType = modal.querySelector('.task-type-opt');
+    if (firstType) firstType.click();
   };
 
+  /* ============ TASKS: SUBMIT CREATE ============ */
   window.submitCreateTask = async function () {
     const title = $('ct-title')?.value.trim();
     const desc = $('ct-desc')?.value.trim();
-    const username = $('ct-username')?.value.trim();
-    const url = $('ct-url')?.value.trim();
-    const reward = Number($('ct-reward')?.value) || 50;
+    const target = $('ct-target')?.value.trim();
+    const reward = Number($('ct-reward')?.value) || 5000;
     const max = Number($('ct-max')?.value) || 0;
 
-    if (!title) return KR.toast.error('Judul wajib');
-    if (!window.__newTaskPlatform) return KR.toast.error('Pilih platform');
-    if (!username) return KR.toast.error('Username target wajib');
-    if (!url) return KR.toast.error('Link target wajib');
+    const taskType = window.__newTaskType;
+    const platform = window.__newTaskPlatform;
+
+    if (!taskType) return KR.toast.error('Pilih tipe tugas dulu');
+    if (!title) return KR.toast.error('Judul wajib diisi');
+
+    const cfg = TASK_TYPES[taskType];
+    if (cfg.needsPlatform && !platform) return KR.toast.error('Pilih platform dulu');
+    if (cfg.needsTarget && !target) return KR.toast.error('Target wajib diisi');
+    if (reward < 1) return KR.toast.error('Reward minimal Rp 1');
+
+    const taskMeta = {};
+    const extraInputs = document.querySelectorAll('#ct-extra-fields [data-extra-key]');
+    const extraDef = TYPE_EXTRA_FIELDS[taskType] || [];
+    for (const inp of extraInputs) {
+      const key = inp.dataset.extraKey;
+      const val = inp.value.trim();
+      const def = extraDef.find(f => f.key === key);
+      if (def && def.required && !val) return KR.toast.error(def.label + ' wajib diisi');
+      if (val) taskMeta[key] = val;
+    }
 
     showLoading('Membuat tugas...');
     try {
       const uid = await getUid();
-      await rpc('seller_task_create', {
-        p_seller_id: uid,
-        p_title: title,
-        p_description: desc || null,
-        p_platform: window.__newTaskPlatform,
-        p_target_username: username,
-        p_target_url: url,
-        p_reward_amount: reward,
-        p_max_completions: max,
-        p_expires_at: null,
-      });
-      KR.toast.success('Tugas dibuat');
+
+      const insertData = {
+        seller_id: uid,
+        title: title,
+        description: desc || null,
+        platform: cfg.needsPlatform ? platform : taskType,
+        target_username: target || '-',
+        target_url: cfg.needsTarget ? target : null,
+        reward_amount: reward,
+        max_completions: max,
+        current_completions: 0,
+        is_active: true,
+        expires_at: null,
+        task_type: taskType,
+        task_meta: taskMeta,
+      };
+
+      const { error } = await KR.sb.client.from('reward_tasks').insert(insertData);
+      if (error) throw error;
+
+      KR.toast.success('Tugas berhasil dibuat');
       $('create-task-modal')?.remove();
       await loadTasks();
     } catch (e) {
-      KR.toast.error('Gagal: ' + e.message);
-    } finally { hideLoading(); }
+      console.error('[CreateTask]', e);
+      KR.toast.error('Gagal: ' + (e.message || 'Unknown'));
+    } finally {
+      hideLoading();
+    }
   };
 
+  /* ============ TASKS: TOGGLE / DELETE ============ */
   window.toggleTask = async function (id, activate) {
     showLoading('Memperbarui...');
     try {
@@ -341,8 +546,11 @@ function _buildProofThumb(url) {
       });
       KR.toast.success(activate ? 'Tugas diaktifkan' : 'Tugas dinonaktifkan');
       await loadTasks();
-    } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-    finally { hideLoading(); }
+    } catch (e) {
+      KR.toast.error('Gagal: ' + e.message);
+    } finally {
+      hideLoading();
+    }
   };
 
   window.deleteTask = function (id) {
@@ -353,12 +561,15 @@ function _buildProofThumb(url) {
         await rpc('seller_task_delete', { p_task_id: id, p_seller_id: uid });
         KR.toast.success('Tugas dihapus');
         await loadTasks();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
+      } catch (e) {
+        KR.toast.error('Gagal: ' + e.message);
+      } finally {
+        hideLoading();
+      }
     });
   };
 
-  /* ---------- SOCIALS ---------- */
+  /* ============ SOCIALS ============ */
   async function loadSocials() {
     try {
       const uid = await getUid();
@@ -368,7 +579,10 @@ function _buildProofThumb(url) {
       });
       socials = (data || []).map(parse).filter(Boolean);
       renderSocials();
-    } catch (e) { console.error(e); KR.toast.error('Gagal memuat akun sosmed'); }
+    } catch (e) {
+      console.error(e);
+      KR.toast.error('Gagal memuat akun sosmed');
+    }
   }
 
   function renderSocials() {
@@ -378,7 +592,7 @@ function _buildProofThumb(url) {
 
     if (countEl) countEl.textContent = socials.length + ' akun';
 
-     const tabs = _buildFilterTabs('setSocialFilter', socialFilter, ['pending', 'verified', 'rejected', 'all']);
+    const tabs = _buildFilterTabs('setSocialFilter', socialFilter, ['pending', 'verified', 'rejected', 'all']);
 
     if (!socials.length) {
       el.innerHTML = tabs + '<div class="empty-state"><i data-lucide="share-2"></i><h3>Tidak ada akun</h3></div>';
@@ -394,9 +608,9 @@ function _buildProofThumb(url) {
         rejected: '<span class="customer-badge" style="background:#fee2e2;color:#991b1b;">Rejected</span>',
       }[s.status] || '';
 
-       const proofThumb = s.proof_url
+      const proofThumb = s.proof_url
         ? _buildProofThumb(s.proof_url)
-        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">⚠ Bukti tidak ada</div>';
+        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">Bukti tidak ada</div>';
 
       const actions = s.status === 'pending'
         ? '<button class="btn btn-primary btn-sm" onclick="verifySocial(\'' + s.id + '\', true)"><i data-lucide="check"></i> Setujui</button>' +
@@ -410,13 +624,13 @@ function _buildProofThumb(url) {
           '</div>' +
           '<div class="customer-body" style="flex:1;min-width:0;">' +
             '<div class="customer-name">' + esc(s.username) + ' ' + statusBadge + '</div>' +
-            '<div class="customer-username">' + plat.name + ' • Customer: ' + esc(s.customer_name || '-') + '</div>' +
+            '<div class="customer-username">' + plat.name + ' - Customer: ' + esc(s.customer_name || '-') + '</div>' +
             '<div class="customer-stats"><div>' + esc(s.customer_phone || 'No HP tidak ada') + '</div></div>' +
           '</div>' +
           '<div class="customer-actions">' + actions + '</div>' +
         '</div>' +
         '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;">' +
-          '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px;">📸 Bukti Screenshot Profil</div>' +
+          '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px;">Bukti Screenshot Profil</div>' +
           proofThumb +
         '</div>' +
       '</div>';
@@ -439,8 +653,11 @@ function _buildProofThumb(url) {
         });
         KR.toast.success(approve ? 'Akun diverifikasi' : 'Akun ditolak');
         await loadSocials();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
+      } catch (e) {
+        KR.toast.error('Gagal: ' + e.message);
+      } finally {
+        hideLoading();
+      }
     };
 
     if (approve) {
@@ -452,7 +669,7 @@ function _buildProofThumb(url) {
     }
   };
 
-  /* ---------- SUBMISSIONS ---------- */
+  /* ============ SUBMISSIONS ============ */
   async function loadSubmissions() {
     try {
       const uid = await getUid();
@@ -462,7 +679,10 @@ function _buildProofThumb(url) {
       });
       submissions = (data || []).map(parse).filter(Boolean);
       renderSubmissions();
-    } catch (e) { console.error(e); KR.toast.error('Gagal memuat bukti'); }
+    } catch (e) {
+      console.error(e);
+      KR.toast.error('Gagal memuat bukti');
+    }
   }
 
   function renderSubmissions() {
@@ -472,7 +692,7 @@ function _buildProofThumb(url) {
 
     if (countEl) countEl.textContent = submissions.length + ' submission';
 
-     const tabs = _buildFilterTabs('setSubmissionFilter', submissionFilter, ['pending', 'approved', 'rejected', 'all']);
+    const tabs = _buildFilterTabs('setSubmissionFilter', submissionFilter, ['pending', 'approved', 'rejected', 'all']);
 
     if (!submissions.length) {
       el.innerHTML = tabs + '<div class="empty-state"><i data-lucide="inbox"></i><h3>Tidak ada bukti</h3></div>';
@@ -481,11 +701,20 @@ function _buildProofThumb(url) {
     }
 
     el.innerHTML = tabs + '<div class="space-y-3">' + submissions.map(s => {
-      const plat = PLATFORMS[s.platform] || { name: s.platform, icon: 'globe', color: '#64748b' };
+      const type = s.task_type || 'follow';
+      const cfg = TASK_TYPES[type] || TASK_TYPES.follow;
+      const plat = PLATFORMS[s.platform] || { name: s.platform || cfg.label, icon: cfg.icon, color: cfg.color };
 
-       const proofThumb = s.proof_url
+      const proofThumb = s.proof_url
         ? _buildProofThumb(s.proof_url)
-        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">⚠ Bukti tidak ada</div>';
+        : '<div style="margin-top:8px;padding:12px;background:#fee2e2;border-radius:8px;font-size:.75rem;color:#991b1b;">Bukti tidak ada</div>';
+
+      const proofLinkHtml = s.proof_link
+        ? '<div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:.75rem;">' +
+            '<div style="font-weight:800;color:#1e40af;margin-bottom:4px;">Link Bukti Customer:</div>' +
+            '<a href="' + esc(s.proof_link) + '" target="_blank" rel="noopener" style="color:#1d4ed8;word-break:break-all;text-decoration:underline;">' + esc(s.proof_link) + '</a>' +
+          '</div>'
+        : (cfg.customerLink ? '<div style="margin-top:10px;padding:10px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:.72rem;color:#92400e;">Link bukti belum dikirim customer</div>' : '');
 
       const actions = s.status === 'pending'
         ? '<button class="btn btn-primary btn-sm" onclick="verifySubmission(\'' + s.id + '\', true)"><i data-lucide="check"></i> Approve +' + fmt(s.reward_amount) + '</button>' +
@@ -494,23 +723,26 @@ function _buildProofThumb(url) {
 
       return '<div class="customer-card" style="flex-direction:column;align-items:stretch;">' +
         '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-          '<div style="width:48px;height:48px;border-radius:12px;background:' + plat.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
-            '<i data-lucide="' + plat.icon + '" class="w-5 h-5"></i>' +
+          '<div style="width:48px;height:48px;border-radius:12px;background:' + cfg.color + ';color:#fff;display:grid;place-items:center;flex-shrink:0;">' +
+            '<i data-lucide="' + cfg.icon + '" class="w-5 h-5"></i>' +
           '</div>' +
           '<div class="customer-body" style="flex:1;min-width:0;">' +
-            '<div class="customer-name">' + esc(s.task_title) + '</div>' +
-            '<div class="customer-username">Target: ' + esc(s.target_username) + '</div>' +
+            '<div class="customer-name">' + esc(s.task_title) +
+              '<span class="customer-badge" style="background:' + cfg.color + '15;color:' + cfg.color + ';border:1px solid ' + cfg.color + '40;">' + cfg.label + '</span>' +
+            '</div>' +
+            '<div class="customer-username">Target: ' + esc(s.target_username || '-') + '</div>' +
             '<div class="customer-stats">' +
               '<div><strong>' + esc(s.customer_name || '-') + '</strong></div>' +
               '<div>' + fmt(s.reward_amount) + '</div>' +
             '</div>' +
-            (s.notes ? '<div style="font-size:.75rem;color:#64748b;margin-top:4px;">📝 ' + esc(s.notes) + '</div>' : '') +
+            (s.notes ? '<div style="font-size:.75rem;color:#64748b;margin-top:4px;">Catatan: ' + esc(s.notes) + '</div>' : '') +
           '</div>' +
           '<div class="customer-actions">' + actions + '</div>' +
         '</div>' +
         '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #e2e8f0;">' +
-          '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px;">📸 Bukti Screenshot Follow</div>' +
+          '<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:6px;">Bukti Screenshot</div>' +
           proofThumb +
+          proofLinkHtml +
         '</div>' +
       '</div>';
     }).join('') + '</div>';
@@ -530,10 +762,13 @@ function _buildProofThumb(url) {
           p_approve: approve,
           p_reason: reason || null,
         });
-        KR.toast.success(approve ? 'Disetujui — saldo customer bertambah' : 'Bukti ditolak');
+        KR.toast.success(approve ? 'Disetujui - saldo customer bertambah' : 'Bukti ditolak');
         await loadSubmissions();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
+      } catch (e) {
+        KR.toast.error('Gagal: ' + e.message);
+      } finally {
+        hideLoading();
+      }
     };
 
     if (approve) {
@@ -545,7 +780,7 @@ function _buildProofThumb(url) {
     }
   };
 
-  /* ---------- WITHDRAWALS ---------- */
+  /* ============ WITHDRAWALS ============ */
   async function loadWithdrawals() {
     try {
       const uid = await getUid();
@@ -555,7 +790,10 @@ function _buildProofThumb(url) {
       });
       withdrawals = (data || []).map(parse).filter(Boolean);
       renderWithdrawals();
-    } catch (e) { console.error(e); KR.toast.error('Gagal memuat penarikan'); }
+    } catch (e) {
+      console.error(e);
+      KR.toast.error('Gagal memuat penarikan');
+    }
   }
 
   function renderWithdrawals() {
@@ -565,7 +803,7 @@ function _buildProofThumb(url) {
 
     if (countEl) countEl.textContent = withdrawals.length + ' penarikan';
 
-     const tabs = _buildFilterTabs('setWithdrawalFilter', withdrawalFilter, ['pending', 'done', 'cancelled', 'all']);
+    const tabs = _buildFilterTabs('setWithdrawalFilter', withdrawalFilter, ['pending', 'done', 'cancelled', 'all']);
 
     if (!withdrawals.length) {
       el.innerHTML = tabs + '<div class="empty-state"><i data-lucide="banknote"></i><h3>Tidak ada penarikan</h3></div>';
@@ -591,7 +829,7 @@ function _buildProofThumb(url) {
         '</div>' +
         '<div class="customer-body">' +
           '<div class="customer-name">' + fmt(w.amount) + ' ' + statusBadge + '</div>' +
-          '<div class="customer-username">' + esc(w.customer_name || '-') + ' • ' + esc(w.customer_phone || '') + '</div>' +
+          '<div class="customer-username">' + esc(w.customer_name || '-') + ' - ' + esc(w.customer_phone || '') + '</div>' +
           '<div class="customer-stats">' +
             '<div><strong>' + esc(w.withdrawal_bank) + '</strong> ' + esc(w.withdrawal_account) + '</div>' +
             '<div>a.n. ' + esc(w.withdrawal_holder) + '</div>' +
@@ -621,8 +859,11 @@ function _buildProofThumb(url) {
         await KR.sb.updateOnlineOrderStatus(id, 'done');
         KR.toast.success('Penarikan selesai');
         await loadWithdrawals();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
+      } catch (e) {
+        KR.toast.error('Gagal: ' + e.message);
+      } finally {
+        hideLoading();
+      }
     });
   };
 
@@ -631,79 +872,74 @@ function _buildProofThumb(url) {
       showLoading('Memproses...');
       try {
         await KR.sb.updateOnlineOrderStatus(id, 'cancelled');
-        KR.toast.success('Penarikan ditolak — saldo dikembalikan');
+        KR.toast.success('Penarikan ditolak - saldo dikembalikan');
         await loadWithdrawals();
-      } catch (e) { KR.toast.error('Gagal: ' + e.message); }
-      finally { hideLoading(); }
+      } catch (e) {
+        KR.toast.error('Gagal: ' + e.message);
+      } finally {
+        hideLoading();
+      }
     });
   };
 
-  /* ---------- MAIN TAB ---------- */
-   window.switchTaskTab = function (tab) {
-     mainTab = tab;
-   
-     // Update active state tab utama
-     document.querySelectorAll('[data-task-tab]').forEach(b => {
-       b.classList.toggle('active', b.dataset.taskTab === tab);
-     });
-   
-     // Re-render icons (karena ada icon baru)
-     if (window.lucide) lucide.createIcons();
-   
-     const btnNew = $('create-task-btn');
-     if (btnNew) btnNew.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
-   
-     if (tab === 'tasks') loadTasks();
-     if (tab === 'socials') loadSocials();
-     if (tab === 'submissions') loadSubmissions();
-     if (tab === 'withdrawals') loadWithdrawals();
-   };
+  /* ============ MAIN TAB SWITCHER ============ */
+  window.switchTaskTab = function (tab) {
+    mainTab = tab;
 
-async function loadTaskTab(evt) {
-  // Ambil tombol refresh (dari event atau via ID)
-  const btn = evt?.target?.closest('button') || document.getElementById('task-refresh-btn');
-  const orig = btn ? btn.innerHTML : null;
+    document.querySelectorAll('[data-task-tab]').forEach(b => {
+      b.classList.toggle('active', b.dataset.taskTab === tab);
+    });
 
-  // Feedback visual: disable + spinner
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = '.7';
-    btn.style.cursor = 'wait';
-    btn.innerHTML = '<i data-lucide="loader-circle" style="animation:krSpin 1s linear infinite;"></i> Memuat...';
     if (window.lucide) lucide.createIcons();
-  }
 
-  try {
-    // Reset semua data state — biar benar-benar fresh
-    tasks = [];
-    socials = [];
-    submissions = [];
-    withdrawals = [];
+    const btnNew = $('create-task-btn');
+    if (btnNew) btnNew.style.display = tab === 'tasks' ? 'inline-flex' : 'none';
 
-    // Reload tab yang sedang aktif
-    switchTaskTab(mainTab);
+    if (tab === 'tasks') loadTasks();
+    if (tab === 'socials') loadSocials();
+    if (tab === 'submissions') loadSubmissions();
+    if (tab === 'withdrawals') loadWithdrawals();
+  };
 
-    // Delay minimal 400ms biar loading state kelihatan
-    await new Promise(r => setTimeout(r, 400));
+  async function loadTaskTab(evt) {
+    const btn = evt?.target?.closest('button') || document.getElementById('task-refresh-btn');
+    const orig = btn ? btn.innerHTML : null;
 
-    // Toast feedback
-    if (KR.toast) KR.toast.success('Data diperbarui');
-  } catch (e) {
-    console.error('[Refresh Tasks]', e);
-    if (KR.toast) KR.toast.error('Gagal refresh: ' + (e.message || 'Unknown'));
-  } finally {
-    // Kembalikan tombol ke semula
-    if (btn && orig) {
-      btn.disabled = false;
-      btn.style.opacity = '';
-      btn.style.cursor = '';
-      btn.innerHTML = orig;
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '.7';
+      btn.style.cursor = 'wait';
+      btn.innerHTML = '<i data-lucide="loader-circle" style="animation:krSpin 1s linear infinite;"></i> Memuat...';
       if (window.lucide) lucide.createIcons();
     }
-  }
-}
-window.loadTaskTab = loadTaskTab;
 
+    try {
+      tasks = [];
+      socials = [];
+      submissions = [];
+      withdrawals = [];
+
+      switchTaskTab(mainTab);
+
+      await new Promise(r => setTimeout(r, 400));
+
+      if (KR.toast) KR.toast.success('Data diperbarui');
+    } catch (e) {
+      console.error('[Refresh Tasks]', e);
+      if (KR.toast) KR.toast.error('Gagal refresh: ' + (e.message || 'Unknown'));
+    } finally {
+      if (btn && orig) {
+        btn.disabled = false;
+        btn.style.opacity = '';
+        btn.style.cursor = '';
+        btn.innerHTML = orig;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  }
+  window.loadTaskTab = loadTaskTab;
+
+  /* ============ INIT ============ */
   window.addEventListener('kasirku:ready', () => {
     setTimeout(() => {
       if (KR.auth.isLoggedIn() && $('tasks-list')) loadTasks();
