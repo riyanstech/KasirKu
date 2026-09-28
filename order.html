@@ -3840,12 +3840,24 @@
       }
       if (sbCount) sbCount.textContent = count;
     }
+
     window.toggleFav = function(productId, ev) {
       if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+      const wasAdded = !state.favorites.has(productId);
       if (state.favorites.has(productId)) state.favorites.delete(productId);
       else state.favorites.add(productId);
       saveFavorites();
       renderProducts();
+      // Animasi heartbeat saat ditambahkan
+      if (wasAdded) {
+        setTimeout(() => {
+          const heart = document.querySelector(`.pc-fav.active svg`);
+          if (heart) {
+            heart.classList.add('heart-beat');
+            setTimeout(() => heart.classList.remove('heart-beat'), 500);
+          }
+        }, 50);
+      }
       if (!$('pd-modal').classList.contains('hidden')) renderPdModal();
     };
 
@@ -4544,6 +4556,7 @@
       const titleEl = $('dt-prod-title');
 
       if (titleEl) {
+        titleEl.classList.toggle('fav-mode', state.showFavoritesOnly);
         if (state.showFavoritesOnly) titleEl.textContent = 'Produk Favorit';
         else if (state.categoryFilter) titleEl.textContent = state.categoryFilter;
         else titleEl.textContent = 'Produk Tersedia';
@@ -4554,6 +4567,7 @@
       if (!list.length) {
         grid.innerHTML = ''; grid.classList.add('hidden');
         empty.classList.remove('hidden');
+        empty.classList.toggle('fav-mode', state.showFavoritesOnly);
         if (state.showFavoritesOnly) {
           empty.querySelector('.empty-title').textContent = 'Belum ada favorit';
           empty.querySelector('.empty-sub').textContent = 'Tap ikon hati di produk untuk menambahkan ke favorit';
