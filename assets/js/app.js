@@ -166,6 +166,7 @@ function showTab(tabId, btn) {
   if (tabId === 'customer' && typeof loadCustomers === 'function') loadCustomers();
   if (tabId === 'tugas' && typeof loadTaskTab === 'function') loadTaskTab();
   if (tabId === 'kasbon' && typeof loadKasbon === 'function') loadKasbon();
+  if (tabId === 'notif' && typeof loadNotifications === 'function') loadNotifications();
   if (tabId === 'digital' && typeof loadDigitalProducts === 'function') loadDigitalProducts();
 
   if (window.lucide) lucide.createIcons();
