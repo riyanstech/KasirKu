@@ -4594,7 +4594,8 @@
         document.title = 'Order — ' + storeName;
 
         $('store-name').textContent = storeName;
-        $('store-status').innerHTML = `<span class="live-dot"></span><span style="overflow:hidden;text-overflow:ellipsis;">${esc(profile.store_address || 'Order online')}</span>`;
+        const statusText = $('store-status-text');
+        if (statusText) statusText.textContent = profile.store_address || 'Order online';
         const dtName = $('dt-store-name');
         if (dtName) dtName.textContent = storeName;
 
