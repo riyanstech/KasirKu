@@ -1135,6 +1135,12 @@ async function init() {
 
   const params = new URLSearchParams(location.search);
   state.sellerSlug = params.get('seller');
+  
+  // Fallback: baca dari path /toko/:slug/digital
+  if (!state.sellerSlug) {
+    const m = location.pathname.match(/^\/toko\/([^\/]+)\/digital\/?$/);
+    if (m) state.sellerSlug = decodeURIComponent(m[1]);
+  }
 
   try {
     let sellerQuery = sb.from('profiles').select('id, store_name, username');
