@@ -2850,10 +2850,10 @@
           <span>Keranjang</span>
           <span id="dt-cart-badge" class="badge hidden">0</span>
         </button>
-        <a id="digital-link-desktop" href="digital.html" class="dt-nav-item" style="text-decoration:none;" title="Pulsa, Token PLN, Paket Data">
+        <button onclick="goToDigital()" class="dt-nav-item" style="text-decoration:none;border:none;cursor:pointer;" title="Pulsa, Token PLN, Paket Data">
           <i data-lucide="zap"></i>
           <span>Pulsa & Token</span>
-        </a>
+        </button>
         <div class="dt-profile" onclick="toggleDtProfileMenu(event)" id="dt-profile-btn">
           <div class="dt-profile-avatar" id="dt-profile-avatar">
             <i data-lucide="user"></i>
@@ -2892,9 +2892,9 @@
       <button id="my-orders-header-btn" class="tb-btn orders hidden" title="Pesanan">
         <i data-lucide="receipt-text"></i>
       </button>
-      <a id="digital-link-mobile" href="digital.html" class="tb-btn" style="color:#d97706;text-decoration:none;" title="Pulsa & Token PLN">
+      <button onclick="goToDigital()" class="tb-btn" style="color:#d97706;background:none;border:none;cursor:pointer;" title="Pulsa & Token PLN">
         <i data-lucide="zap"></i>
-      </a>
+      </button>
       <button id="customer-header-btn" class="tb-btn" title="Akun">
         <i data-lucide="user"></i>
       </button>
@@ -5066,6 +5066,21 @@
 window.closeAboutModal = closeAboutModal;
 
     window.submitOrder = submitOrder;
+
+    /* ============ GO TO DIGITAL ============ */
+window.goToDigital = function() {
+  if (!state.seller) {
+    alert('Memuat data toko... coba lagi sebentar');
+    return;
+  }
+  const slug = state.seller.store_slug || state.seller.username;
+  if (!slug) {
+    alert('Slug toko belum diset. Set dulu di Pengaturan → Toko.');
+    return;
+  }
+  // Arahkan ke halaman digital dengan parameter seller
+  window.location.href = 'digital.html?seller=' + encodeURIComponent(slug);
+};
 
     /* ============ TRACK ============ */
     function openTrackModal() { resetTrack(); $('track-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; icon(); setTimeout(() => $('inp-track-code')?.focus(), 300); }
