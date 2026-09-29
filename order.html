@@ -2947,23 +2947,33 @@
       </div>
   
       <div class="tb-actions">
-        <!-- Keranjang -->
         <button class="tb-btn cart" onclick="openCart()" title="Keranjang">
           <i data-lucide="shopping-cart"></i>
           <span id="tb-cart-badge" class="tb-badge hidden">0</span>
         </button>
-      
-        <!-- Notifikasi -->
         <button class="tb-btn bell" onclick="tbGoNotif()" title="Notifikasi">
           <i data-lucide="bell"></i>
           <span id="tb-notif-badge" class="tb-badge hidden">0</span>
         </button>
-      
-        <!-- Avatar Customer -->
         <button id="tb-avatar-btn" class="tb-avatar" onclick="tbGoUser()" title="Akun">
           <i data-lucide="user"></i>
         </button>
       </div>
+    </div>
+  
+    <!-- 👇 2 BLOK YANG HILANG — TAMBAHKAN DI SINI -->
+  
+    <div class="search-wrap">
+      <div class="search-box">
+        <i data-lucide="search"></i>
+        <input id="search-input" type="search" placeholder="Cari produk...">
+      </div>
+    </div>
+  
+    <div class="cat-wrap">
+      <div id="category-chips" class="cat-tabs"></div>
+    </div>
+  
   </header>
 
   <!-- ============================================
@@ -4674,10 +4684,12 @@
       return list;
     }
 
-    function renderCategoryChips() {
-      const cats = [...new Set(state.products.map(p => p.category).filter(Boolean))].sort();
-
-      const c = $('category-chips');
+  function renderCategoryChips() {
+    const cats = [...new Set(state.products.map(p => p.category).filter(Boolean))].sort();
+  
+    // ---- Mobile: category chips ----
+    const c = $('category-chips');
+    if (c) {
       let html = `<button data-cat="" class="cat-tab ${(!state.categoryFilter && !state.showFavoritesOnly) ? 'active' : ''}">Semua <span class="count">${state.products.length}</span></button>`;
       html += cats.map(cat => {
         const count = state.products.filter(p => p.category === cat).length;
@@ -4695,62 +4707,65 @@
           renderProducts();
         };
       });
-
-      const dtGrid = $('dt-category-grid');
-      if (dtGrid) {
-        const allMeta = { icon: 'layout-grid', bg: '#e0e7ff', color: '#4f46e5' };
-        let dtHtml = `
-          <button class="dt-cat-card ${(!state.categoryFilter && !state.showFavoritesOnly) ? 'active' : ''}" data-cat="">
-            <div class="dt-cat-ico" style="background:${allMeta.bg};color:${allMeta.color};">
-              <i data-lucide="${allMeta.icon}"></i>
+    }
+  
+    // ---- Desktop: dt-category-grid ----
+    const dtGrid = $('dt-category-grid');
+    if (dtGrid) {
+      const allMeta = { icon: 'layout-grid', bg: '#e0e7ff', color: '#4f46e5' };
+      let dtHtml = `
+        <button class="dt-cat-card ${(!state.categoryFilter && !state.showFavoritesOnly) ? 'active' : ''}" data-cat="">
+          <div class="dt-cat-ico" style="background:${allMeta.bg};color:${allMeta.color};">
+            <i data-lucide="${allMeta.icon}"></i>
+          </div>
+          <div class="dt-cat-name">Semua</div>
+          <div class="dt-cat-count">${state.products.length} produk</div>
+        </button>`;
+      dtHtml += cats.map((cat, idx) => {
+        const count = state.products.filter(p => p.category === cat).length;
+        const active = state.categoryFilter === cat && !state.showFavoritesOnly;
+        const meta = getCategoryMeta(cat, idx);
+        return `
+          <button class="dt-cat-card ${active ? 'active' : ''}" data-cat="${esc(cat)}">
+            <div class="dt-cat-ico" style="background:${meta.bg};color:${meta.color};">
+              <i data-lucide="${meta.icon}"></i>
             </div>
-            <div class="dt-cat-name">Semua</div>
-            <div class="dt-cat-count">${state.products.length} produk</div>
+            <div class="dt-cat-name" title="${esc(cat)}">${esc(cat)}</div>
+            <div class="dt-cat-count">${count} produk</div>
           </button>`;
-        dtHtml += cats.map((cat, idx) => {
+      }).join('');
+      dtGrid.innerHTML = dtHtml;
+      dtGrid.querySelectorAll('.dt-cat-card').forEach(btn => {
+        btn.onclick = () => {
+          state.showFavoritesOnly = false;
+          state.categoryFilter = btn.dataset.cat;
+          document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+          document.querySelector('.sb-item[data-sb="all"]')?.classList.add('active');
+          renderCategoryChips();
+          renderProducts();
+        };
+      });
+    }
+  
+    // ---- Desktop: sidebar category list ----
+    const sbList = $('sb-cat-list');
+    if (sbList) {
+      if (!cats.length) {
+        sbList.innerHTML = '<div class="sb-empty">Belum ada kategori</div>';
+      } else {
+        sbList.innerHTML = cats.map((cat, idx) => {
           const count = state.products.filter(p => p.category === cat).length;
-          const active = state.categoryFilter === cat && !state.showFavoritesOnly;
           const meta = getCategoryMeta(cat, idx);
           return `
-            <button class="dt-cat-card ${active ? 'active' : ''}" data-cat="${esc(cat)}">
-              <div class="dt-cat-ico" style="background:${meta.bg};color:${meta.color};">
-                <i data-lucide="${meta.icon}"></i>
-              </div>
-              <div class="dt-cat-name" title="${esc(cat)}">${esc(cat)}</div>
-              <div class="dt-cat-count">${count} produk</div>
+            <button class="sb-item" data-sb-cat="${esc(cat)}" onclick="sbCategoryClick('${esc(cat)}')">
+              <i data-lucide="${meta.icon}" style="color:${meta.color};"></i>
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(cat)}</span>
+              <span class="sb-count">${count}</span>
             </button>`;
         }).join('');
-        dtGrid.innerHTML = dtHtml;
-        dtGrid.querySelectorAll('.dt-cat-card').forEach(btn => {
-          btn.onclick = () => {
-            state.showFavoritesOnly = false;
-            state.categoryFilter = btn.dataset.cat;
-            document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
-            document.querySelector('.sb-item[data-sb="all"]')?.classList.add('active');
-            renderCategoryChips();
-            renderProducts();
-          };
-        });
-      }
-
-      const sbList = $('sb-cat-list');
-      if (sbList) {
-        if (!cats.length) {
-          sbList.innerHTML = '<div class="sb-empty">Belum ada kategori</div>';
-        } else {
-          sbList.innerHTML = cats.map((cat, idx) => {
-            const count = state.products.filter(p => p.category === cat).length;
-            const meta = getCategoryMeta(cat, idx);
-            return `
-              <button class="sb-item" data-sb-cat="${esc(cat)}" onclick="sbCategoryClick('${esc(cat)}')">
-                <i data-lucide="${meta.icon}" style="color:${meta.color};"></i>
-                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(cat)}</span>
-                <span class="sb-count">${count}</span>
-              </button>`;
-          }).join('');
-        }
       }
     }
+  }
 
     window.sbCategoryClick = function(cat) {
       state.showFavoritesOnly = false;
