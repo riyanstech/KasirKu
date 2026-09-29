@@ -2850,7 +2850,7 @@
           <span>Keranjang</span>
           <span id="dt-cart-badge" class="badge hidden">0</span>
         </button>
-        <a href="digital.html" class="dt-nav-item" style="text-decoration:none;" title="Pulsa, Token PLN, Paket Data">
+        <a id="digital-link-desktop" href="digital.html" class="dt-nav-item" style="text-decoration:none;" title="Pulsa, Token PLN, Paket Data">
           <i data-lucide="zap"></i>
           <span>Pulsa & Token</span>
         </a>
@@ -2892,7 +2892,7 @@
       <button id="my-orders-header-btn" class="tb-btn orders hidden" title="Pesanan">
         <i data-lucide="receipt-text"></i>
       </button>
-      <a href="digital.html" class="tb-btn" style="color:#d97706;text-decoration:none;" title="Pulsa & Token PLN">
+      <a id="digital-link-mobile" href="digital.html" class="tb-btn" style="color:#d97706;text-decoration:none;" title="Pulsa & Token PLN">
         <i data-lucide="zap"></i>
       </a>
       <button id="customer-header-btn" class="tb-btn" title="Akun">
@@ -4435,6 +4435,12 @@
         if (!profile.online_order_enabled) return showError('Toko sedang tutup', 'Pemesanan online sedang tidak aktif.');
 
         state.seller = profile;
+        // Update link digital.html dengan seller slug
+        const sellerSlug = profile.store_slug || profile.username || slug;
+        const dlink1 = document.getElementById('digital-link-desktop');
+        const dlink2 = document.getElementById('digital-link-mobile');
+        if (dlink1) dlink1.href = 'digital.html?seller=' + encodeURIComponent(sellerSlug);
+        if (dlink2) dlink2.href = 'digital.html?seller=' + encodeURIComponent(sellerSlug);
         loadFavorites();
 
         const { data: products } = await sb
