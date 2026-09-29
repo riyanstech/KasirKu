@@ -3,7 +3,7 @@
    Auto-update + Offline support
    v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v29-digital-admin';  // ← naikkan versi
+const CACHE_VERSION = 'kasirku-v30-digital-admin';  // ← naikkan versi
 
 const ASSETS = [
   './',
