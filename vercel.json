@@ -1,7 +1,9 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/toko/:slug", "destination": "/order" },
-    { "source": "/toko/:slug/", "destination": "/order" }
+    { "source": "/toko/:slug/digital", "destination": "/digital?seller=:slug" },
+    { "source": "/toko/:slug/digital/", "destination": "/digital?seller=:slug" },
+    { "source": "/toko/:slug", "destination": "/order?seller=:slug" },
+    { "source": "/toko/:slug/", "destination": "/order?seller=:slug" }
   ]
 }
