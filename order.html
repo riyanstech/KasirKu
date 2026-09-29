@@ -6034,12 +6034,13 @@ window.closeAboutModal = closeAboutModal;
     }
   };
 
+
+
   window.dtLogout = function (e) {
     if (e) e.stopPropagation();
     document.getElementById('dt-profile-menu')?.classList.add('hidden');
-    if (confirm('Keluar dari akun?')) {
-      window.CustomerAuth?.handleLogout?.();
-    }
+    // Pakai CustomerAuth.handleLogout yang sudah pakai custom confirm
+    window.CustomerAuth?.handleLogout?.();
   };
 
   /* ---------- SIDEBAR HANDLERS ---------- */
