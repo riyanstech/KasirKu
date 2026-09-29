@@ -156,36 +156,35 @@
     .reveal.revealed { opacity: 1; transform: none !important; }
     .d-1 { transition-delay: .08s; }
 
-    /* ============================================================
-       MOBILE TOP BAR (< 1024px)
-       ============================================================ */
+    /* ============ MOBILE TOP BAR (v6) ============ */
     .top-bar {
       position: sticky;
       top: 0;
       z-index: 40;
       padding-top: var(--safe-top);
-      background: linear-gradient(to bottom, var(--cream) 85%, rgba(245,250,247,.85));
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid var(--line);
     }
     .top-inner {
       max-width: 640px;
       margin: 0 auto;
-      padding: 12px 16px 8px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
     .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
     .brand-logo {
-      width: 40px; height: 40px;
-      border-radius: 13px;
+      width: 38px; height: 38px;
+      border-radius: 12px;
       display: grid; place-items: center;
       color: #fff;
       background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%);
       background-size: 200% 200%;
       animation: gradientShift 6s ease infinite;
-      box-shadow: 0 8px 18px -6px rgba(16,185,129,.5), inset 0 1px 0 rgba(255,255,255,.25);
+      box-shadow: 0 6px 14px -4px rgba(16,185,129,.5), inset 0 1px 0 rgba(255,255,255,.25);
       flex-shrink: 0;
       position: relative;
       overflow: hidden;
@@ -196,95 +195,139 @@
       background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.4), transparent 55%);
       pointer-events: none;
     }
-    .brand-logo svg { width: 19px; height: 19px; position: relative; z-index: 1; }
+    .brand-logo svg { width: 18px; height: 18px; position: relative; z-index: 1; }
     .brand-text { min-width: 0; }
     .brand-title {
-      font-weight: 800; font-size: .93rem; letter-spacing: -.02em;
+      font-weight: 800; font-size: .92rem; letter-spacing: -.02em;
       line-height: 1.15; white-space: nowrap; overflow: hidden;
       text-overflow: ellipsis; color: var(--ink);
     }
     .brand-sub {
       display: flex; align-items: center; gap: 5px;
-      font-size: .68rem; color: var(--ink-3); margin-top: 3px;
+      font-size: .66rem; color: var(--ink-3); margin-top: 2px;
       font-weight: 600; white-space: nowrap; overflow: hidden;
       text-overflow: ellipsis;
     }
     .live-dot {
-      width: 6px; height: 6px; border-radius: 50%;
+      width: 5px; height: 5px; border-radius: 50%;
       background: var(--primary); flex-shrink: 0;
-      box-shadow: 0 0 0 3px rgba(16,185,129,.18);
+      box-shadow: 0 0 0 3px rgba(16,185,129,.15);
       animation: pulseDot 2s ease-in-out infinite;
     }
+    
+    /* Aksi ikon kanan */
+    .tb-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
     .tb-btn {
-      width: 40px; height: 40px; border-radius: 12px;
+      width: 38px; height: 38px;
+      border-radius: 11px;
       display: grid; place-items: center;
-      color: var(--ink-2); background: transparent;
-      transition: all .2s cubic-bezier(.34,1.56,.64,1);
-      flex-shrink: 0;
+      color: var(--ink-2);
+      background: transparent;
+      border: none;
       position: relative;
+      transition: all .25s cubic-bezier(.34,1.56,.64,1);
+      flex-shrink: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
-    .tb-btn:hover { background: var(--paper-2); color: var(--ink); transform: translateY(-2px); }
     .tb-btn:active { transform: scale(.9); }
-    .tb-btn svg { width: 18px; height: 18px; transition: transform .3s; }
-    .tb-btn:hover svg { animation: iconWiggle .5s ease; }
-    .tb-btn.tasks { color: var(--amber-dark); }
-    .tb-btn.tasks:hover { background: #fef3c7; }
-    .tb-btn.orders { color: var(--primary-dark); }
-    .tb-btn.orders:hover { background: var(--primary-soft); }
-
-    .search-wrap { max-width: 640px; margin: 0 auto; padding: 4px 16px 12px; }
+    .tb-btn svg { width: 20px; height: 20px; }
+    .tb-btn.zap { color: #d97706; }
+    .tb-btn.zap:active { background: #fef3c7; }
+    .tb-btn.cart { color: var(--primary-dark); }
+    .tb-btn.cart:active { background: var(--primary-soft); }
+    .tb-btn.bell { color: #8b5cf6; }
+    .tb-btn.bell:active { background: #ede9fe; }
+    .tb-btn .tb-badge {
+      position: absolute;
+      top: 1px; right: 1px;
+      min-width: 18px; height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      font-size: .56rem; font-weight: 900;
+      display: grid; place-items: center;
+      border: 2px solid #fff;
+      font-family: 'JetBrains Mono', monospace;
+      box-shadow: 0 2px 6px -1px rgba(239,68,68,.4);
+    }
+    .tb-btn .tb-badge.hidden { display: none !important; }
+    .tb-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-weight: 800; font-size: .82rem;
+      box-shadow: 0 3px 8px -2px rgba(16,185,129,.5);
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .tb-avatar svg { width: 16px; height: 16px; }
+    
+    /* Search */
+    .search-wrap { max-width: 640px; margin: 0 auto; padding: 2px 14px 10px; }
     .search-box {
       position: relative; display: flex; align-items: center;
-      background: var(--paper); border-radius: 14px;
-      border: 1.5px solid var(--line); box-shadow: var(--sh-1);
+      background: var(--paper); border-radius: 12px;
+      border: 1.5px solid var(--line);
       transition: all .25s cubic-bezier(.4,0,.2,1);
     }
     .search-box:focus-within {
       border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(16,185,129,.14), 0 8px 20px -8px rgba(16,185,129,.25);
-      transform: translateY(-1px);
+      box-shadow: 0 0 0 3px rgba(16,185,129,.12);
     }
     .search-box > svg {
-      position: absolute; left: 14px;
-      width: 17px; height: 17px; color: var(--ink-3);
-      pointer-events: none; transition: all .25s;
+      position: absolute; left: 12px;
+      width: 16px; height: 16px; color: var(--ink-3);
+      pointer-events: none;
     }
-    .search-box:focus-within > svg { color: var(--primary); transform: scale(1.1); }
     .search-box input {
-      width: 100%; padding: 13px 14px 13px 42px;
+      width: 100%; padding: 11px 14px 11px 38px;
       border: none; background: transparent;
       font-size: 15px; font-weight: 500; outline: none;
     }
     .search-box input::placeholder { color: var(--ink-3); font-weight: 400; }
-
+    
+    /* Kategori chips */
     .cat-wrap {
-      max-width: 640px; margin: 0 auto; padding: 0 16px;
-      position: sticky; top: calc(60px + var(--safe-top));
-      z-index: 30; background: var(--cream);
+      max-width: 640px; margin: 0 auto; padding: 0 14px;
+      position: sticky; top: calc(56px + var(--safe-top));
+      z-index: 30;
+      background: rgba(245,250,247,.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
     .cat-tabs {
-      display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
-      border-bottom: 1px solid var(--line);
-      margin: 0 -16px; padding: 0 16px;
+      display: flex; gap: 4px; overflow-x: auto;
+      scrollbar-width: none;
+      padding: 0 0 8px;
     }
     .cat-tabs::-webkit-scrollbar { display: none; }
     .cat-tab {
-      position: relative; padding: 12px 14px;
-      font-size: .82rem; font-weight: 700;
+      position: relative;
+      padding: 8px 14px;
+      font-size: .78rem; font-weight: 700;
       color: var(--ink-3); white-space: nowrap;
       flex-shrink: 0; transition: all .25s;
-      border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      cursor: pointer;
     }
-    .cat-tab:hover { color: var(--primary-dark); }
     .cat-tab.active {
-      color: var(--primary-darker);
-      border-bottom-color: var(--primary);
+      color: #fff;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: transparent;
+      box-shadow: 0 4px 12px -4px rgba(16,185,129,.5);
     }
     .cat-tab .count {
-      font-size: .68rem; opacity: .65;
+      font-size: .64rem; opacity: .7;
       margin-left: 3px; font-family: 'JetBrains Mono', monospace;
     }
-    .cat-tab.active .count { opacity: 1; color: var(--primary-dark); }
+    .cat-tab.active .count { opacity: 1; }
 
     /* ============================================================
        DESKTOP HEADER (>= 1024px)
@@ -878,6 +921,23 @@
       box-shadow: 0 4px 10px rgba(245,158,11,.5);
     }
     .bn-cart .badge.bounce { animation: badgeBounce .55s cubic-bezier(.34,1.56,.64,1); }
+
+    .bn-item .nav-badge {
+      position: absolute;
+      top: 4px; right: 22%;
+      min-width: 18px; height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      font-size: .58rem;
+      font-weight: 900;
+      display: grid; place-items: center;
+      border: 2px solid var(--cream);
+      font-family: 'JetBrains Mono', monospace;
+      box-shadow: 0 2px 6px -1px rgba(239,68,68,.5);
+    }
+    .bn-item .nav-badge.hidden { display: none !important; }
 
     /* ============ SHEET / MODAL ============ */
     .sheet {
@@ -2872,41 +2932,52 @@
   <!-- ============================================
        MOBILE TOP BAR (< 1024px)
        ============================================ -->
+  <!-- ============ MOBILE TOP BAR (v6) ============ -->
   <header class="top-bar">
     <div class="top-inner">
       <div class="brand">
-        <div class="brand-logo">
-          <i data-lucide="store"></i>
-        </div>
+        <div class="brand-logo"><i data-lucide="store"></i></div>
         <div class="brand-text">
           <div id="store-name" class="brand-title">Memuat...</div>
-          <div id="store-status" class="brand-sub">
+          <div class="brand-sub">
             <span class="live-dot"></span>
-            <span style="overflow:hidden;text-overflow:ellipsis;">—</span>
+            <span id="store-status-text" style="overflow:hidden;text-overflow:ellipsis;">—</span>
           </div>
         </div>
       </div>
-      <button id="tasks-header-btn" class="tb-btn tasks hidden" onclick="CustomerTasks.openTasksSheet()" title="Tugas">
-        <i data-lucide="gift"></i>
-      </button>
-      <button id="my-orders-header-btn" class="tb-btn orders hidden" title="Pesanan">
-        <i data-lucide="receipt-text"></i>
-      </button>
-      <button onclick="goToDigital()" class="tb-btn" style="color:#d97706;background:none;border:none;cursor:pointer;" title="Pulsa & Token PLN">
-        <i data-lucide="zap"></i>
-      </button>
-      <button id="customer-header-btn" class="tb-btn" title="Akun">
-        <i data-lucide="user"></i>
-      </button>
+  
+      <div class="tb-actions">
+        <!-- Pulsa & Token -->
+        <button class="tb-btn zap" onclick="tbGoDigital()" title="Pulsa & Token">
+          <i data-lucide="zap"></i>
+        </button>
+  
+        <!-- Keranjang -->
+        <button class="tb-btn cart" onclick="openCart()" title="Keranjang">
+          <i data-lucide="shopping-cart"></i>
+          <span id="tb-cart-badge" class="tb-badge hidden">0</span>
+        </button>
+  
+        <!-- Notifikasi -->
+        <button class="tb-btn bell" onclick="tbGoNotif()" title="Notifikasi">
+          <i data-lucide="bell"></i>
+          <span id="tb-notif-badge" class="tb-badge hidden">0</span>
+        </button>
+  
+        <!-- Avatar Customer -->
+        <button id="tb-avatar-btn" class="tb-avatar" onclick="tbGoUser()" title="Akun">
+          <i data-lucide="user"></i>
+        </button>
+      </div>
     </div>
-
+  
     <div class="search-wrap">
       <div class="search-box">
         <i data-lucide="search"></i>
         <input id="search-input" type="search" placeholder="Cari produk...">
       </div>
     </div>
-
+  
     <div class="cat-wrap">
       <div id="category-chips" class="cat-tabs"></div>
     </div>
@@ -3141,27 +3212,29 @@
         <i data-lucide="home"></i>
         <span>Beranda</span>
       </button>
-      <button class="bn-item" data-bn="cat" onclick="bnSwitch('cat')">
-        <i data-lucide="grid-2x2"></i>
-        <span>Kategori</span>
+  
+      <button class="bn-item" data-bn="orders" onclick="bnSwitch('orders')">
+        <i data-lucide="package"></i>
+        <span>Pesanan</span>
       </button>
-
+  
       <button class="bn-cart" onclick="openCart()" title="Keranjang">
         <i data-lucide="shopping-bag"></i>
         <span id="fab-cart-badge" class="badge hidden">0</span>
       </button>
-
-      <button class="bn-item" data-bn="tasks" onclick="bnSwitch('tasks')">
-        <i data-lucide="gift"></i>
-        <span>Tugas</span>
+  
+      <button class="bn-item" data-bn="notif" onclick="bnSwitch('notif')">
+        <i data-lucide="bell"></i>
+        <span>Notif</span>
+        <span id="bn-notif-badge" class="nav-badge hidden">0</span>
       </button>
-      <button class="bn-item" data-bn="orders" onclick="bnSwitch('orders')">
-        <i data-lucide="receipt-text"></i>
-        <span>Pesanan</span>
+  
+      <button class="bn-item" data-bn="user" onclick="bnSwitch('user')">
+        <i data-lucide="user"></i>
+        <span>Profil</span>
       </button>
     </div>
   </nav>
-
   <!-- ============================================
        PRODUCT DETAIL MODAL
        ============================================ -->
@@ -3804,13 +3877,51 @@
     /* ============ NAVIGATION ============ */
     window.bnSwitch = function(tab) {
       document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === tab));
-      if (tab === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (tab === 'cat') document.querySelector('.cat-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (tab === 'tasks') { if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet(); }
+    
+      if (tab === 'home') {
+        state.showFavoritesOnly = false;
+        state.categoryFilter = '';
+        state.searchQuery = '';
+        const si = document.getElementById('search-input');
+        if (si) si.value = '';
+        renderCategoryChips();
+        renderProducts();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    
       if (tab === 'orders') {
-        if (window.CustomerAuth?.openMyOrders) window.CustomerAuth.openMyOrders();
-        else if (window.KRCustomer?.getSession?.()) toast('Memuat pesanan...');
-        else window.CustomerAuth?.openAuthModal('login');
+        const session = window.KRCustomer?.getSession?.();
+        if (session) {
+          if (window.CustomerAuth?.openMyOrders) window.CustomerAuth.openMyOrders();
+        } else {
+          window.CustomerAuth?.openAuthModal?.('login');
+          document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+        }
+        return;
+      }
+    
+      if (tab === 'notif') {
+        window.tbGoNotif();
+        document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+        return;
+      }
+    
+      if (tab === 'user') {
+        window.tbGoUser();
+        document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+        return;
+      }
+    
+      if (tab === 'tasks') {
+        const session = window.KRCustomer?.getSession?.();
+        if (!session) {
+          if (window.showLoginHint) window.showLoginHint('tasks');
+          document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+          return;
+        }
+        if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet();
+        return;
       }
     };
 
@@ -3873,6 +3984,32 @@
         window.CustomerAuth?.openAuthModal('login');
       }
     }
+
+    /* ============ HEADER MOBILE ACTIONS ============ */
+    window.tbGoDigital = function() {
+      const slug = state.seller?.store_slug || state.seller?.username;
+      if (!slug) {
+        toast('Data toko belum siap', 'info');
+        return;
+      }
+      window.location.href = '/digital.html?seller=' + encodeURIComponent(slug);
+    };
+    
+    window.tbGoNotif = function() {
+      // Placeholder — akan di-implement di FASE 3
+      toast('Fitur notifikasi segera hadir 🚧', 'info');
+    };
+    
+    window.tbGoUser = function() {
+      const session = window.KRCustomer?.getSession?.();
+      if (session) {
+        if (window.CustomerAuth?.openProfileSheet) {
+          window.CustomerAuth.openProfileSheet();
+        }
+      } else {
+        window.CustomerAuth?.openAuthModal?.('login');
+      }
+    };
 
     window.scrollToProducts = function() {
       document.getElementById('dt-prod-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4504,6 +4641,12 @@
         if (profAv) profAv.innerHTML = `<i data-lucide="user"></i>`;
       }
       icon();
+      // Update avatar header mobile
+      const tbAvatar = document.getElementById('tb-avatar-btn');
+      if (tbAvatar && session) {
+        const initial = (session.name || '?')[0].toUpperCase();
+        tbAvatar.innerHTML = '<span style="font-weight:800;font-size:.9rem;">' + initial + '</span>';
+      }
     }
 
     async function autoDetectSeller() {
