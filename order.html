@@ -5068,20 +5068,18 @@ window.closeAboutModal = closeAboutModal;
     window.submitOrder = submitOrder;
 
     /* ============ GO TO DIGITAL ============ */
-window.goToDigital = function() {
-  if (!state.seller) {
-    alert('Memuat data toko... coba lagi sebentar');
-    return;
-  }
-  const slug = state.seller.store_slug || state.seller.username;
-  if (!slug) {
-    alert('Slug toko belum diset. Set dulu di Pengaturan → Toko.');
-    return;
-  }
-  // Arahkan ke halaman digital dengan parameter seller
-  window.location.href = 'digital.html?seller=' + encodeURIComponent(slug);
-};
-
+    window.goToDigital = function() {
+      if (!state.seller) {
+        alert('Memuat data toko... coba lagi sebentar');
+        return;
+      }
+      const slug = state.seller.store_slug || state.seller.username;
+      if (!slug) {
+        alert('Slug toko belum diset. Set dulu di Pengaturan → Toko.');
+        return;
+      }
+      window.location.href = '/digital.html?seller=' + encodeURIComponent(slug);
+    };
     /* ============ TRACK ============ */
     function openTrackModal() { resetTrack(); $('track-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; icon(); setTimeout(() => $('inp-track-code')?.focus(), 300); }
     function closeTrackModal() { $('track-modal').classList.add('hidden'); document.body.style.overflow = ''; }
