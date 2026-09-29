@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+    <meta name="theme-color" content="#10b981">
+    <title>KasirKu — Point of Sale</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KasirKu">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="KasirKu">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/tailwind.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3"></script>
+    <!-- Export libraries: lazy-loaded dari app.js saat user klik tombol export -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <div class="hdr-inner">
+                <div class="hdr-logo">
+                    <div class="logo-box"><i data-lucide="shopping-cart"></i></div>
+                    <div>
+                        <h1 class="logo-title">KasirKu</h1>
+                        <p class="logo-sub">POINT OF SALE</p>
+                    </div>
+                </div>
+
+                <nav class="nav-tabs">
+                    <button class="nav-tab active" data-tab="kasir" onclick="showTab('kasir', this)">
+                        <i data-lucide="store"></i><span>Kasir</span>
+                    </button>
+                    <button class="nav-tab" data-tab="produk" onclick="showTab('produk', this)">
+                        <i data-lucide="package"></i><span>Produk</span>
+                    </button>
+                    <button class="nav-tab" data-tab="digital" onclick="showTab('digital', this)">
+                        <i data-lucide="zap"></i><span>Pulsa</span>
+                    </button>
+                    <button class="nav-tab" data-tab="transaksi" onclick="showTab('transaksi', this)">
+                        <i data-lucide="receipt-text"></i><span>Transaksi</span>
+                    </button>
+                    <button class="nav-tab" data-tab="pesanan" onclick="showTab('pesanan', this)">
+                        <i data-lucide="inbox"></i><span>Pesanan</span>
+                        <span id="orders-badge" class="nav-badge hidden">0</span>
+                    </button>
+                    <button class="nav-tab" data-tab="laporan" onclick="showTab('laporan', this)">
+                        <i data-lucide="bar-chart-3"></i><span>Laporan</span>
+                    </button>
+
+                    <button class="nav-tab" data-tab="tugas" onclick="showTab('tugas', this)">
+                      <i data-lucide="gift"></i><span>Tugas</span>
+                      <span id="tasks-badge" class="nav-badge hidden">0</span>
+                    </button>
+
+                    <button class="nav-tab" data-tab="customer" onclick="showTab('customer', this)">
+                      <i data-lucide="users"></i><span>Customer</span>
+                    </button>
+
+                    <button class="nav-tab" data-tab="kasbon" onclick="showTab('kasbon', this)">
+                      <i data-lucide="hand-coins"></i><span>Kasbon</span>
+                    </button>
+
+                    <button class="nav-tab" data-tab="pengaturan" onclick="showTab('pengaturan', this)">
+                        <i data-lucide="settings"></i><span>Pengaturan</span>
+                    </button>
+                </nav>
+
+                <div class="hdr-actions">
+                    <!-- Badge sync pending (oranye) -->
+                    <button id="sync-badge" class="cart-badge hidden"
+                            style="background:linear-gradient(135deg,#f59e0b,#d97706);"
+                            title="Pending sync">0</button>
+                
+                    <!-- Badge offline (kuning) -->
+                    <div id="offline-badge" class="hidden"
+                         style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:#fef3c7;border-radius:8px;font-size:.72rem;font-weight:700;color:#92400e;">
+                        <i data-lucide="wifi-off" style="width:12px;height:12px;"></i>
+                        <span>Offline</span>
+                    </div>
+                
+                    <span id="cart-badge-hdr" class="cart-badge hidden">0</span>
+                    <button id="user-badge-btn" onclick="showTab('pengaturan')" class="user-badge" title="Akun" style="display:none">
+                        <i data-lucide="user"></i>
+                        <span id="user-badge-name"></span>
+                    </button>
+                    <button onclick="toggleTheme()" class="icon-btn" aria-label="Tema">
+                        <i id="theme-icon" data-lucide="moon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <section id="tab-kasir" class="tab-content active">
+                <div class="pos-layout">
+                    <div class="pos-products">
+                        <div class="pos-toolbar">
+                            <div class="search-box">
+                                <i data-lucide="search"></i>
+                                <input type="text" id="pos-search" placeholder="Cari produk atau scan barcode..." oninput="renderPosGrid()">
+                            </div>
+                            <button class="btn btn-primary" onclick="openScanner()">
+                                <i data-lucide="scan-line"></i> Scan
+                            </button>
+                        </div>
+                        <div id="pos-category-filter" class="cat-chips"></div>
+                        <div id="pos-grid" class="product-grid"></div>
+                    </div>
+
+                    <div class="pos-cart">
+                        <div class="cart-header">
+                            <h3><i data-lucide="shopping-bag"></i> Keranjang</h3>
+                            <button class="btn-icon-danger" onclick="clearCart()" title="Kosongkan">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                        <div id="cart-items" class="cart-items"></div>
+                        <div class="cart-summary">
+                            <div class="sum-row"><span>Subtotal</span><span id="sum-subtotal">Rp 0</span></div>
+                            <div class="sum-row"><span>Diskon</span><span id="sum-discount">Rp 0</span></div>
+                            <div class="sum-row total"><span>Total</span><span id="sum-total">Rp 0</span></div>
+                            <button id="checkout-btn" class="btn-checkout" onclick="openCheckout()" disabled>
+                                <i data-lucide="banknote"></i> Bayar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-produk" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Manajemen Produk</h2>
+                        <p id="prod-count-label">0 produk</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openProductForm()">
+                        <i data-lucide="plus"></i> Tambah Produk
+                    </button>
+                </div>
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="prod-search" placeholder="Cari produk, SKU, kategori..." oninput="renderProductList()">
+                    </div>
+                    <select id="prod-cat-filter" class="select" onchange="renderProductList()">
+                        <option value="">Semua Kategori</option>
+                    </select>
+                </div>
+                <div id="product-list" class="product-admin-list"></div>
+            </section>
+
+            <section id="tab-digital" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Produk Digital</h2>
+                        <p id="digital-count-label">0 produk</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openDigitalForm()">
+                        <i data-lucide="plus"></i> Tambah Produk Digital
+                    </button>
+                </div>
+
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="digital-search" placeholder="Cari nama, provider, atau nominal..." oninput="setDigitalSearch(this.value)">
+                    </div>
+                </div>
+
+                <div id="digital-stats" class="orders-stats"></div>
+                <div id="digital-list" class="product-admin-list"></div>
+            </section>
+
+            <section id="tab-transaksi" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Riwayat Transaksi</h2>
+                        <p id="trx-count-label">0 transaksi</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <input type="date" id="trx-date-filter" class="input" onchange="renderTransactionList()">
+                        <button class="btn btn-ghost" onclick="document.getElementById('trx-date-filter').value=''; renderTransactionList();">
+                            <i data-lucide="x"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                <div id="trx-list" class="trx-list"></div>
+            </section>
+
+            <section id="tab-pesanan" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Pesanan Online</h2>
+                        <p id="orders-count-label">Memuat...</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-secondary" onclick="refreshOrders()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div id="orders-stats" class="orders-stats"></div>
+                <div id="orders-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-laporan" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Laporan & Analitik</h2>
+                        <p>Pantau perkembangan usaha Anda</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <select id="report-period" class="select" onchange="renderReport()">
+                            <option value="today">Hari Ini</option>
+                            <option value="7d">7 Hari Terakhir</option>
+                            <option value="30d" selected>30 Hari Terakhir</option>
+                            <option value="month">Bulan Ini</option>
+                            <option value="all">Semua Waktu</option>
+                        </select>
+
+                        <button class="btn btn-secondary" onclick="exportReportExcel()" title="Export Excel">
+                            <i data-lucide="file-spreadsheet"></i> Excel
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportReportCSV()" title="Export CSV">
+                            <i data-lucide="file-text"></i> CSV
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportReportPDF()" title="Export PDF">
+                            <i data-lucide="file-down"></i> PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div id="report-kpis" class="report-kpi-grid"></div>
+
+                <!-- Chart -->
+                <div class="settings-card" style="margin-bottom:16px;">
+                    <h3><i data-lucide="trending-up"></i> Grafik Penjualan</h3>
+                    <div id="report-chart" class="report-chart"></div>
+                </div>
+
+                <!-- Two Columns: Top Products & Categories -->
+                <div class="report-two-col">
+                    <div class="settings-card">
+                        <h3><i data-lucide="trophy"></i> Produk Terlaris</h3>
+                        <div id="report-top-products"></div>
+                    </div>
+                    <div class="settings-card">
+                        <h3><i data-lucide="layers"></i> Per Kategori</h3>
+                        <div id="report-categories"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-customer" class="tab-content">
+              <div class="page-header">
+                <div>
+                  <h2>Data Customer</h2>
+                  <p id="customers-count-label">0 customer</p>
+                </div>
+                <div class="page-header-actions">
+                  <button class="btn btn-ghost" onclick="clearGuests()" title="Hapus semua tamu">
+                    <i data-lucide="user-x"></i> Clear Tamu
+                  </button>
+                  <button class="btn btn-ghost" onclick="clearInactive(90)" title="Hapus customer tidak aktif 90 hari">
+                    <i data-lucide="user-minus"></i> Clear Tidak Aktif
+                  </button>
+                  <button class="btn btn-secondary" onclick="loadCustomers()">
+                    <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                </div>
+              </div>
+            
+              <div class="toolbar">
+                <div class="search-box">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="cust-search" placeholder="Cari nama, username, atau nomor HP..." oninput="setCustomerSearch(this.value)">
+                </div>
+              </div>
+            
+              <div id="customers-stats" class="orders-stats"></div>
+              <div id="customers-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-tugas" class="tab-content">
+              <div class="page-header">
+                <div>
+                  <h2>Tugas Berhadiah</h2>
+                  <p id="tasks-count-label">0 tugas</p>
+                </div>
+                <div class="page-header-actions">
+                  <button id="create-task-btn" class="btn btn-primary" onclick="openCreateTaskModal()">
+                    <i data-lucide="plus"></i> Buat Tugas
+                  </button>
+    
+                  <button class="btn btn-secondary" id="task-refresh-btn" onclick="loadTaskTab(event)">
+                      <i data-lucide="refresh-cw"></i> Refresh
+                  </button>
+                </div>
+              </div>
+
+            <div class="task-main-tabs">
+                <button data-task-tab="tasks" onclick="switchTaskTab('tasks')" class="task-main-tab active">
+                    <i data-lucide="gift"></i>
+                    <span>Tugas</span>
+                </button>
+                <button data-task-tab="socials" onclick="switchTaskTab('socials')" class="task-main-tab">
+                    <i data-lucide="share-2"></i>
+                    <span>Akun Sosmed</span>
+                </button>
+                <button data-task-tab="submissions" onclick="switchTaskTab('submissions')" class="task-main-tab">
+                    <i data-lucide="inbox"></i>
+                    <span>Bukti Tugas</span>
+                </button>
+                <button data-task-tab="withdrawals" onclick="switchTaskTab('withdrawals')" class="task-main-tab">
+                    <i data-lucide="banknote"></i>
+                    <span>Penarikan Saldo</span>
+                </button>
+            </div>
+            
+              <div id="tasks-stats" class="orders-stats"></div>
+              <div id="tasks-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-kasbon" class="tab-content">
+              <div class="page-header">
+                <div>
+                  <h2>Kasbon / Hutang Customer</h2>
+                  <p id="kasbon-count-label">0 kasbon</p>
+                </div>
+                <div class="page-header-actions">
+                    <button class="btn btn-primary" onclick="openManualKasbonForm()">
+                        <i data-lucide="plus"></i> Kasbon Baru
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadKasbon()">
+                        <i data-lucide="refresh-cw"></i> Refresh
+                    </button>
+                </div>
+              </div>
+            
+              <div class="toolbar">
+                <div class="search-box">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="kasbon-search" placeholder="Cari nama atau nomor HP..." oninput="setKasbonSearch(this.value)">
+                </div>
+              </div>
+            
+              <div id="kasbon-stats" class="orders-stats"></div>
+              <div id="kasbon-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-pengaturan" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Pengaturan</h2>
+                        <p>Kelola toko, akun, dan preferensi aplikasi</p>
+                    </div>
+                </div>
+
+                <!-- ============ SETTINGS TABS ============ -->
+                <div class="settings-tabs" role="tablist">
+                    <button class="settings-tab active" data-settings-tab="toko" onclick="switchSettingsTab('toko')" role="tab">
+                        <i data-lucide="store"></i>
+                        <span>Toko</span>
+                    </button>
+                    <button class="settings-tab" data-settings-tab="akun" onclick="switchSettingsTab('akun')" role="tab">
+                        <i data-lucide="user-circle"></i>
+                        <span>Akun</span>
+                    </button>
+                    <button class="settings-tab" data-settings-tab="fitur" onclick="switchSettingsTab('fitur')" role="tab">
+                        <i data-lucide="sparkles"></i>
+                        <span>Fitur</span>
+                    </button>
+                    <button class="settings-tab" data-settings-tab="sistem" onclick="switchSettingsTab('sistem')" role="tab">
+                        <i data-lucide="settings-2"></i>
+                        <span>Sistem</span>
+                    </button>
+                </div>
+
+                <!-- ============ PANEL: TOKO ============ -->
+                <div class="settings-panel active" data-settings-panel="toko">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro">
+                            <i data-lucide="info"></i>
+                            <div class="settings-panel-intro-text">
+                                <strong>Informasi Dasar Toko</strong>
+                                Data ini muncul di struk, halaman order online, dan notifikasi ke customer.
+                            </div>
+                        </div>
+
+                        <!-- Informasi Toko -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="store"></i> Informasi Toko</h3>
+                            <p class="settings-card-sub">Identitas toko yang tampil di struk & halaman order.</p>
+
+                            <div class="field">
+                                <label>Nama Toko</label>
+                                <input id="set-store-name" class="input" placeholder="Contoh: Warung Bu Sari">
+                            </div>
+                            <div class="field">
+                                <label>Alamat</label>
+                                <input id="set-store-address" class="input" placeholder="Jl. Contoh No. 1, Kota">
+                            </div>
+                            <div class="field">
+                                <label>No. Telepon</label>
+                                <input id="set-store-phone" class="input" placeholder="0812-xxxx-xxxx">
+                            </div>
+                            <div class="field">
+                                <label>Pesan Struk</label>
+                                <input id="set-receipt-footer" class="input" placeholder="Terima kasih, datang lagi!">
+                            </div>
+
+                            <div class="settings-card-divider"></div>
+
+                            <button class="btn btn-primary" onclick="saveStoreInfo()" style="width:100%;">
+                                <i data-lucide="save"></i> Simpan Informasi Toko
+                            </button>
+                        </div>
+
+                        <!-- Pesanan Online -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="globe"></i> Pesanan Online</h3>
+                            <p class="settings-card-sub">Aktifkan halaman order publik — customer pesan sendiri via link.</p>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="set-online-enabled">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Aktifkan Halaman Order</span>
+                            </label>
+
+                            <div class="field" style="margin-top:12px;">
+                                <label>Info Pembayaran</label>
+                                <textarea id="set-payment-info" class="textarea" rows="4" placeholder="DANA: 0858xxx (Nama)&#10;BCA: 123xxx a.n. Nama&#10;QRIS: scan QR"></textarea>
+                            </div>
+
+                            <div class="field">
+                                <label>Nomor WhatsApp (format 62)</label>
+                                <input id="set-whatsapp-number" class="input" placeholder="6285888082252">
+                            </div>
+
+                            <div class="field">
+                                <label>Slug Toko (URL)</label>
+                                <input id="set-store-slug" class="input" placeholder="warung-budi" maxlength="30" autocapitalize="off" autocorrect="off" spellcheck="false">
+                                <p class="settings-desc" style="margin-top:6px;font-size:.72rem;line-height:1.4">
+                                    Huruf kecil, angka, dan dash (-). Contoh: <code style="background:var(--bg-subtle);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.7rem">warung-budi</code>
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label>Link Halaman Order</label>
+                                <div class="online-preview-link">
+                                    <i data-lucide="link"></i>
+                                    <span id="online-order-link" style="flex:1;min-width:0;">—</span>
+                                    <button class="icon-btn" onclick="copyOrderLink()" title="Copy"><i data-lucide="copy"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="settings-card-divider"></div>
+
+                            <button class="btn btn-primary" onclick="saveOnlineSettings()" style="width:100%;">
+                                <i data-lucide="save"></i> Simpan Pesanan Online
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ============ PANEL: AKUN ============ -->
+                <div class="settings-panel" data-settings-panel="akun">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro">
+                            <i data-lucide="info"></i>
+                            <div class="settings-panel-intro-text">
+                                <strong>Akun & Keamanan</strong>
+                                Info akun yang sedang login. Logout jika ingin ganti akun.
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h3><i data-lucide="user-circle"></i> Akun Saya</h3>
+                            <p class="settings-card-sub">Detail akun yang sedang aktif di perangkat ini.</p>
+                            <div id="account-info"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ============ PANEL: FITUR ============ -->
+                <div class="settings-panel" data-settings-panel="fitur">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro">
+                            <i data-lucide="sparkles"></i>
+                            <div class="settings-panel-intro-text">
+                                <strong>Fitur Tambahan</strong>
+                                Alat bantu untuk mempermudah kerja harian — opsional, aktifkan sesuai kebutuhan.
+                            </div>
+                        </div>
+
+                        <!-- AI Vision -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="brain-circuit"></i> AI Vision</h3>
+                            <p class="settings-card-sub">Kenali produk dari foto — cocok untuk input produk cepat di warung.</p>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="ai-enabled" onchange="toggleAiEnabled()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Aktifkan AI Vision</span>
+                            </label>
+
+                            <div id="ai-config-area" class="hidden" style="margin-top:12px;">
+                                <div class="field">
+                                    <label>Provider AI</label>
+                                    <select id="ai-provider" class="select" onchange="onAiProviderChange()"></select>
+                                    <p id="ai-provider-desc" class="settings-desc" style="margin-top:6px"></p>
+                                </div>
+                                <div class="field">
+                                    <label>API Key</label>
+                                    <div style="display:flex;gap:8px">
+                                        <input id="ai-key" type="password" class="input" placeholder="Masukkan API Key...">
+                                        <button class="btn btn-primary" onclick="saveAiKey()" style="min-width:48px;"><i data-lucide="check"></i></button>
+                                    </div>
+                                    <a id="ai-key-help" href="#" target="_blank" rel="noopener" class="settings-help">🔗 Cara mendapatkan API Key →</a>
+                                </div>
+                                <div class="btn-row">
+                                    <button class="btn btn-secondary" onclick="testAiConnection()">
+                                        <i data-lucide="plug"></i> Test Koneksi
+                                    </button>
+                                    <button class="btn btn-ghost" onclick="clearAiCache()">
+                                        <i data-lucide="trash-2"></i> Reset Cache
+                                    </button>
+                                </div>
+                                <div id="ai-status" class="gh-status warn" style="margin-top:12px">
+                                    <i data-lucide="alert-triangle"></i><span>Belum ada API Key</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Printer Thermal -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="printer"></i> Printer Thermal</h3>
+                            <p class="settings-card-sub">Cetak struk ke printer thermal via Bluetooth (BLE).</p>
+
+                            <div id="thermal-status" class="gh-status warn">
+                                <i data-lucide="bluetooth-off"></i><span>Belum terhubung</span>
+                            </div>
+
+                            <div class="field">
+                                <label>Ukuran Kertas</label>
+                                <select id="thermal-paper" class="select" onchange="saveThermalSettings()">
+                                    <option value="58">58 mm (32 karakter)</option>
+                                    <option value="80">80 mm (48 karakter)</option>
+                                </select>
+                            </div>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="thermal-auto" onchange="saveThermalSettings()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Auto-print setelah transaksi</span>
+                            </label>
+
+                            <label class="toggle-row">
+                                <input type="checkbox" id="thermal-cut" onchange="saveThermalSettings()">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Auto-cut kertas setelah cetak</span>
+                            </label>
+
+                            <div class="settings-card-divider"></div>
+
+                            <div class="btn-row">
+                                <button id="thermal-connect-btn" class="btn btn-primary" onclick="thermalConnect()">
+                                    <i data-lucide="bluetooth"></i> Hubungkan
+                                </button>
+                                <button id="thermal-test-btn" class="btn btn-secondary hidden" onclick="thermalTestPrint()">
+                                    <i data-lucide="printer"></i> Test Print
+                                </button>
+                                <button id="thermal-disconnect-btn" class="btn btn-ghost hidden" onclick="thermalDisconnect()">
+                                    <i data-lucide="x"></i> Putuskan
+                                </button>
+                            </div>
+
+                            <p class="settings-desc" style="margin-top:12px;font-size:.72rem;line-height:1.5">
+                                💡 <strong>Wajib Web Bluetooth</strong> — Chrome Android / Desktop / Edge. iOS Safari belum support.
+                                Printer harus BLE (bukan Bluetooth Classic). Contoh: <em>XP-P323B, Goojprt PT-210, RPP02N</em>.
+                            </p>
+                        </div>
+
+                        <!-- Install Aplikasi -->
+                        <div class="settings-card full" id="install-app-card">
+                            <h3><i data-lucide="smartphone"></i> Install Aplikasi</h3>
+                            <p class="settings-card-sub">Install KasirKu di homescreen HP untuk akses lebih cepat + notifikasi order langsung.</p>
+
+                            <div id="install-app-status" class="gh-status warn" style="margin-bottom:12px">
+                                <i data-lucide="info"></i>
+                                <span id="install-app-status-text">Cek ketersediaan install...</span>
+                            </div>
+
+                            <button id="install-app-btn" class="btn btn-primary" style="width:100%;" onclick="triggerAppInstall()">
+                                <i data-lucide="download"></i> Install Sekarang
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ============ PANEL: SISTEM ============ -->
+                <div class="settings-panel" data-settings-panel="sistem">
+                    <div class="settings-panel-grid">
+
+                        <div class="settings-panel-intro" style="background:linear-gradient(135deg,#f1f5f9 0%,#e2e8f0 100%);border-color:#cbd5e1;">
+                            <i data-lucide="shield" style="color:#475569;"></i>
+                            <div class="settings-panel-intro-text" style="color:#334155;">
+                                <strong style="color:#1e293b;">Pengaturan Sistem</strong>
+                                Sinkronisasi cloud, backup data, dan reset. Hati-hati saat mengubah bagian ini.
+                            </div>
+                        </div>
+
+                        <!-- Sinkronisasi Cloud -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="cloud"></i> Sinkronisasi Cloud</h3>
+                            <p class="settings-card-sub">Data & foto tersimpan otomatis di Supabase Cloud.</p>
+
+                            <div class="gh-status ok">
+                                <i data-lucide="check-circle"></i><span>Terhubung ke Supabase</span>
+                            </div>
+
+                            <div class="btn-row" style="margin-top:12px">
+                                <button class="btn btn-success" onclick="KR.auth.reloadFromCloud()">
+                                    <i data-lucide="cloud-download"></i> Ambil dari Cloud
+                                </button>
+                                <button class="btn btn-secondary" onclick="pushToGithub()">
+                                    <i data-lucide="info"></i> Info Sync
+                                </button>
+                            </div>
+
+                            <p class="settings-desc" style="margin-top:12px;font-size:.72rem">
+                                💡 Data otomatis tersimpan setiap kali kamu tambah/edit/hapus produk atau transaksi.
+                            </p>
+                        </div>
+
+                        <!-- Backup Data -->
+                        <div class="settings-card">
+                            <h3><i data-lucide="database"></i> Backup Data</h3>
+                            <p class="settings-card-sub">Export & import data sebagai file JSON untuk backup mandiri.</p>
+
+                            <div class="btn-row">
+                                <button class="btn btn-primary" onclick="exportData()">
+                                    <i data-lucide="download"></i> Export JSON
+                                </button>
+                                <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">
+                                    <i data-lucide="upload"></i> Import JSON
+                                </button>
+                            </div>
+                            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+                        </div>
+
+                        <!-- Zona Bahaya -->
+                        <div class="settings-card danger full">
+                            <h3><i data-lucide="alert-octagon"></i> Zona Bahaya</h3>
+                            <p class="settings-card-sub">Reset cache lokal. Data cloud tetap aman & akan diambil ulang saat reload.</p>
+                            <button class="btn btn-danger" onclick="confirmReset()">
+                                <i data-lucide="refresh-cw"></i> Reset Cache Lokal
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
+        </main>
+            
+
+        <!-- ==================== MOBILE BOTTOM NAV ==================== -->
+        <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+            <div class="bn-inner-mobile">
+                <button class="bn-item-mobile active" data-tab="kasir" onclick="switchMobileTab('kasir')">
+                    <i data-lucide="store"></i>
+                    <span>Kasir</span>
+                </button>
+                <button class="bn-item-mobile" data-tab="produk" onclick="switchMobileTab('produk')">
+                    <i data-lucide="package"></i>
+                    <span>Produk</span>
+                </button>
+                <button class="bn-item-mobile" data-tab="transaksi" onclick="switchMobileTab('transaksi')">
+                    <i data-lucide="receipt-text"></i>
+                    <span>Transaksi</span>
+                </button>
+                <button class="bn-item-mobile" data-tab="pesanan" onclick="switchMobileTab('pesanan')">
+                    <i data-lucide="inbox"></i>
+                    <span>Pesanan</span>
+                    <span id="orders-badge-bn" class="nav-badge hidden">0</span>
+                </button>
+                <button class="bn-item-mobile" onclick="openMobileMenu()">
+                    <i data-lucide="menu"></i>
+                    <span>Lainnya</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ==================== MOBILE MENU DRAWER ==================== -->
+    <div id="mobile-menu-drawer" class="mobile-menu-drawer">
+        <div class="mm-backdrop" onclick="closeMobileMenu()"></div>
+        <div class="mm-panel">
+            <!-- Head -->
+            <div class="mm-head">
+                <div class="mm-head-inner">
+                    <div class="mm-logo">
+                        <i data-lucide="shopping-cart"></i>
+                    </div>
+                    <div class="mm-head-text">
+                        <div class="mm-head-title">KasirKu</div>
+                        <div class="mm-head-sub">Point of Sale</div>
+                    </div>
+                    <button class="mm-close" onclick="closeMobileMenu()" aria-label="Tutup menu">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Card -->
+            <div class="mm-user-card">
+                <div class="mm-user-avatar" id="mm-user-avatar">?</div>
+                <div class="mm-user-info">
+                    <div class="mm-user-name" id="mm-user-name">Memuat...</div>
+                    <div class="mm-user-role" id="mm-user-role">Admin</div>
+                </div>
+            </div>
+
+            <!-- Menu List -->
+            <div class="mm-menu">
+                <div class="mm-section-label">Menu Utama</div>
+
+                <button class="mm-item active" data-menu-tab="kasir" onclick="switchMobileTab('kasir'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="store"></i></div>
+                    <span class="mm-item-label">Kasir</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="produk" onclick="switchMobileTab('produk'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="package"></i></div>
+                    <span class="mm-item-label">Produk</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="transaksi" onclick="switchMobileTab('transaksi'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="receipt-text"></i></div>
+                    <span class="mm-item-label">Transaksi</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="pesanan" onclick="switchMobileTab('pesanan'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="inbox"></i></div>
+                    <span class="mm-item-label">Pesanan</span>
+                    <span id="orders-badge-mm" class="mm-item-badge hidden">0</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <div class="mm-section-label">Lainnya</div>
+
+                <button class="mm-item" data-menu-tab="laporan" onclick="switchMobileTab('laporan'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="bar-chart-3"></i></div>
+                    <span class="mm-item-label">Laporan</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="tugas" onclick="switchMobileTab('tugas'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="gift"></i></div>
+                    <span class="mm-item-label">Tugas Berhadiah</span>
+                    <span id="tasks-badge-mm" class="mm-item-badge hidden">0</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="customer" onclick="switchMobileTab('customer'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="users"></i></div>
+                    <span class="mm-item-label">Customer</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="kasbon" onclick="switchMobileTab('kasbon'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="hand-coins"></i></div>
+                    <span class="mm-item-label">Kasbon</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="pengaturan" onclick="switchMobileTab('pengaturan'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="settings"></i></div>
+                    <span class="mm-item-label">Pengaturan</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="mm-footer">
+                <button class="mm-footer-btn" onclick="toggleTheme(); closeMobileMenu();">
+                    <i data-lucide="sun-moon"></i>
+                    <span>Ganti Tema</span>
+                </button>
+                <button class="mm-footer-btn danger" onclick="KR.auth.logout(); closeMobileMenu();">
+                    <i data-lucide="log-out"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FLOATING CART BUTTON (FAB) ==================== -->
+    <button id="cart-fab" class="cart-fab hidden" onclick="scrollToCart()" title="Buka Keranjang">
+        <i data-lucide="shopping-cart"></i>
+        <span id="cart-fab-badge" class="cart-fab-badge">0</span>
+        <span class="cart-fab-total" id="cart-fab-total"></span>
+    </button>
+
+    <!-- ==================== MODAL PRODUCT ==================== -->
+    <div id="modal-product" class="modal">
+        <div class="modal-backdrop" onclick="closeModal('modal-product')"></div>
+        <div class="modal-card">
+            <div class="modal-head">
+                <h3 id="product-form-title">Tambah Produk</h3>
+                <button class="icon-btn" onclick="closeModal('modal-product')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pf-id">
+                <div class="field">
+                    <label>Foto Produk</label>
+                    <div id="pf-image-area"></div>
+                    <input type="file" id="pf-image-input" accept="image/*" class="hidden">
+                    <div id="pf-image-status"></div>
+                </div>
+                <div class="field">
+                    <label>Nama Produk <span class="req">*</span></label>
+                    <input id="pf-name" class="input" placeholder="Contoh: Indomie Goreng">
+                </div>
+
+                <div class="field">
+                    <label>
+                        SKU / Kode Barang
+                        <span style="color:var(--text-3);font-weight:600;font-size:.65rem;text-transform:none;letter-spacing:0;margin-left:4px;">(opsional)</span>
+                    </label>
+                    <div class="input-with-btn">
+                        <input id="pf-sku" class="input" placeholder="Ketik atau scan barcode... (kosongkan kalau tidak ada)" oninput="onSkuChange()">
+                        <button type="button" class="input-scan-btn" onclick="openSkuScanner()" title="Scan SKU">
+                            <i data-lucide="scan-line"></i>
+                        </button>
+                    </div>
+                    <p style="font-size:.7rem;color:var(--text-3);margin-top:4px;line-height:1.4;">
+                        💡 Kosongkan jika produk tidak punya SKU (telur, tepung, produk digital, dll)
+                    </p>
+                </div>
+                <div class="field-grid">
+                    <div class="field">
+                        <label>Harga Modal</label>
+                        <input id="pf-cost" type="number" class="input" placeholder="0" min="0">
+                    </div>
+                    <div class="field">
+                        <label>Harga Jual <span class="req">*</span></label>
+                        <input id="pf-price" type="number" class="input" placeholder="0" min="0">
+                    </div>
+                </div>
+
+                <div class="field-grid">
+                    <div class="field">
+                        <label>Stok</label>
+                        <input id="pf-stock" type="number" class="input" value="0" min="0">
+                    </div>
+                    <div class="field">
+                        <label>Kategori</label>
+                        <input id="pf-category" class="input" placeholder="Contoh: Makanan">
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label>
+                        Satuan
+                        <span style="color:var(--text-3);font-weight:600;font-size:.65rem;text-transform:none;letter-spacing:0;margin-left:4px;">(opsional)</span>
+                    </label>
+                    <select id="pf-unit" class="select" onchange="onPfUnitChange()">
+                        <option value="">— Tidak ada satuan —</option>
+                        <optgroup label="🔢 Satuan Umum">
+                            <option value="pcs">pcs — piece / buah</option>
+                            <option value="buah">buah</option>
+                            <option value="unit">unit</option>
+                            <option value="ekor">ekor (untuk ikan/ayam)</option>
+                            <option value="butir">butir (untuk telur)</option>
+                            <option value="batang">batang</option>
+                            <option value="lembar">lembar</option>
+                            <option value="keping">keping</option>
+                        </optgroup>
+                        <optgroup label="⚖️ Berat & Volume">
+                            <option value="kg">kg — kilogram</option>
+                            <option value="gram">gram / g</option>
+                            <option value="ons">ons</option>
+                            <option value="liter">liter / l</option>
+                            <option value="ml">ml — mililiter</option>
+                            <option value="meter">meter / m</option>
+                        </optgroup>
+                        <optgroup label="📦 Kemasan">
+                            <option value="bungkus">bungkus</option>
+                            <option value="sachet">sachet</option>
+                            <option value="pack">pack / pak</option>
+                            <option value="renteng">renteng</option>
+                            <option value="botol">botol</option>
+                            <option value="kaleng">kaleng</option>
+                            <option value="dus">dus</option>
+                            <option value="box">box</option>
+                            <option value="karton">karton</option>
+                            <option value="karung">karung</option>
+                            <option value="sak">sak</option>
+                            <option value="ikat">ikat</option>
+                            <option value="set">set</option>
+                        </optgroup>
+                        <optgroup label="📊 Kuantitas Besar">
+                            <option value="lusin">lusin (12)</option>
+                            <option value="kodi">kodi (20)</option>
+                            <option value="rim">rim (500 lembar)</option>
+                            <option value="roll">roll / gulung</option>
+                        </optgroup>
+                        <optgroup label="🍽️ Porsi">
+                            <option value="porsi">porsi</option>
+                            <option value="gelas">gelas</option>
+                            <option value="mangkuk">mangkuk</option>
+                            <option value="piring">piring</option>
+                        </optgroup>
+                        <option value="__custom__" style="font-weight:800;color:#059669;">✏️ Ketik sendiri...</option>
+                    </select>
+                
+                    <!-- Input custom — muncul kalau pilih "Ketik sendiri" -->
+                    <input 
+                        id="pf-unit-custom" 
+                        class="input hidden" 
+                        placeholder="Contoh: sendok, genggam, ember..." 
+                        style="margin-top:8px;"
+                        oninput="onPfUnitCustomChange()"
+                    >
+                </div>
+
+                <div class="pf-online-section">
+                    <h4><i data-lucide="globe"></i> Pesanan Online</h4>
+                    <label class="toggle-row">
+                        <input type="checkbox" id="pf-online" onchange="onPfOnlineChange()">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-label">Tampilkan di halaman order</span>
+                    </label>
+                    <div id="pf-online-detail" class="hidden">
+                        <label class="toggle-row" style="margin-top:6px;">
+                            <input type="checkbox" id="pf-needs-address">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Butuh alamat pengiriman</span>
+                        </label>
+                        <div class="field" style="margin-top:10px;margin-bottom:0;">
+                            <label>Harga Online (opsional)</label>
+                            <input id="pf-online-price" type="number" class="input" placeholder="Kosongkan = pakai harga jual" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" onclick="closeModal('modal-product')">Batal</button>
+                <button class="btn btn-primary" onclick="saveProduct()">
+                    <i data-lucide="check"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL SKU SCANNER ==================== -->
+    <div id="modal-sku-scanner" class="modal">
+        <div class="modal-backdrop" onclick="closeSkuScanner()"></div>
+        <div class="modal-card modal-card-md">
+            <div class="modal-head">
+                <h3><i data-lucide="scan-line"></i> Scan Barcode SKU</h3>
+                <button class="icon-btn" onclick="closeSkuScanner()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top:14px">
+                <div id="sku-scanner-reader" class="scanner-reader"></div>
+                <p class="scanner-hint">
+                    <i data-lucide="info" style="width:12px;height:12px;display:inline-block;vertical-align:-2px;"></i>
+                    Arahkan kamera ke barcode produk
+                </p>
+                <div class="sku-result-box">
+                    <div class="sku-result-label">Hasil Scan</div>
+                    <div id="sku-scanner-result" class="sku-result-value">—</div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" onclick="closeSkuScanner()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL SCANNER (Kasir) ==================== -->
+    <div id="modal-scanner" class="modal">
+        <div class="modal-backdrop" onclick="closeScanner()"></div>
+        <div class="modal-card modal-card-lg">
+            <div class="modal-head">
+                <h3><i data-lucide="scan-line"></i> Scan / Foto Produk</h3>
+                <button class="icon-btn" onclick="closeScanner()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top:0">
+                <div class="scanner-tabs">
+                    <button class="scanner-tab active" data-scan-mode="barcode" onclick="switchScanMode('barcode')">
+                        <i data-lucide="barcode"></i> Barcode
+                    </button>
+                    <button class="scanner-tab" data-scan-mode="vision" onclick="switchScanMode('vision')">
+                        <i data-lucide="brain-circuit"></i> AI Vision
+                    </button>
+                </div>
+
+                <div id="scan-mode-barcode" class="scan-mode-panel active">
+                    <div id="scanner-reader" class="scanner-reader"></div>
+                    <p class="scanner-hint">
+                        <i data-lucide="info" style="width:12px;height:12px;display:inline-block;vertical-align:-2px;"></i>
+                        Scanner aktif terus — arahkan barcode dengan jarak 15-20 cm
+                    </p>
+                    <div id="scan-result" class="scan-result hidden" style="margin-top:12px"></div>
+                    <button class="btn btn-primary btn-lg" style="width:100%;margin-top:14px;" onclick="closeScanner()">
+                        <i data-lucide="check-circle"></i> Selesai Scan
+                    </button>
+                </div>
+
+                <div id="scan-mode-vision" class="scan-mode-panel">
+                    <div id="vision-setup-warning" class="vision-warning hidden">
+                        <i data-lucide="alert-triangle"></i>
+                        <div>
+                            <strong>AI Vision Belum Aktif</strong>
+                            <p>Aktifkan di Pengaturan → AI Vision</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="closeScanner(); showTab('pengaturan');">
+                            Setup →
+                        </button>
+                    </div>
+                    <div id="vision-setup-ok" class="vision-actions">
+                        <button class="vision-btn" onclick="document.getElementById('vision-camera-input').click()">
+                            <i data-lucide="camera"></i>
+                            <span>Ambil Foto Produk</span>
+                            <small>Arahkan ke produk, pastikan jelas</small>
+                        </button>
+                        <button class="vision-btn secondary" onclick="document.getElementById('vision-gallery-input').click()">
+                            <i data-lucide="image"></i>
+                            <span>Pilih dari Galeri</span>
+                            <small>Foto produk yang sudah ada</small>
+                        </button>
+                        <input type="file" id="vision-camera-input" accept="image/*" capture="environment" class="hidden">
+                        <input type="file" id="vision-gallery-input" accept="image/*" class="hidden">
+                    </div>
+                    <div id="vision-preview" class="vision-preview hidden"></div>
+                    <div id="vision-loading" class="vision-loading hidden">
+                        <div class="loader"></div>
+                        <p>AI sedang mengenali produk...</p>
+                    </div>
+                    <div id="vision-result" class="vision-result hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL CHECKOUT ==================== -->
+    <div id="modal-checkout" class="modal">
+        <div class="modal-backdrop" onclick="closeModal('modal-checkout')"></div>
+        <div class="modal-card modal-card-sm">
+            <div class="modal-head">
+                <h3><i data-lucide="banknote"></i> Pembayaran</h3>
+                <button class="icon-btn" onclick="closeModal('modal-checkout')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="checkout-total">
+                    <div class="checkout-label">Total Belanja</div>
+                    <div id="co-total" class="checkout-total-value">Rp 0</div>
+                </div>
+                <div class="field">
+                    <label>Uang Diterima</label>
+                    <input id="co-paid" type="number" class="input input-lg" placeholder="0" min="0" oninput="updateChange()">
+                </div>
+                <div class="quick-cash" id="co-quick-cash"></div>
+                <div class="field">
+                    <label>Kembalian</label>
+                    <div id="co-change" class="change-value">Rp 0</div>
+                </div>
+                <div class="field">
+                    <label>Metode Pembayaran</label>
+                    <select id="co-method" class="select">
+                        <option value="Cash">Tunai</option>
+                        <option value="QRIS">QRIS</option>
+                        <option value="Transfer">Transfer Bank</option>
+                        <option value="E-Wallet">E-Wallet</option>
+                        <option value="Kasbon">Kasbon (Hutang)</option>  <!-- ← BARIS BARU -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" onclick="closeModal('modal-checkout')">Batal</button>
+                <button class="btn btn-success btn-lg" onclick="submitCheckout()">
+                    <i data-lucide="check-circle"></i> Selesaikan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL RECEIPT ==================== -->
+    <div id="modal-receipt" class="modal">
+        <div class="modal-backdrop" onclick="closeModal('modal-receipt')"></div>
+        <div class="modal-card modal-card-md">
+            <div class="modal-head no-print">
+                <h3><i data-lucide="receipt-text"></i> Struk Transaksi</h3>
+                <button class="icon-btn" onclick="closeModal('modal-receipt')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="receipt-paper" class="receipt-paper"></div>
+            </div>
+
+            <div class="modal-foot no-print">
+                <button class="btn btn-ghost" onclick="closeModal('modal-receipt')">Tutup</button>
+                <button class="btn btn-secondary" onclick="shareReceipt()">
+                    <i data-lucide="share-2"></i> Bagikan
+                </button>
+                <button id="thermal-print-btn" class="btn btn-secondary" onclick="printThermalReceipt()" title="Cetak ke printer thermal Bluetooth">
+                    <i data-lucide="bluetooth"></i> Bluetooth
+                </button>
+                <button class="btn btn-primary" onclick="printReceipt()">
+                    <i data-lucide="printer"></i> Cetak
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- ====================================================== -->
+    
+    <!-- ==================== MODAL DIGITAL PRODUCT ==================== -->
+    <div id="modal-digital" class="modal">
+        <div class="modal-backdrop" onclick="closeModal('modal-digital')"></div>
+        <div class="modal-card">
+            <div class="modal-head">
+                <h3 id="df-title">Tambah Produk Digital</h3>
+                <button class="icon-btn" onclick="closeModal('modal-digital')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="df-id">
+
+                <!-- KATEGORI -->
+                <div class="field">
+                    <label>Kategori <span class="req">*</span></label>
+                    <select id="df-category" class="select">
+                        <option value="pulsa">📱 Pulsa</option>
+                        <option value="token_pln">⚡ Token PLN</option>
+                        <option value="paket_data">🌐 Paket Data</option>
+                        <option value="voucher_game">🎮 Voucher Game</option>
+                        <option value="e_money">💰 E-Money</option>
+                        <option value="streaming">📺 Voucher Streaming</option>
+                        <option value="masa_aktif">📅 Masa Aktif Kartu</option>
+                    </select>
+                </div>
+
+                <!-- PROVIDER -->
+                <div class="field">
+                    <label>Provider <span class="req">*</span></label>
+                    <select id="df-provider" class="select">
+                        <option value="">— Pilih Provider —</option>
+                    </select>
+                    <input id="df-provider-custom" class="input hidden" placeholder="Ketik nama provider..." style="margin-top:8px;">
+                </div>
+
+                <!-- DENOM (label dinamis — di-update oleh JS) -->
+                <div class="field">
+                    <label>Nominal / Denomination <span class="req">*</span></label>
+                    <input id="df-denom" type="number" class="input" placeholder="0" min="1" step="1">
+                    <p style="font-size:.7rem;color:var(--text-3);margin-top:4px;line-height:1.4;">💡 Nominal produk</p>
+                </div>
+
+                <!-- NAMA PRODUK -->
+                <div class="field">
+                    <label>Nama Produk <span class="req">*</span></label>
+                    <input id="df-name" class="input" placeholder="Auto-generate dari kategori + provider + nominal">
+                </div>
+
+                <!-- HARGA -->
+                <div class="field-grid">
+                    <div class="field">
+                        <label>Harga Modal (opsional)</label>
+                        <input id="df-price-buy" type="number" class="input" placeholder="0" min="0">
+                    </div>
+                    <div class="field">
+                        <label>Harga Jual <span class="req">*</span></label>
+                        <input id="df-price-sell" type="number" class="input" placeholder="0" min="0">
+                    </div>
+                </div>
+
+                <!-- TOGGLE AKTIF -->
+                <label class="toggle-row" style="margin-top:8px;">
+                    <input type="checkbox" id="df-active" checked>
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Aktifkan produk (tampil di halaman order)</span>
+                </label>
+
+                <div id="df-status"></div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" onclick="closeModal('modal-digital')">Batal</button>
+                <button class="btn btn-primary" onclick="saveDigitalProduct()">
+                    <i data-lucide="check"></i> Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL CONFIRM ==================== -->
+    <div id="modal-confirm" class="modal">
+        <div class="modal-backdrop" onclick="closeModal('modal-confirm')"></div>
+        <div class="modal-card modal-card-xs">
+            <div class="modal-head">
+                <h3 id="confirm-title">Konfirmasi</h3>
+                <button class="icon-btn" onclick="closeModal('modal-confirm')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message"></p>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Batal</button>
+                <button id="confirm-ok" class="btn btn-danger">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== LOADING ==================== -->
+    <div id="loading" class="modal">
+        <div class="loading-card">
+            <div class="loader"></div>
+            <p id="loading-text">Memproses...</p>
+        </div>
+    </div>
+
+    <div id="toasts"></div>
+
+    <!-- ==================== PWA INSTALL BANNER ==================== -->
+    <div id="pwa-banner" class="pwa-banner hidden">
+        <div class="pwa-banner-inner">
+            <button class="pwa-banner-close" onclick="KR.pwa.markDismissed(); KR.pwa.hideBanner();">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="pwa-banner-icon">
+                <i data-lucide="smartphone"></i>
+            </div>
+            <div class="pwa-banner-body">
+                <div class="pwa-banner-title">Install KasirKu</div>
+                <div class="pwa-banner-desc">Akses lebih cepat + notifikasi order langsung di HP kamu</div>
+                <div id="pwa-banner-status" class="pwa-banner-status"></div>
+            </div>
+            <button class="pwa-banner-btn" onclick="KR.pwa.triggerInstall()">
+                <i data-lucide="download"></i> Install
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PWA iOS MODAL ==================== -->
+    <div id="pwa-ios-modal" class="modal">
+        <div class="modal-backdrop" onclick="KR.pwa.closeInstructions()"></div>
+        <div class="modal-card modal-card-sm">
+            <div class="modal-head">
+                <h3><i data-lucide="smartphone"></i> Install di iPhone / iPad</h3>
+                <button class="icon-btn" onclick="KR.pwa.closeInstructions()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:.85rem;color:var(--text-2);margin:0 0 16px;line-height:1.6;">
+                    Safari iOS belum support install otomatis. Ikuti langkah ini:
+                </p>
+                <ol class="pwa-steps">
+                    <li>
+                        <div class="pwa-step-num">1</div>
+                        <div>
+                            Tap ikon <strong>Share</strong> <i data-lucide="share" style="width:14px;height:14px;display:inline-block;vertical-align:-2px;"></i> di bawah Safari
+                        </div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">2</div>
+                        <div>Scroll & pilih <strong>"Add to Home Screen"</strong></div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">3</div>
+                        <div>Tap <strong>"Add"</strong> di kanan atas</div>
+                    </li>
+                </ol>
+                <div class="gh-status ok" style="margin-top:16px;">
+                    <i data-lucide="check-circle"></i>
+                    <span>Setelah itu, icon KasirKu muncul di homescreen kamu</span>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-primary" onclick="KR.pwa.closeInstructions()">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PWA ANDROID MODAL ==================== -->
+    <div id="pwa-android-modal" class="modal">
+        <div class="modal-backdrop" onclick="KR.pwa.closeInstructions()"></div>
+        <div class="modal-card modal-card-sm">
+            <div class="modal-head">
+                <h3><i data-lucide="smartphone"></i> Install di Android</h3>
+                <button class="icon-btn" onclick="KR.pwa.closeInstructions()"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <ol class="pwa-steps">
+                    <li>
+                        <div class="pwa-step-num">1</div>
+                        <div>Tap menu <strong>⋮</strong> (3 titik) di kanan atas browser</div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">2</div>
+                        <div>Pilih <strong>"Install app"</strong> atau <strong>"Add to Home screen"</strong></div>
+                    </li>
+                    <li>
+                        <div class="pwa-step-num">3</div>
+                        <div>Tap <strong>"Install"</strong></div>
+                    </li>
+                </ol>
+            </div>
+            <div class="modal-foot">
+                <button class="btn btn-primary" onclick="KR.pwa.closeInstructions()">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+      var scripts = [
+        '/assets/js/supabase.js',
+        '/assets/js/core.js',
+        '/assets/js/auth.js',
+        '/assets/js/vision.js',
+        '/assets/js/thermal.js',
+        '/assets/js/thermal-ui.js',
+        '/assets/js/sync.js',         // ← TAMBAH INI
+        '/assets/js/pos.js',
+        '/assets/js/orders.js',
+        '/assets/js/customers-admin.js',
+        '/assets/js/kasbon.js',
+        '/assets/js/seller-tasks.js',
+        '/assets/js/digital-admin.js',  // ← TAMBAH INI
+        '/assets/js/pwa.js', 
+        '/assets/js/app.js'
+      ];
+        
+      var i = 0;
+      function loadNext() {
+        if (i >= scripts.length) {
+          window.dispatchEvent(new Event('kasirku:ready'));
+          return;
+        }
+        var s = document.createElement('script');
+        s.src = scripts[i];
+        s.async = false;
+        s.onload = function () { i++; loadNext(); };
+        s.onerror = function () {
+          console.error('[Loader] Gagal load:', scripts[i]);
+          i++;
+          loadNext();
+        };
+        document.head.appendChild(s);
+      }
+      loadNext();
+    })();
+    </script>
+
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then((reg) => {
+          console.log('[SW] Registered, scope:', reg.scope);
+          setInterval(() => reg.update(), 5 * 60 * 1000);
+          reg.addEventListener('updatefound', () => {
+            const newSW = reg.installing;
+            newSW.addEventListener('statechange', () => {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[SW] New version installed, activating...');
+                newSW.postMessage('SKIP_WAITING');
+              }
+            });
+          });
+        }).catch(err => {
+          console.warn('[SW] Registration failed', err);
+        });
+
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          refreshing = true;
+          console.log('[SW] New controller, reloading...');
+          window.location.reload();
+        });
+      });
+    }
+    </script>
+
+</body>
+</html>
