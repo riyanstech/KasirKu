@@ -371,12 +371,31 @@
     }
   }
 
-  function handleLogout() {
-    if (!confirm('Keluar dari akun?')) return;
-    logout();
-    toast('Logout berhasil');
-    setTimeout(function () { location.reload(); }, 400);
-  }
+   function handleLogout() {
+     // Pakai custom confirm modal kalau tersedia
+     if (window.showConfirm) {
+       window.showConfirm({
+         title: 'Keluar dari Akun?',
+         desc: 'Kamu akan keluar dari akun ini. Untuk masuk lagi, tinggal login dengan username & password.',
+         okText: 'Ya, Keluar',
+         cancelText: 'Batal',
+         icon: 'log-out',
+         variant: 'warn',
+         onOk: function () {
+           logout();
+           toast('Berhasil logout');
+           setTimeout(function () { location.reload(); }, 500);
+         }
+       });
+       return;
+     }
+   
+     // Fallback kalau custom modal belum ke-load
+     if (!confirm('Keluar dari akun?')) return;
+     logout();
+     toast('Logout berhasil');
+     setTimeout(function () { location.reload(); }, 400);
+   }
 
   /* ---------- AUTOFILL CHECKOUT ---------- */
   function autofillCheckout() {
