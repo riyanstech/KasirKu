@@ -914,9 +914,10 @@
           <span>Pulsa • Token PLN • Paket Data</span>
         </div>
       </div>
-      <a href="order.html" class="switch-btn" title="Belanja Produk Fisik">
+       <a id="belanja-fisik-btn" href="order.html" class="switch-btn" title="Belanja Produk Fisik">
         <i data-lucide="shopping-bag"></i>
         <span>Belanja Fisik</span>
+      </a>
       </a>
     </div>
   </div>
@@ -1162,6 +1163,14 @@ async function init() {
     const profile = rows[0];
     state.sellerId = profile.id;
     $('store-name').textContent = profile.store_name || 'Toko Digital';
+    // Update link "Belanja Fisik" dengan slug seller
+    const sellerSlug = profile.store_slug || profile.username || state.sellerSlug;
+    const belanjaFisikBtn = document.getElementById('belanja-fisik-btn');
+    if (belanjaFisikBtn && sellerSlug) {
+      // Pakai path /toko/:slug supaya konsisten dengan rewrite Vercel
+      belanjaFisikBtn.href = '/toko/' + encodeURIComponent(sellerSlug);
+    }
+    
 
     const { data: products, error: prodErr } = await sb
       .from('digital_products')
