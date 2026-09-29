@@ -1050,7 +1050,9 @@ function renderCategories() {
 }
 
 /* ============================================================
-   SELECT CATEGORY → tampil daftar provider
+   SELECT CATEGORY
+   — Kalau cuma 1 provider (mis. Token PLN) → skip step provider
+   — Kalau >1 provider (mis. Pulsa) → tampil list provider
    ============================================================ */
 function selectCategory(cat) {
   state.selectedCategory = cat;
@@ -1063,17 +1065,17 @@ function selectCategory(cat) {
   const prods = state.products.filter(p => p.category === cat);
   const providers = [...new Set(prods.map(p => p.provider).filter(Boolean))].sort();
 
-  const container = $('provider-list');
-
-  if (!providers.length) {
-    // Kalau tidak ada provider, langsung skip ke produk
+  // ✅ FIX: kalau 0 atau 1 provider → langsung tampil produk, skip step provider
+  if (providers.length <= 1) {
+    state.selectedProvider = providers[0] || null;
     showProducts();
     return;
   }
 
+  // --- Render list provider (untuk >1 provider) ---
+  const container = $('provider-list');
   container.innerHTML = providers.map((prov, i) => {
     const count = prods.filter(p => p.provider === prov).length;
-    // Inisial: ambil 2 huruf pertama
     const initial = prov.slice(0, 2).toUpperCase();
     return `
       <button class="provider-item" onclick="selectProvider('${esc(prov)}')" style="--i:${i}">
@@ -1101,7 +1103,7 @@ function backToCategory() {
 }
 
 /* ============================================================
-   SELECT PROVIDER → tampil produk
+   SELECT PROVIDER
    ============================================================ */
 function selectProvider(provider) {
   state.selectedProvider = provider;
@@ -1144,33 +1146,37 @@ function showProducts() {
 function backToProvider() {
   $('step-product').classList.add('hidden');
 
-  // Kalau ada provider, balik ke list provider
-  if (state.selectedProvider) {
+  // Cek apakah kategori ini punya >1 provider
+  const cat = state.selectedCategory;
+  const prods = state.products.filter(p => p.category === cat);
+  const providers = [...new Set(prods.map(p => p.provider).filter(Boolean))].sort();
+
+  if (providers.length > 1) {
+    // Punya banyak provider → balik ke step provider
     state.selectedProvider = null;
     $('step-provider').classList.remove('hidden');
-    // Refresh provider list (biar animasi tetap)
-    if (state.selectedCategory) {
-      const prods = state.products.filter(p => p.category === state.selectedCategory);
-      const providers = [...new Set(prods.map(p => p.provider).filter(Boolean))].sort();
-      const container = $('provider-list');
-      container.innerHTML = providers.map((prov, i) => {
-        const count = prods.filter(p => p.provider === prov).length;
-        const initial = prov.slice(0, 2).toUpperCase();
-        return `
-          <button class="provider-item" onclick="selectProvider('${esc(prov)}')" style="--i:${i}">
-            <div class="provider-ico">${esc(initial)}</div>
-            <div class="provider-info">
-              <div class="provider-name">${esc(prov)}</div>
-              <div class="provider-count">${count} produk</div>
-            </div>
-            <div class="provider-chevron"><i data-lucide="chevron-right"></i></div>
-          </button>
-        `;
-      }).join('');
-    }
+
+    // Re-render provider list
+    const container = $('provider-list');
+    container.innerHTML = providers.map((prov, i) => {
+      const count = prods.filter(p => p.provider === prov).length;
+      const initial = prov.slice(0, 2).toUpperCase();
+      return `
+        <button class="provider-item" onclick="selectProvider('${esc(prov)}')" style="--i:${i}">
+          <div class="provider-ico">${esc(initial)}</div>
+          <div class="provider-info">
+            <div class="provider-name">${esc(prov)}</div>
+            <div class="provider-count">${count} produk</div>
+          </div>
+          <div class="provider-chevron"><i data-lucide="chevron-right"></i></div>
+        </button>
+      `;
+    }).join('');
   } else {
-    // Kalau tidak ada provider, balik ke kategori
+    // Cuma 1 provider → balik ke kategori
     $('step-category').classList.remove('hidden');
+    state.selectedProvider = null;
+    state.selectedCategory = null;
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -1211,7 +1217,7 @@ function backToCheckout() {
 }
 
 /* ============================================================
-   CREATE PAYMENT
+   CREATE PAYMENT (via Edge Function → NasionalPay)
    ============================================================ */
 async function createPayment() {
   const target = $('inp-target').value.trim();
