@@ -2947,40 +2947,23 @@
       </div>
   
       <div class="tb-actions">
-        <!-- Pulsa & Token -->
-        <button class="tb-btn zap" onclick="tbGoDigital()" title="Pulsa & Token">
-          <i data-lucide="zap"></i>
-        </button>
-  
         <!-- Keranjang -->
         <button class="tb-btn cart" onclick="openCart()" title="Keranjang">
           <i data-lucide="shopping-cart"></i>
           <span id="tb-cart-badge" class="tb-badge hidden">0</span>
         </button>
-  
+      
         <!-- Notifikasi -->
         <button class="tb-btn bell" onclick="tbGoNotif()" title="Notifikasi">
           <i data-lucide="bell"></i>
           <span id="tb-notif-badge" class="tb-badge hidden">0</span>
         </button>
-  
+      
         <!-- Avatar Customer -->
         <button id="tb-avatar-btn" class="tb-avatar" onclick="tbGoUser()" title="Akun">
           <i data-lucide="user"></i>
         </button>
       </div>
-    </div>
-  
-    <div class="search-wrap">
-      <div class="search-box">
-        <i data-lucide="search"></i>
-        <input id="search-input" type="search" placeholder="Cari produk...">
-      </div>
-    </div>
-  
-    <div class="cat-wrap">
-      <div id="category-chips" class="cat-tabs"></div>
-    </div>
   </header>
 
   <!-- ============================================
@@ -3213,9 +3196,9 @@
         <span>Beranda</span>
       </button>
   
-      <button class="bn-item" data-bn="orders" onclick="bnSwitch('orders')">
-        <i data-lucide="package"></i>
-        <span>Pesanan</span>
+      <button class="bn-item" data-bn="pulsa" onclick="bnSwitch('pulsa')">
+        <i data-lucide="zap"></i>
+        <span>Pulsa</span>
       </button>
   
       <button class="bn-cart" onclick="openCart()" title="Keranjang">
@@ -3223,10 +3206,9 @@
         <span id="fab-cart-badge" class="badge hidden">0</span>
       </button>
   
-      <button class="bn-item" data-bn="notif" onclick="bnSwitch('notif')">
-        <i data-lucide="bell"></i>
-        <span>Notif</span>
-        <span id="bn-notif-badge" class="nav-badge hidden">0</span>
+      <button class="bn-item" data-bn="fav" onclick="bnSwitch('fav')">
+        <i data-lucide="heart"></i>
+        <span>Favorit</span>
       </button>
   
       <button class="bn-item" data-bn="user" onclick="bnSwitch('user')">
@@ -3890,6 +3872,32 @@
         return;
       }
     
+      if (tab === 'pulsa') {
+        window.tbGoDigital();
+        document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+        return;
+      }
+    
+      if (tab === 'fav') {
+        state.showFavoritesOnly = !state.showFavoritesOnly;
+        if (state.showFavoritesOnly) {
+          state.categoryFilter = '';
+          document.getElementById('dt-prod-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          toast('Menampilkan favorit ❤', 'info');
+        } else {
+          toast('Menampilkan semua produk', 'info');
+        }
+        renderCategoryChips();
+        renderProducts();
+        return;
+      }
+    
+      if (tab === 'user') {
+        window.tbGoUser();
+        document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+        return;
+      }
+    
       if (tab === 'orders') {
         const session = window.KRCustomer?.getSession?.();
         if (session) {
@@ -3903,12 +3911,6 @@
     
       if (tab === 'notif') {
         window.tbGoNotif();
-        document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
-        return;
-      }
-    
-      if (tab === 'user') {
-        window.tbGoUser();
         document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
         return;
       }
@@ -5443,28 +5445,6 @@ window.closeAboutModal = closeAboutModal;
     document.getElementById('login-hint-modal').classList.add('hidden');
   };
 
-  /* ============================================================
-     2. Override bnSwitch (mobile bottom nav)
-     ============================================================ */
-  const _origBnSwitch = window.bnSwitch;
-  window.bnSwitch = function(tab) {
-    if (tab === 'tasks' || tab === 'orders') {
-      const session = window.KRCustomer?.getSession?.();
-      if (!session) {
-        window.showLoginHint(tab);
-        document.querySelectorAll('.bn-item').forEach(b => {
-          b.classList.toggle('active', b.dataset.bn === 'home');
-        });
-        return;
-      }
-    }
-    if (tab === 'fav') {
-      document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'fav'));
-      if (window.sbNavClick) window.sbNavClick('fav');
-      return;
-    }
-    if (typeof _origBnSwitch === 'function') _origBnSwitch(tab);
-  };
 
   /* ============================================================
      3. Override dtNavClick (desktop header nav)
@@ -5488,14 +5468,6 @@ window.closeAboutModal = closeAboutModal;
      4. Tambah menu di DOM setelah halaman load
      ============================================================ */
   function injectNewMenus() {
-    // --- A. Mobile bottom nav: ganti "Kategori" jadi "Favorit" ---
-    const catBtn = document.querySelector('.bn-inner .bn-item[data-bn="cat"]');
-    if (catBtn) {
-      catBtn.setAttribute('data-bn', 'fav');
-      catBtn.setAttribute('onclick', "bnSwitch('fav')");
-      catBtn.innerHTML = '<i data-lucide="heart"></i><span>Favorit</span>';
-    }
-
     // --- B. Desktop header: tambah menu "Hadiah" sebelum profile ---
     const dtNav = document.querySelector('.dt-nav-links');
     if (dtNav && !dtNav.querySelector('[data-dt-nav="tasks"]')) {
@@ -5708,68 +5680,6 @@ window.closeAboutModal = closeAboutModal;
 (function () {
   'use strict';
 
-  /* ============================================================
-     Override bnSwitch dengan versi clean & lengkap
-     - Fix: klik "Beranda" reset filter favorit
-     - Fix: klik "Favorit" toggle filter dengan benar
-     - Fix: klik "Tugas"/"Pesanan" cek login + tampilkan hint
-     ============================================================ */
-  window.bnSwitch = function (tab) {
-    // 1. Update active state semua bottom nav item
-    document.querySelectorAll('.bn-item').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.bn === tab);
-    });
-
-    // 2. HOME — reset semua filter (favorit, kategori) & scroll top
-    if (tab === 'home') {
-      if (typeof window.sbNavClick === 'function') window.sbNavClick('home');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-
-    // 3. FAVORIT — toggle filter lewat sbNavClick
-    if (tab === 'fav') {
-      if (typeof window.sbNavClick === 'function') window.sbNavClick('fav');
-      return;
-    }
-
-    // 4. KATEGORI — scroll ke sticky tabs
-    if (tab === 'cat') {
-      var catWrap = document.querySelector('.cat-wrap');
-      if (catWrap) catWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-
-    // 5. TUGAS / PESANAN — butuh login dulu
-    if (tab === 'tasks' || tab === 'orders') {
-      var session = window.KRCustomer && window.KRCustomer.getSession && window.KRCustomer.getSession();
-
-      if (!session) {
-        // Belum login → reset active ke home + tampilkan modal hint
-        document.querySelectorAll('.bn-item').forEach(function (b) {
-          b.classList.toggle('active', b.dataset.bn === 'home');
-        });
-        if (typeof window.showLoginHint === 'function') {
-          window.showLoginHint(tab);
-        }
-        return;
-      }
-
-      // Sudah login → buka fitur
-      if (tab === 'tasks') {
-        if (window.CustomerTasks && window.CustomerTasks.openTasksSheet) {
-          window.CustomerTasks.openTasksSheet();
-        }
-      } else if (tab === 'orders') {
-        if (window.CustomerAuth && window.CustomerAuth.openMyOrders) {
-          window.CustomerAuth.openMyOrders();
-        } else if (typeof window.__customerToast === 'function') {
-          window.__customerToast('Memuat pesanan...', 'info');
-        }
-      }
-      return;
-    }
-  };
 
   /* ============================================================
      Safety net — kalau ada state favorit nyangkut,
