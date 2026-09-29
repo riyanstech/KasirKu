@@ -52,6 +52,11 @@
                         <i data-lucide="inbox"></i><span>Pesanan</span>
                         <span id="orders-badge" class="nav-badge hidden">0</span>
                     </button>
+
+                    <button class="nav-tab" data-tab="notif" onclick="showTab('notif', this)">
+                        <i data-lucide="bell"></i><span>Notif</span>
+                    </button>
+                    
                     <button class="nav-tab" data-tab="laporan" onclick="showTab('laporan', this)">
                         <i data-lucide="bar-chart-3"></i><span>Laporan</span>
                     </button>
@@ -211,6 +216,21 @@
 
                 <div id="orders-stats" class="orders-stats"></div>
                 <div id="orders-list" class="orders-list"></div>
+            </section>
+
+            <section id="tab-notif" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Notifikasi</h2>
+                        <p id="notif-count-label">0 notifikasi</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openNotifForm()">
+                        <i data-lucide="plus"></i> Kirim Notifikasi
+                    </button>
+                </div>
+            
+                <div id="notif-stats" class="orders-stats"></div>
+                <div id="notif-list" class="orders-list"></div>
             </section>
 
             <section id="tab-laporan" class="tab-content">
@@ -772,6 +792,12 @@
                     <span class="mm-item-label">Pesanan</span>
                     <span id="orders-badge-mm" class="mm-item-badge hidden">0</span>
                     <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="notif" onclick="switchMobileTab('notif'); closeMobileMenu();">
+                  <div class="mm-item-icon"><i data-lucide="bell"></i></div>
+                  <span class="mm-item-label">Notifikasi</span>
+                  <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
                 </button>
 
                 <div class="mm-section-label">Lainnya</div>
@@ -1353,6 +1379,7 @@
         '/assets/js/seller-tasks.js',
         '/assets/js/digital-admin.js',  // ← TAMBAH INI
         '/assets/js/pwa.js', 
+        '/assets/js/notifications-admin.js',  // 👈 TAMBAH
         '/assets/js/app.js'
       ];
         
