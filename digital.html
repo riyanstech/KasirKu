@@ -1142,17 +1142,24 @@ async function init() {
     if (m) state.sellerSlug = decodeURIComponent(m[1]);
   }
 
-  try {
-    let sellerQuery = sb.from('profiles').select('id, store_name, username');
-    if (state.sellerSlug) {
-      sellerQuery = sellerQuery.eq('username', state.sellerSlug);
+
+   try {
+    // Pakai RPC lookup_seller — cek username DAN store_slug
+    if (!state.sellerSlug) {
+      // Auto-detect seller kalau cuma 1 toko
+      const { data: autoRows } = await sb.from('profiles').select('username').eq('online_order_enabled', true).limit(2);
+      if (autoRows && autoRows.length === 1) {
+        state.sellerSlug = autoRows[0].username;
+      }
     }
-    const { data: profiles, error: pErr } = await sellerQuery.limit(1);
-
+  
+    if (!state.sellerSlug) throw new Error('Toko tidak ditemukan. Cek link Anda.');
+  
+    const { data: rows, error: pErr } = await sb.rpc('lookup_seller', { p_slug: state.sellerSlug });
     if (pErr) throw pErr;
-    if (!profiles || !profiles.length) throw new Error('Toko tidak ditemukan. Cek link Anda.');
-
-    const profile = profiles[0];
+    if (!rows || !rows.length) throw new Error('Toko tidak ditemukan. Cek link Anda.');
+  
+    const profile = rows[0];
     state.sellerId = profile.id;
     $('store-name').textContent = profile.store_name || 'Toko Digital';
 
