@@ -252,6 +252,9 @@
       font-family: 'JetBrains Mono', monospace;
       box-shadow: 0 2px 6px -1px rgba(239,68,68,.4);
     }
+    .tb-btn.fav { color: #ef4444; }
+    .tb-btn.fav:active { background: #fee2e2; }
+    .tb-btn.fav.active { color: #dc2626; }
     .tb-btn .tb-badge.hidden { display: none !important; }
     .tb-avatar {
       width: 34px; height: 34px;
@@ -2955,6 +2958,9 @@
           <i data-lucide="bell"></i>
           <span id="tb-notif-badge" class="tb-badge hidden">0</span>
         </button>
+        <button class="tb-btn fav" onclick="tbGoFav()" title="Favorit">
+          <i data-lucide="heart"></i>
+        </button>
         <button id="tb-avatar-btn" class="tb-avatar" onclick="tbGoUser()" title="Akun">
           <i data-lucide="user"></i>
         </button>
@@ -3216,9 +3222,9 @@
         <span id="fab-cart-badge" class="badge hidden">0</span>
       </button>
   
-      <button class="bn-item" data-bn="fav" onclick="bnSwitch('fav')">
-        <i data-lucide="heart"></i>
-        <span>Favorit</span>
+      <button class="bn-item" data-bn="tasks" onclick="bnSwitch('tasks')">
+        <i data-lucide="gift"></i>
+        <span>Tugas</span>
       </button>
   
       <button class="bn-item" data-bn="user" onclick="bnSwitch('user')">
@@ -3888,17 +3894,14 @@
         return;
       }
     
-      if (tab === 'fav') {
-        state.showFavoritesOnly = !state.showFavoritesOnly;
-        if (state.showFavoritesOnly) {
-          state.categoryFilter = '';
-          document.getElementById('dt-prod-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          toast('Menampilkan favorit ❤', 'info');
-        } else {
-          toast('Menampilkan semua produk', 'info');
+      if (tab === 'tasks') {
+        const session = window.KRCustomer?.getSession?.();
+        if (!session) {
+          if (window.showLoginHint) window.showLoginHint('tasks');
+          document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
+          return;
         }
-        renderCategoryChips();
-        renderProducts();
+        if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet();
         return;
       }
     
@@ -3922,17 +3925,6 @@
       if (tab === 'notif') {
         window.tbGoNotif();
         document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
-        return;
-      }
-    
-      if (tab === 'tasks') {
-        const session = window.KRCustomer?.getSession?.();
-        if (!session) {
-          if (window.showLoginHint) window.showLoginHint('tasks');
-          document.querySelectorAll('.bn-item').forEach(b => b.classList.toggle('active', b.dataset.bn === 'home'));
-          return;
-        }
-        if (window.CustomerTasks?.openTasksSheet) window.CustomerTasks.openTasksSheet();
         return;
       }
     };
@@ -4021,6 +4013,23 @@
       } else {
         window.CustomerAuth?.openAuthModal?.('login');
       }
+    };
+
+    window.tbGoFav = function() {
+      state.showFavoritesOnly = !state.showFavoritesOnly;
+      if (state.showFavoritesOnly) {
+        state.categoryFilter = '';
+        document.getElementById('dt-prod-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast('Menampilkan favorit ❤', 'info');
+      } else {
+        toast('Menampilkan semua produk', 'info');
+      }
+      renderCategoryChips();
+      renderProducts();
+    
+      // Update tombol fav state
+      const favBtn = document.querySelector('.tb-btn.fav');
+      if (favBtn) favBtn.classList.toggle('active', state.showFavoritesOnly);
     };
 
     window.scrollToProducts = function() {
