@@ -3720,6 +3720,31 @@
     </div>
   </div>
 
+  <!-- ============================================
+     NOTIFIKASI MODAL
+     ============================================ -->
+  <div id="notif-modal" class="sheet hidden">
+    <div class="sheet-bg" onclick="closeNotifSheet()"></div>
+    <div class="sheet-card" style="max-width:480px;">
+      <div class="grab"></div>
+      <div class="sheet-head">
+        <div style="flex:1;min-width:0;">
+          <div class="sheet-head-title">Notifikasi</div>
+          <div id="notif-subtitle" class="sheet-head-sub">Memuat...</div>
+        </div>
+        <button id="notif-mark-all" onclick="markAllNotifRead()" style="font-size:.72rem;font-weight:800;color:var(--primary-darker);padding:8px 10px;border-radius:8px;background:var(--primary-soft);border:none;cursor:pointer;font-family:inherit;">
+          Tandai semua
+        </button>
+        <button onclick="closeNotifSheet()" class="sheet-x"><i data-lucide="x"></i></button>
+      </div>
+      <div class="sheet-body" id="notif-body">
+        <div style="padding:60px 20px;text-align:center;">
+          <div class="loading-spin" style="margin:0 auto 14px;"></div>
+          <p style="font-size:.82rem;color:var(--ink-3);font-weight:600;">Memuat notifikasi...</p>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="toasts"></div>
 
   <!-- ============================================
@@ -3998,10 +4023,9 @@
       }
       window.location.href = '/digital.html?seller=' + encodeURIComponent(slug);
     };
-    
+
     window.tbGoNotif = function() {
-      // Placeholder — akan di-implement di FASE 3
-      toast('Fitur notifikasi segera hadir 🚧', 'info');
+      openNotifSheet();
     };
     
     window.tbGoUser = function() {
@@ -4035,6 +4059,221 @@
     window.scrollToProducts = function() {
       document.getElementById('dt-prod-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
+
+    /* ============ NOTIFIKASI ============ */
+    let _notifRealtime = null;
+    
+    window.openNotifSheet = function() {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session || !state.seller) {
+        toast('Login dulu untuk lihat notifikasi', 'info');
+        if (window.CustomerAuth?.openAuthModal) window.CustomerAuth.openAuthModal('login');
+        return;
+      }
+    
+      $('notif-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      icon();
+      loadNotifList();
+    };
+    
+    window.closeNotifSheet = function() {
+      $('notif-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    };
+    
+    window.loadNotifList = async function() {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session || !state.seller) return;
+    
+      const body = $('notif-body');
+      const subtitle = $('notif-subtitle');
+    
+      try {
+        const { data, error } = await sb.rpc('notif_customer_list', {
+          p_seller_id: state.seller.id,
+          p_customer_id: session.id,
+          p_limit: 30
+        });
+        if (error) throw error;
+    
+        const list = (typeof data === 'string' ? JSON.parse(data) : data) || [];
+    
+        if (!list.length) {
+          body.innerHTML = `
+            <div style="padding:60px 24px;text-align:center;">
+              <div style="width:76px;height:76px;margin:0 auto 14px;border-radius:22px;background:linear-gradient(140deg,#ecfdf5,#d1fae5);display:grid;place-items:center;color:#059669;">
+                <i data-lucide="bell-off" style="width:32px;height:32px;"></i>
+              </div>
+              <div style="font-weight:800;font-size:1rem;color:var(--ink);margin-bottom:4px;">Belum ada notifikasi</div>
+              <div style="font-size:.78rem;color:var(--ink-3);">Notifikasi dari toko akan muncul di sini</div>
+            </div>`;
+          if (subtitle) subtitle.textContent = 'Tidak ada notifikasi';
+          icon();
+          return;
+        }
+    
+        const unreadCount = list.filter(n => !n.is_read).length;
+        if (subtitle) subtitle.textContent = `${list.length} notifikasi${unreadCount ? ` • ${unreadCount} baru` : ''}`;
+    
+        body.innerHTML = list.map(n => renderNotifCard(n)).join('');
+        icon();
+    
+        // Auto-mark-read semua notif yang BELUM dibaca (kecuali broadcast — tetap tandai personal)
+        const unreadIds = list.filter(n => !n.is_read).map(n => n.id);
+        if (unreadIds.length) {
+          for (const id of unreadIds) {
+            try { await sb.rpc('notif_mark_read', { p_notification_id: id, p_customer_id: session.id }); } catch(e) {}
+          }
+          updateNotifBadge(0);
+        }
+      } catch (e) {
+        console.error('[Notif]', e);
+        body.innerHTML = `
+          <div style="padding:60px 24px;text-align:center;">
+            <div style="width:76px;height:76px;margin:0 auto 14px;border-radius:22px;background:#fee2e2;display:grid;place-items:center;color:#dc2626;">
+              <i data-lucide="alert-circle" style="width:32px;height:32px;"></i>
+            </div>
+            <div style="font-weight:800;color:var(--ink);margin-bottom:4px;">Gagal memuat</div>
+            <div style="font-size:.78rem;color:var(--ink-3);">${esc(e.message || 'Coba lagi')}</div>
+          </div>`;
+        if (subtitle) subtitle.textContent = 'Gagal memuat';
+        icon();
+      }
+    };
+    
+    function renderNotifCard(n) {
+      // Kategori → warna & icon
+      const meta = {
+        info:    { color: '#3b82f6', bg: '#dbeafe', icon: 'info' },
+        promo:   { color: '#f59e0b', bg: '#fef3c7', icon: 'gift' },
+        order:   { color: '#10b981', bg: '#d1fae5', icon: 'package' },
+        system:  { color: '#6b7280', bg: '#f1f5f9', icon: 'megaphone' },
+      }[n.category] || { color: '#3b82f6', bg: '#dbeafe', icon: 'bell' };
+    
+      // Relative time
+      const timeAgo = getTimeAgo(n.created_at);
+    
+      // Border kiri biru kalau belum dibaca
+      const unreadBar = !n.is_read
+        ? `<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#10b981,#059669);"></div>`
+        : '';
+    
+      // Badge "BARU"
+      const newBadge = !n.is_read
+        ? `<span style="display:inline-block;margin-left:6px;padding:2px 6px;border-radius:5px;background:#ef4444;color:#fff;font-size:.56rem;font-weight:900;letter-spacing:.04em;">BARU</span>`
+        : '';
+    
+      return `
+        <div style="position:relative;padding:14px;padding-left:16px;border-radius:14px;background:${n.is_read ? '#fff' : '#f8fafc'};border:1.5px solid ${n.is_read ? 'var(--line)' : '#a7f3d0'};margin-bottom:10px;">
+          ${unreadBar}
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:38px;height:38px;border-radius:11px;background:${meta.bg};color:${meta.color};display:grid;place-items:center;flex-shrink:0;">
+              <i data-lucide="${meta.icon}" style="width:17px;height:17px;"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:800;font-size:.84rem;color:var(--ink);line-height:1.3;margin-bottom:3px;">
+                ${esc(n.title)}${newBadge}
+              </div>
+              ${n.body ? `<div style="font-size:.78rem;color:var(--ink-2);line-height:1.45;">${esc(n.body)}</div>` : ''}
+              <div style="font-size:.66rem;color:var(--ink-3);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:8px;">
+                <span>${timeAgo}</span>
+                ${n.is_broadcast ? `<span style="padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#64748b;">📢 Broadcast</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+    
+    window.markAllNotifRead = async function() {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session || !state.seller) return;
+      try {
+        await sb.rpc('notif_mark_all_read', {
+          p_seller_id: state.seller.id,
+          p_customer_id: session.id
+        });
+        updateNotifBadge(0);
+        loadNotifList();
+        toast('Semua notifikasi ditandai dibaca', 'success');
+      } catch (e) {
+        toast('Gagal: ' + e.message, 'error');
+      }
+    };
+    
+    window.updateNotifBadge = function(count) {
+      const badge1 = $('tb-notif-badge');
+      const badge2 = $('bn-notif-badge');
+    
+      [badge1, badge2].forEach(badge => {
+        if (!badge) return;
+        if (count > 0) {
+          badge.textContent = count > 99 ? '99+' : count;
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      });
+    };
+    
+    window.loadNotifBadge = async function() {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session || !state.seller) {
+        updateNotifBadge(0);
+        return;
+      }
+      try {
+        const { data, error } = await sb.rpc('notif_customer_unread_count', {
+          p_seller_id: state.seller.id,
+          p_customer_id: session.id
+        });
+        if (error) throw error;
+        const count = Number(data) || 0;
+        updateNotifBadge(count);
+      } catch (e) {
+        console.warn('[Notif badge]', e);
+      }
+    };
+    
+    function getTimeAgo(ts) {
+      const diff = Date.now() - new Date(ts).getTime();
+      const s = Math.floor(diff / 1000);
+      if (s < 60) return 'Baru saja';
+      const m = Math.floor(s / 60);
+      if (m < 60) return m + ' menit lalu';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + ' jam lalu';
+      const d = Math.floor(h / 24);
+      if (d < 7) return d + ' hari lalu';
+      const dt = new Date(ts);
+      const pad = n => String(n).padStart(2, '0');
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      return `${pad(dt.getDate())} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+    }
+    
+    /* Realtime — auto-update badge saat ada notif baru */
+    function setupNotifRealtime() {
+      const session = window.KRCustomer?.getSession?.();
+      if (!session || !state.seller) return;
+      if (_notifRealtime) return; // sudah ada
+    
+      try {
+        _notifRealtime = sb.channel('notif-customer')
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `seller_id=eq.${state.seller.id}`
+          }, () => {
+            loadNotifBadge();
+            // Kalau sheet lagi kebuka, refresh list
+            if (!$('notif-modal').classList.contains('hidden')) loadNotifList();
+          })
+          .subscribe();
+      } catch (e) {
+        console.warn('[Notif realtime]', e);
+      }
+    }
 
     /* ============ FAVORITES ============ */
     function getFavKey() {
@@ -4630,6 +4869,12 @@
 
         setTimeout(updateGreetingCard, 500);
         setTimeout(updateGreetingCard, 1500);
+
+        // Init notifikasi
+        setTimeout(() => {
+          loadNotifBadge();
+          setupNotifRealtime();
+        }, 1000);
 
         icon();
         setTimeout(setupRevealObserver, 60);
