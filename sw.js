@@ -3,7 +3,7 @@
    Auto-update + Offline support
    v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v32-digital-orders';
+const CACHE_VERSION = 'kasirku-v34-digital-orders';
 
 const ASSETS = [
   './',
