@@ -3,7 +3,7 @@
    Auto-update + Offline support
    v9 — Performance Sprint 1 (cache strategy optimized)
    ========================================== */
-const CACHE_VERSION = 'kasirku-v31-digital-admin';  // ← naikkan versi
+const CACHE_VERSION = 'kasirku-v32-digital-orders';
 
 const ASSETS = [
   './',
@@ -29,6 +29,7 @@ const ASSETS = [
   './assets/js/pwa.js',
   './assets/js/app.js',
   './assets/js/digital-admin.js',
+   './assets/js/digital-orders.js',  // ← TAMBAH
 ];
 
 /* ==================== INSTALL ==================== */
