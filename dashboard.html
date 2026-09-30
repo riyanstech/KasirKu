@@ -53,6 +53,12 @@
                         <span id="orders-badge" class="nav-badge hidden">0</span>
                     </button>
 
+                    <!-- ➕ TAMBAHKAN TAB BARU DI BAWAH INI -->
+                    <button class="nav-tab" data-tab="digital-orders" onclick="showTab('digital-orders', this)">
+                        <i data-lucide="zap"></i><span>Digital</span>
+                        <span id="digital-orders-badge" class="nav-badge hidden">0</span>
+                    </button>
+
                     <button class="nav-tab" data-tab="notif" onclick="showTab('notif', this)">
                         <i data-lucide="bell"></i><span>Notif</span>
                     </button>
@@ -216,6 +222,31 @@
 
                 <div id="orders-stats" class="orders-stats"></div>
                 <div id="orders-list" class="orders-list"></div>
+            </section>
+
+            <!-- ============ TAB DIGITAL ORDERS (BARU) ============ -->
+            <section id="tab-digital-orders" class="tab-content">
+                <div class="page-header">
+                    <div>
+                        <h2>Pesanan Digital</h2>
+                        <p id="digital-orders-count-label">Memuat...</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-secondary" onclick="loadDigitalOrders()">
+                            <i data-lucide="refresh-cw"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            
+                <div style="margin-bottom:14px;">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="digital-orders-search" placeholder="Cari produk, nomor tujuan, atau kode order..." oninput="setDigitalOrdersSearch(this.value)">
+                    </div>
+                </div>
+            
+                <div id="digital-orders-stats" class="orders-stats"></div>
+                <div id="digital-orders-list" class="orders-list"></div>
             </section>
 
             <section id="tab-notif" class="tab-content">
@@ -791,6 +822,13 @@
                     <div class="mm-item-icon"><i data-lucide="inbox"></i></div>
                     <span class="mm-item-label">Pesanan</span>
                     <span id="orders-badge-mm" class="mm-item-badge hidden">0</span>
+                    <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
+                </button>
+
+                <button class="mm-item" data-menu-tab="digital-orders" onclick="switchMobileTab('digital-orders'); closeMobileMenu();">
+                    <div class="mm-item-icon"><i data-lucide="zap"></i></div>
+                    <span class="mm-item-label">Pesanan Digital</span>
+                    <span id="digital-orders-badge-mm" class="mm-item-badge hidden">0</span>
                     <span class="mm-item-chevron"><i data-lucide="chevron-right"></i></span>
                 </button>
 
@@ -1374,6 +1412,7 @@
         '/assets/js/sync.js',         // ← TAMBAH INI
         '/assets/js/pos.js',
         '/assets/js/orders.js',
+        '/assets/js/digital-orders.js', 
         '/assets/js/customers-admin.js',
         '/assets/js/kasbon.js',
         '/assets/js/seller-tasks.js',
