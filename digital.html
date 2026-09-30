@@ -1254,7 +1254,7 @@ async function createPayment() {
 
     $('qris-img').src = data.qris_image;
     $('qris-amount').textContent = fmt(data.amount);
-    $('qris-oid').textContent = data.order_id.slice(0, 8).toUpperCase();
+    $('qris-oid').textContent = (data.order_code || data.order_id.slice(0, 8)).toUpperCase();
 
     $('step-checkout').classList.add('hidden');
     $('step-qris').classList.remove('hidden');
@@ -1320,7 +1320,7 @@ async function checkStatus() {
 
 function showSuccess() {
   const o = state.currentOrder;
-  $('success-oid').textContent = o.order_id.slice(0, 8).toUpperCase();
+  $('success-oid').textContent = (o.order_code || o.order_id.slice(0, 8)).toUpperCase();
   $('success-product').textContent = state.selectedProduct.name;
   $('success-target').textContent = o.target;
   $('success-amount').textContent = fmt(o.amount);
