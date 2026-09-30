@@ -37,6 +37,9 @@ serve(async (req) => {
     }
 
     const orderId = crypto.randomUUID();
+    // ➕ TAMBAHKAN 3 BARIS INI
+    const orderCode = "DGT" + Date.now().toString(36).toUpperCase() +
+                      Math.random().toString(36).slice(2, 5).toUpperCase();
     const playerUsername = "user_" + orderId.slice(0, 8);
 
     const npResponse = await fetch(
@@ -79,6 +82,7 @@ serve(async (req) => {
         target_note: notes || null,
         amount: product.price_sell,
         status: "pending",
+        order_code: orderCode,   // 👈 TAMBAH BARIS INI
         np_transaction_id: npData.data.transaction_id,
         np_qris_url: npData.data.qris_image,
         np_qris_data: npData.data.qris_data,
@@ -95,6 +99,7 @@ serve(async (req) => {
     return jsonResponse({
       success: true,
       order_id: order.id,
+      order_code: order.order_code, 
       transaction_id: npData.data.transaction_id,
       qris_image: npData.data.qris_image,
       qris_data: npData.data.qris_data,
