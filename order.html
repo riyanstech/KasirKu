@@ -5530,10 +5530,17 @@ window.closeAboutModal = closeAboutModal;
 
     function renderTrackResult(o) {
       const statusMap = {
-        pending:   { label: 'Menunggu Verifikasi', color: 'amber',   step: 1, icon: 'clock' },
-        verified:  { label: 'Sedang Diproses',     color: 'blue',    step: 2, icon: 'loader' },
-        done:      { label: 'Selesai',             color: 'emerald', step: 3, icon: 'check-circle' },
-        cancelled: { label: 'Dibatalkan',          color: 'red',     step: 0, icon: 'x-circle' },
+        // Status untuk produk fisik (online_orders)
+        pending:    { label: 'Menunggu Verifikasi', color: 'amber',   step: 1, icon: 'clock' },
+        verified:   { label: 'Sedang Diproses',     color: 'blue',    step: 2, icon: 'loader' },
+        done:       { label: 'Selesai',             color: 'emerald', step: 3, icon: 'check-circle' },
+        cancelled:  { label: 'Dibatalkan',          color: 'red',     step: 0, icon: 'x-circle' },
+        // Status untuk produk digital (digital_orders)
+        paid:       { label: 'Sudah Dibayar',       color: 'emerald', step: 1, icon: 'check-circle' },
+        processing: { label: 'Sedang Diproses',     color: 'blue',    step: 2, icon: 'loader' },
+        failed:     { label: 'Gagal',               color: 'red',     step: 0, icon: 'x-circle' },
+        expired:    { label: 'Kadaluarsa',          color: 'red',     step: 0, icon: 'alarm-clock' },
+        refunded:   { label: 'Dana Dikembalikan',   color: 'red',     step: 0, icon: 'rotate-ccw' },
       };
       const s = statusMap[o.status] || statusMap.pending;
       const code = o.order_code || '—';
