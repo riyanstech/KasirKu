@@ -168,6 +168,7 @@ function showTab(tabId, btn) {
   if (tabId === 'kasbon' && typeof loadKasbon === 'function') loadKasbon();
   if (tabId === 'notif' && typeof loadNotifications === 'function') loadNotifications();
   if (tabId === 'digital' && typeof loadDigitalProducts === 'function') loadDigitalProducts();
+  if (tabId === 'digital-orders' && typeof loadDigitalOrders === 'function') loadDigitalOrders();
 
   if (window.lucide) lucide.createIcons();
 }
